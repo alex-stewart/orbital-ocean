@@ -1,6 +1,7 @@
 import { useRef } from 'preact/hooks';
 import { useZoomPan } from '../hooks/useZoomPan.js';
 import { computeOrbitalAngle } from '../utils/timePhysics.js';
+import { generateAsteroidsFromBelt } from '../utils/generateAsteroids.js';
 import { IslandImage } from './IslandImage.jsx';
 import { OrbitPath } from './OrbitPath.jsx';
 
@@ -94,6 +95,22 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
               })}
             </>
           );
+        })}
+
+        {world.asteroid_belts?.flatMap((belt) => {
+          console.log('Generating belt:', belt.id);
+          const asteroids = generateAsteroidsFromBelt(belt, currentTime);
+          return asteroids.map(asteroid => (
+            <circle
+              key={asteroid.id}
+              cx={asteroid.orbitX}
+              cy={asteroid.orbitY}
+              r={asteroid.size[0] / 2}
+              fill="#888"
+              opacity="0.6"
+              style={{ pointerEvents: 'none' }}
+            />
+          ));
         })}
       </g>
     </svg>
