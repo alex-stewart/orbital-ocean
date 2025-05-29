@@ -29,5 +29,5 @@ asteroid_belts:
     orbit_radius_range: [600, 650]
     initial_angle_range: [0, 360]
     period_world_years_range: [0.3, 1.0]
-    size_range: [2, 5]
+    size_range: [0.8, 2.0] 
     shape_variants: 5  # optional, for rock sprites
