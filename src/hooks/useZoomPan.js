@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-export function useZoomPan(svgRef) {
+export function useZoomPan(svgRef, onZoomChange) {
   const zoomRef = useRef(1);
   const panRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
@@ -30,6 +30,9 @@ export function useZoomPan(svgRef) {
         y: cursor.y - (cursor.y - prevPan.y) * scaleDelta,
       };
       zoomRef.current = newZoom;
+
+      if (onZoomChange) onZoomChange(newZoom); // ✅ Notify parent
+
       forceRender((v) => v + 1);
     };
 
@@ -63,7 +66,7 @@ export function useZoomPan(svgRef) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [onZoomChange]); // ✅ Add dependency
 
   return {
     zoom: zoomRef.current,

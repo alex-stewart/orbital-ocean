@@ -5,9 +5,9 @@ import { generateAsteroidsFromBelt } from '../utils/generateAsteroids.js';
 import { IslandImage } from './IslandImage.jsx';
 import { OrbitPath } from './OrbitPath.jsx';
 
-export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIsland }) {
+export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIsland, setZoom }) {
   const svgRef = useRef(null);
-  const { zoom, pan } = useZoomPan(svgRef);
+  const { zoom, pan } = useZoomPan(svgRef, setZoom);
 
   return (
     <svg
