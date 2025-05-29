@@ -4,13 +4,22 @@ import { TimeHUD } from './components/TimeHUD.jsx';
 import { OrbitCanvas } from './components/OrbitCanvas.jsx';
 import { IslandInfoBox } from './components/IslandInfoBox.jsx';
 import { ZoomIndicator } from './components/ZoomIndicator.jsx';
+import { TIME_SCALE } from './utils/timeScale.js';
 
 export function App() {
   const [world, setWorld] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [hoveredIsland, setHoveredIsland] = useState(null);
-  const now = Date.now() / 1000;
 
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now() / 1000);
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadWorldYaml().then(setWorld);
