@@ -33,36 +33,66 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
           setHoveredIsland={setHoveredIsland}
         />
 
-        {/* Orbit path for hovered island (only orbiting) */}
-        {hoveredIsland?.orbit_radius > 0 && (
-          <OrbitPath r={hoveredIsland.orbit_radius} />
+        {/* Orbit path for hovered orbital (not central or moons) */}
+        {hoveredIsland?.orbit_radius > 0 && hoveredIsland?.period_world_years !== '∞' && (
+          <OrbitPath
+            r={hoveredIsland.orbit_radius}
+            cx={hoveredIsland.centerX ?? 0}
+            cy={hoveredIsland.centerY ?? 0}
+          />
         )}
 
-        {/* Orbiting islands */}
+        {/* Orbiting islands + moons */}
         {world.orbitals.map((island) => {
-          // Compute angle based on time
+          // Compute orbital island position
           const angleDeg = computeOrbitalAngle({
             initialAngle: island.initial_angle,
             periodWorldYears: island.period_world_years,
             realTimeSeconds: currentTime,
           });
 
-          // Convert to radians and compute x/y position
           const angleRad = (angleDeg * Math.PI) / 180;
           const x = island.orbit_radius * Math.cos(angleRad);
           const y = island.orbit_radius * Math.sin(angleRad);
 
           return (
-            <IslandImage
-              key={island.id}
-              island={{
-                ...island,
-                orbitX: x,
-                orbitY: y,
-              }}
-              currentTime={currentTime}
-              setHoveredIsland={setHoveredIsland}
-            />
+            <>
+              {/* Main orbital island */}
+              <IslandImage
+                key={island.id}
+                island={{ ...island, orbitX: x, orbitY: y }}
+                currentTime={currentTime}
+                setHoveredIsland={setHoveredIsland}
+              />
+
+              {/* Moons (relative to this island) */}
+              {island.moons?.map((moon) => {
+                const moonAngle = computeOrbitalAngle({
+                  initialAngle: moon.initial_angle,
+                  periodWorldYears: moon.period_world_years,
+                  realTimeSeconds: currentTime,
+                });
+
+                const moonRad = (moonAngle * Math.PI) / 180;
+                const moonX = x + moon.orbit_radius * Math.cos(moonRad);
+                const moonY = y + moon.orbit_radius * Math.sin(moonRad);
+
+                return (
+                  <IslandImage
+                    key={moon.id}
+                    island={{
+                      ...moon,
+                      orbitX: moonX,
+                      orbitY: moonY,
+                      centerX: x,  // parent island X
+                      centerY: y,  // parent island Y
+                    }}
+                    currentTime={currentTime}
+                    setHoveredIsland={setHoveredIsland}
+                  />
+                );
+              })}
+            </>
           );
         })}
       </g>

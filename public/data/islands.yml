@@ -1,17 +1,23 @@
 central:
   id: central-island
-  position: [0, 0]
-  size: [200, 200]
+  size: [100, 100]
 
 orbitals:
-  - id: island-1
+  - id: island_alpha
+    size: [40, 40]
     orbit_radius: 300
     initial_angle: 0
     period_world_years: 1
-    size: [60, 40]
 
-  - id: island-2
-    orbit_radius: 500
+    moons:
+      - id: moon_alpha_1
+        size: [10, 10]
+        orbit_radius: 60
+        initial_angle: 180
+        period_world_years: 0.2
+
+  - id: island_beta
+    size: [30, 30]
+    orbit_radius: 400
     initial_angle: 90
-    period_world_years: 20
-    size: [50, 50]
+    period_world_years: 2
