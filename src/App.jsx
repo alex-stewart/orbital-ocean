@@ -11,7 +11,7 @@ export function App() {
   const [zoom, setZoom] = useState(1);
   const [hoveredIsland, setHoveredIsland] = useState(null);
 
-  const [now, setNow] = useState(0);
+  const [now, setNow] = useState(Date.now() / 1000);
 
   useEffect(() => {
     const interval = setInterval(() => {

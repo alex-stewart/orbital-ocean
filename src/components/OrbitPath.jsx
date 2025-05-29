@@ -5,7 +5,7 @@ export function OrbitPath({ r, cx = 0, cy = 0 }) {
       cy={cy}
       r={r}
       fill="none"
-      stroke="#6b7280"
+      stroke="#FFFFFF"
       strokeWidth="1.5"
       strokeDasharray="4 2"
     />

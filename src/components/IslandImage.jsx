@@ -1,16 +1,28 @@
+import { computeSpinAngle } from '../utils/timePhysics.js';
+
 export function IslandImage({ island, currentTime, setHoveredIsland, isCentral = false }) {
   const x = island.orbitX;
   const y = island.orbitY;
+  const [width, height] = island.size;
+
+  const spinAngle = computeSpinAngle(currentTime, island.spin_period_world_years);
 
   return (
-    <image
-      href={`/assets/islands/${island.id}.svg`}
-      x={x - island.size[0] / 2}
-      y={y - island.size[1] / 2}
-      width={island.size[0]}
-      height={island.size[1]}
+    <g
+      transform={`
+        translate(${x}, ${y})
+        rotate(${spinAngle})
+        translate(${-width / 2}, ${-height / 2})
+      `}
       onPointerEnter={() => setHoveredIsland(island)}
       onPointerLeave={() => setHoveredIsland(null)}
-    />
+    >
+      <image
+        href={`/assets/islands/${island.id}.svg`}
+        width={width}
+        height={height}
+        style={{ pointerEvents: 'none' }} // Ensure mouse events hit the <g>, not <image>
+      />
+    </g>
   );
 }

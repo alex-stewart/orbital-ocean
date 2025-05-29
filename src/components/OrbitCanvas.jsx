@@ -106,8 +106,7 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
               cx={asteroid.orbitX}
               cy={asteroid.orbitY}
               r={asteroid.size[0] / 2}
-              fill="#888"
-              opacity="0.6"
+              fill="#000000"
               style={{ pointerEvents: 'none' }}
             />
           ));
