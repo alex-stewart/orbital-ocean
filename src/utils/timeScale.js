@@ -1,7 +1,10 @@
-export const TIME_SCALE = 60 * 60 * 24 * 365; // 1 world year per real second
+export const TIME_SCALE = 60 * 60 * 24 * 365;
+
+const BASE_REAL_TIME = 1577836800;
 
 export function getWorldTime(realTimeSeconds) {
-  const worldYears = realTimeSeconds / TIME_SCALE;
+  const worldSeconds = realTimeSeconds - BASE_REAL_TIME;
+  const worldYears = worldSeconds / TIME_SCALE;
   const totalDays = worldYears * 365.25;
 
   const years = Math.floor(worldYears);

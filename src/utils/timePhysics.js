@@ -7,10 +7,12 @@ export function computeOrbitalAngle({ initialAngle, periodWorldYears, realTimeSe
   return angle;
 }
 
-export function computeSpinAngle(currentWorldTime, spinPeriodYears) {
+export function computeSpinAngle(realTimeSeconds, spinPeriodYears) {
   if (!spinPeriodYears || spinPeriodYears <= 0 || spinPeriodYears === Infinity) return 0;
 
-  const secondsPerYear = 365 * 24 * 60 * 60;
-  const rotationFraction = (currentWorldTime / (spinPeriodYears * secondsPerYear)) % 1;
-  return rotationFraction * 360;
+  const worldSeconds = realTimeSeconds;
+  const worldYears = worldSeconds / TIME_SCALE;
+
+  const fraction = (worldYears % spinPeriodYears) / spinPeriodYears;
+  return fraction * 360;
 }

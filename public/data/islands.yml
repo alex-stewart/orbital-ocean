@@ -1,7 +1,7 @@
 central:
   id: central_island
   size: [100, 100]
-  spin_period_world_years: 50
+  spin_period_world_years: 10
 
 orbitals:
   - id: island_alpha
@@ -9,7 +9,7 @@ orbitals:
     orbit_radius: 300
     initial_angle: 0
     period_world_years: 1
-    spin_period_world_years: 50
+    spin_period_world_years: 10
 
     moons:
       - id: moon_alpha_1
@@ -17,14 +17,14 @@ orbitals:
         orbit_radius: 60
         initial_angle: 180
         period_world_years: 0.2
-        spin_period_world_years: 50
+        spin_period_world_years: 10
 
   - id: island_beta
     size: [30, 30]
     orbit_radius: 400
     initial_angle: 90
     period_world_years: 2
-    spin_period_world_years: 50
+    spin_period_world_years: 10
 
 asteroid_belts:
   - id: belt_alpha

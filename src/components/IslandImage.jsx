@@ -17,11 +17,18 @@ export function IslandImage({ island, currentTime, setHoveredIsland, isCentral =
       onPointerEnter={() => setHoveredIsland(island)}
       onPointerLeave={() => setHoveredIsland(null)}
     >
+      <rect
+        width={width}
+        height={height}
+        fill="transparent"
+        x={0}
+        y={0}
+      />
       <image
         href={`/assets/islands/${island.id}.svg`}
         width={width}
         height={height}
-        style={{ pointerEvents: 'none' }} // Ensure mouse events hit the <g>, not <image>
+        style={{ pointerEvents: 'none' }}
       />
     </g>
   );
