@@ -4,6 +4,7 @@ import { computeOrbitalAngle } from '../utils/timePhysics.js';
 import { generateAsteroidsFromBelt } from '../utils/generateAsteroids.js';
 import { IslandImage } from './IslandImage.jsx';
 import { OrbitPath } from './OrbitPath.jsx';
+import { IslandLabel } from './IslandLabel.jsx';
 
 export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIsland, setZoom }) {
   const svgRef = useRef(null);
@@ -32,6 +33,13 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
           isCentral
           currentTime={currentTime}
           setHoveredIsland={setHoveredIsland}
+        />
+        <IslandLabel
+          label={world.central.name || world.central.id}
+          x={0}
+          y={0}
+          zoom={zoom}
+          islandHeight={world.central.size[1]}
         />
 
         {/* Orbit path for hovered orbital (not central or moons) */}
@@ -65,6 +73,12 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
                 currentTime={currentTime}
                 setHoveredIsland={setHoveredIsland}
               />
+              <IslandLabel
+                label={island.name || island.id}
+                x={x}
+                y={y}
+                zoom={zoom}
+              />
 
               {/* Moons (relative to this island) */}
               {island.moons?.map((moon) => {
@@ -79,18 +93,27 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
                 const moonY = y + moon.orbit_radius * Math.sin(moonRad);
 
                 return (
-                  <IslandImage
-                    key={moon.id}
-                    island={{
-                      ...moon,
-                      orbitX: moonX,
-                      orbitY: moonY,
-                      centerX: x,  // parent island X
-                      centerY: y,  // parent island Y
-                    }}
-                    currentTime={currentTime}
-                    setHoveredIsland={setHoveredIsland}
-                  />
+                  <>
+                    <IslandImage
+                      key={moon.id}
+                      island={{
+                        ...moon,
+                        orbitX: moonX,
+                        orbitY: moonY,
+                        centerX: x,
+                        centerY: y,
+                      }}
+                      currentTime={currentTime}
+                      setHoveredIsland={setHoveredIsland}
+                    />
+                    <IslandLabel
+                      label={moon.name || moon.id}
+                      x={moonX}
+                      y={moonY}
+                      zoom={zoom}
+                      islandHeight={moon.size[1]}
+                    />
+                  </>
                 );
               })}
             </>
