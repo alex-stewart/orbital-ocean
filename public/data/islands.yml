@@ -1,10 +1,12 @@
 central:
   id: central_island
+  name: Central Island
   size: [100, 100]
   spin_period_world_years: 10
 
 orbitals:
   - id: island_alpha
+    name: Island Alpha
     size: [40, 40]
     orbit_radius: 300
     initial_angle: 0
@@ -13,6 +15,7 @@ orbitals:
 
     moons:
       - id: moon_alpha_1
+        name: Moon Alpha 1
         size: [10, 10]
         orbit_radius: 60
         initial_angle: 180
@@ -20,6 +23,7 @@ orbitals:
         spin_period_world_years: 10
 
   - id: island_beta
+    name: Island Beta
     size: [30, 30]
     orbit_radius: 400
     initial_angle: 90
@@ -28,6 +32,7 @@ orbitals:
 
 asteroid_belts:
   - id: belt_alpha
+    name: Asteroid Belt Alpha
     seed: 42
     count: 300
     orbit_radius_range: [600, 650]
