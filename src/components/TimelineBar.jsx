@@ -1,5 +1,5 @@
-const MIN_REAL_TIME = 1577836800; // Jan 1, 2020
-const MAX_REAL_TIME = 1893456000; // Jan 1, 2030
+const MIN_REAL_TIME = 1735689600; // Jan 1, 2020
+const MAX_REAL_TIME = 1767225600; // Jan 1, 2030
 
 export function TimelineBar({ realTime, setRealTime, setIsLiveTime }) {
   const year = new Date(realTime * 1000).getUTCFullYear();

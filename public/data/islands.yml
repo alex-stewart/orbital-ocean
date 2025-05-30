@@ -1,42 +1,81 @@
 central:
   id: central_island
   name: Central Island
-  size: [100, 100]
-  spin_period_world_years: 10
-
+  size: [120, 120]
+  spin_period_world_years: 3
 orbitals:
   - id: island_alpha
-    name: Island Alpha
-    size: [40, 40]
+    name: Alpha
     orbit_radius: 300
     initial_angle: 0
+    period_world_years: 0.5
+    spin_period_world_years: 1
+    size: [40, 40]
+  - id: island_beta
+    name: Beta
+    orbit_radius: 500
+    initial_angle: 45
     period_world_years: 1
-    spin_period_world_years: 10
-
+    spin_period_world_years: 1
+    size: [50, 50]
     moons:
-      - id: moon_alpha_1
-        name: Moon Alpha 1
-        size: [10, 10]
+      - id: moon_beta_1
+        name: Beta Moon 1
+        orbit_radius: 60
+        initial_angle: 0
+        period_world_years: 0.1
+        spin_period_world_years: 0.3
+        size: [15, 15]
+  - id: island_gamma
+    name: Gamma
+    orbit_radius: 750
+    initial_angle: 120
+    period_world_years: 3
+    spin_period_world_years: 2
+    size: [60, 60]
+    moons:
+      - id: moon_gamma_1
+        name: Gamma Moon 1
         orbit_radius: 60
         initial_angle: 180
         period_world_years: 0.2
-        spin_period_world_years: 10
-
-  - id: island_beta
-    name: Island Beta
-    size: [30, 30]
-    orbit_radius: 400
-    initial_angle: 90
-    period_world_years: 2
-    spin_period_world_years: 10
-
+        spin_period_world_years: 0.4
+        size: [18, 18]
+      - id: moon_gamma_2
+        name: Gamma Moon 2
+        orbit_radius: 100
+        initial_angle: 90
+        period_world_years: 0.3
+        spin_period_world_years: 0.6
+        size: [12, 12]
+  - id: island_delta
+    name: Delta
+    orbit_radius: 1000
+    initial_angle: 250
+    period_world_years: 6
+    spin_period_world_years: 4
+    size: [70, 70]
+    moons:
+      - id: moon_delta_1
+        name: Delta Moon 1
+        orbit_radius: 100
+        initial_angle: 45
+        period_world_years: 0.25
+        spin_period_world_years: 0.5
+        size: [18, 18]
+  - id: island_epsilon
+    name: Epsiolon
+    orbit_radius: 1500
+    initial_angle: 270
+    period_world_years: 20
+    spin_period_world_years: 1
+    size: [20, 20]
 asteroid_belts:
-  - id: belt_alpha
-    name: Asteroid Belt Alpha
+  - id: belt
     seed: 42
     count: 300
-    orbit_radius_range: [600, 650]
+    orbit_radius_range: [1200, 1300]
     initial_angle_range: [0, 360]
-    period_world_years_range: [0.3, 1.0]
-    size_range: [0.8, 2.0] 
+    period_world_years_range: [15, 15]
+    size_range: [0.8, 2.0]
     shape_variants: 5

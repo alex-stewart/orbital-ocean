@@ -14,11 +14,11 @@ export function OrbitCanvas({ world, currentTime, hoveredIsland, setHoveredIslan
     <svg
       ref={svgRef}
       class="w-full h-full block"
-      viewBox="-500 -500 1000 1000"
-    >
+      viewBox="-1500 -1500 3000 3000"
+      >
       <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
         {/* Ocean background */}
-        <rect x="-1000" y="-1000" width="2000" height="2000" fill="#bfdbfe" />
+        <circle cx="0" cy="0" r="2000" fill="#bfdbfe" />
 
         {/* Central island */}
         <IslandImage
