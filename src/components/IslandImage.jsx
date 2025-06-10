@@ -25,7 +25,7 @@ export function IslandImage({ island, currentTime, setHoveredIsland, isCentral =
         y={0}
       />
       <image
-        href={`/assets/islands/${island.id}.svg`}
+        href={`${import.meta.env.BASE_URL}assets/islands/${island.id}.svg`}
         width={width}
         height={height}
         style={{ pointerEvents: 'none' }}
