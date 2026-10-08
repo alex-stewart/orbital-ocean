@@ -43,8 +43,14 @@ npm install
 npm run dev        # http://localhost:5173/orbital-ocean/
 npm test           # calendar and orbit maths
 npm run build      # typecheck + production build into dist/
-npm run deploy     # build and publish dist/ to GitHub Pages
 ```
+
+### Deployment
+
+`.github/workflows/pages.yml` runs the tests and build on every pull request
+and push. Each push to `main` is then published to GitHub Pages automatically.
+In the repository settings, under **Pages → Build and deployment → Source**,
+choose **GitHub Actions** (one-time setup).
 
 Built with React, TypeScript and Vite. The chart is drawn on a 2D canvas
 (`src/books/atlas/render.ts`); the UI around it is ordinary React.
