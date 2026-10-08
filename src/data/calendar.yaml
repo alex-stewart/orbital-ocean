@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  CALENDAR OF THE ORBITAL OCEAN
+#
+#  Everything about how dates are counted and displayed lives in this file.
+#  All values here are PLACEHOLDERS — rename and resize freely.
+#
+#  Internally the atlas counts time in whole days since the epoch
+#  (day 0 = day 1 of the first month of `epoch_year`). Orbital periods in
+#  world.yaml can be given in days or in years of this calendar.
+# ─────────────────────────────────────────────────────────────────────────────
+
+era:
+  name: Common Reckoning   # shown in full on the timeline
+  abbreviation: CR         # shown after year numbers, e.g. "Year 1012 CR"
+
+# The year number of day 0.
+epoch_year: 1
+
+# Months in order. The sum of `days` is the length of the year.
+# Set `intercalary: true` for festival/blank days that sit outside the
+# ordinary month sequence (they are displayed by name, without a number).
+months:
+  - { name: Month I,    days: 30 }
+  - { name: Month II,   days: 30 }
+  - { name: Month III,  days: 30 }
+  - { name: Month IV,   days: 30 }
+  - { name: Month V,    days: 30 }
+  - { name: Month VI,   days: 30 }
+  - { name: Midyear Days, days: 2, intercalary: true }
+  - { name: Month VII,  days: 30 }
+  - { name: Month VIII, days: 30 }
+  - { name: Month IX,   days: 30 }
+  - { name: Month X,    days: 30 }
+  - { name: Month XI,   days: 30 }
+  - { name: Month XII,  days: 30 }
+  - { name: Year's End, days: 3, intercalary: true }
+
+# Optional. Names of the days of the week, cycling from day 0 of the epoch.
+# Remove the list (or leave it empty) to hide weekdays.
+weekdays: [Firstday, Seconday, Thirday, Fourthday, Fifthday, Restday]
+
+# Where the atlas opens, and how far the timeline reaches.
+default_date: { year: 1000, month: 1, day: 1 }   # month is 1-based, counting every entry above
+timeline:
+  start_year: 900
+  end_year: 1100

@@ -1,0 +1,213 @@
+:root {
+  --paper: #f4ecd6;
+  --paper-deep: #e9dcbc;
+  --ocean: #dde6e1;
+  --ink: #3b2f24;
+  --ink-soft: rgba(59, 47, 36, 0.62);
+  --ink-faint: rgba(59, 47, 36, 0.2);
+  --accent: #9b3a26;
+  --land: #efe0b6;
+  --caps: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  /* Fine paper grain, generated with an SVG turbulence filter. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.36 0 0 0 0 0.24 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--paper) var(--grain);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+/* ── Library ─────────────────────────────────────────────────────────────── */
+
+.library {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 64px 16px 80px;
+}
+
+.library-head {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.eyebrow {
+  font-family: var(--caps);
+  letter-spacing: 0.3em;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+.library-head h1 {
+  font-family: var(--caps);
+  font-weight: 500;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  margin: 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ink-faint);
+  box-shadow: 0 4px 0 -3px var(--ink-faint);
+}
+
+.lede {
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+  max-width: 34em;
+  margin: 18px auto 0;
+}
+
+.shelf {
+  margin: 0 auto 56px;
+  max-width: 560px;
+}
+
+.shelf-books {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  height: 300px;
+  padding: 0 24px;
+}
+
+.book {
+  --h: 100%;
+  position: relative;
+  width: 74px;
+  height: var(--h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), rgba(255, 255, 255, 0.08) 18%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.22)),
+    var(--book);
+  border-radius: 3px 3px 1px 1px;
+  color: #ecd9a6;
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s ease;
+}
+
+a.book:hover,
+a.book:focus-visible {
+  transform: translateY(-14px);
+}
+
+.book--forthcoming {
+  filter: saturate(0.5) brightness(0.92);
+  cursor: default;
+}
+
+.spine-band {
+  width: 100%;
+  height: 10px;
+  border-top: 1px solid rgba(236, 217, 166, 0.7);
+  border-bottom: 1px solid rgba(236, 217, 166, 0.7);
+}
+
+.spine-title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--caps);
+  font-size: 1.15rem;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+
+.shelf-board {
+  height: 16px;
+  background: linear-gradient(#7a5a3a, #5b4129);
+  border-radius: 2px;
+  box-shadow: 0 6px 14px -6px rgba(59, 47, 36, 0.6);
+}
+
+.catalogue {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 600px;
+}
+
+.catalogue li {
+  display: grid;
+  grid-template-columns: 4.5em 1fr auto;
+  grid-template-areas: 'no title state' 'no sub state';
+  column-gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ink-faint);
+}
+
+.catalogue-no {
+  grid-area: no;
+  font-family: var(--caps);
+  color: var(--ink-soft);
+}
+
+.catalogue li > a,
+.catalogue li > span:nth-child(2) {
+  grid-area: title;
+  font-family: var(--caps);
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+}
+
+.catalogue-sub {
+  grid-area: sub;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.catalogue-state {
+  grid-area: state;
+  align-self: center;
+  font-family: var(--caps);
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  color: var(--ink-soft);
+}

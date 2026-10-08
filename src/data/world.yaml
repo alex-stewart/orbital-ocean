@@ -1,0 +1,131 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  THE ORBITAL OCEAN — bodies and orbits
+#
+#  Distances and radii are in Imperial Leagues (1 IL ≈ 1 km).
+#  Every orbit is circular and runs CLOCKWISE as seen on the map.
+#  `bearing` is the compass bearing (0 = north, 90 = east) from the parent
+#  body at day 0 of the calendar epoch.
+#  Periods may be given as `period_years` (calendar years) or `period_days`.
+#  `seed` picks the generated placeholder coastline; change it to reroll.
+#
+#  Names are placeholders.
+# ─────────────────────────────────────────────────────────────────────────────
+
+units:
+  name: Imperial League
+  plural: Imperial Leagues
+  abbreviation: IL
+
+central:
+  id: central
+  name: The Central Isle
+  radius: 210          # ≈ 140,000 IL², between Iceland and Great Britain
+  seed: 11
+
+orbitals:
+  - id: isle-i
+    name: Isle I
+    orbit_radius: 900
+    bearing: 40
+    period_years: 0.62
+    radius: 34
+    seed: 101
+
+  - id: isle-ii
+    name: Isle II
+    orbit_radius: 1650
+    bearing: 200
+    period_years: 1.5
+    radius: 58
+    seed: 202
+    moons:
+      - id: isle-ii-a
+        name: Isle II-a
+        orbit_radius: 150
+        bearing: 0
+        period_days: 21
+        radius: 7
+        seed: 203
+
+  - id: isle-iii
+    name: Isle III
+    orbit_radius: 2550
+    bearing: 310
+    period_years: 2.9
+    radius: 41
+    seed: 303
+
+  - id: isle-iv
+    name: Isle IV
+    orbit_radius: 3700
+    bearing: 115
+    period_years: 5.1
+    radius: 92
+    seed: 404
+    moons:
+      - id: isle-iv-a
+        name: Isle IV-a
+        orbit_radius: 210
+        bearing: 90
+        period_days: 34
+        radius: 11
+        seed: 405
+      - id: isle-iv-b
+        name: Isle IV-b
+        orbit_radius: 330
+        bearing: 250
+        period_days: 66
+        radius: 6
+        seed: 406
+
+  - id: isle-v
+    name: Isle V
+    orbit_radius: 4900
+    bearing: 20
+    period_years: 7.8
+    radius: 27
+    seed: 505
+
+  - id: isle-vi
+    name: Isle VI
+    orbit_radius: 6200
+    bearing: 245
+    period_years: 11.1
+    radius: 70
+    seed: 606
+    moons:
+      - id: isle-vi-a
+        name: Isle VI-a
+        orbit_radius: 190
+        bearing: 160
+        period_days: 40
+        radius: 9
+        seed: 607
+
+  - id: isle-vii
+    name: Isle VII
+    orbit_radius: 8700
+    bearing: 160
+    period_years: 18.4
+    radius: 52
+    seed: 707
+
+  - id: isle-viii
+    name: Isle VIII
+    orbit_radius: 10000
+    bearing: 285
+    period_years: 22.7
+    radius: 24
+    seed: 808
+
+# Bands of tiny islets. Each islet's period scales from the inner edge as
+# (r / inner_radius)^1.5, so the inner edge of a belt overtakes the outer.
+belts:
+  - id: shoals
+    name: The Scattered Shoals
+    seed: 42
+    count: 420
+    inner_radius: 7250
+    outer_radius: 7850
+    period_years_at_inner: 13.5
+    islet_radius: [0.6, 4]
