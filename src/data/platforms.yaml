@@ -12,219 +12,232 @@
 #  The Atlas warns about any platform in something's path.
 # ─────────────────────────────────────────────────────────────────────────────
 
-- {id: HPBE-P-00001, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 32.7}
-- {id: HPBE-P-00002, class: keep, owner: imperial, motion: ring, around: magmarnus, radius: 125, bearing: 133.8}
-- {id: HPBE-P-00003, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 238.4}
-- {id: HPBE-P-00004, class: grand, owner: imperial, motion: anchored, radius: 470.4, bearing: 282.89}
-- {id: HPBE-P-00005, class: keep, owner: imperial, motion: anchored, radius: 5179.7, bearing: 205.96}
-- {id: HPBE-P-00006, class: keep, owner: imperial, motion: anchored, radius: 607.3, bearing: 107.28}
-- {id: HPBE-P-00007, class: keep, owner: imperial, motion: anchored, radius: 5137, bearing: 252.52}
-- {id: HPBE-P-00008, class: keep, owner: imperial, motion: anchored, radius: 5064.8, bearing: 7.47}
-- {id: HPBE-P-00009, class: grand, owner: imperial, motion: lane, radius: 1928, bearing: 167.1}
-- {id: HPBE-P-00010, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: -178}
-- {id: HPBE-P-00011, class: keep, owner: imperial, motion: anchored, radius: 2103.1, bearing: 270.47}
-- {id: HPBE-P-00012, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 17.2}
-- {id: HPBE-P-00013, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -17.2}
-- {id: HPBE-P-00014, class: keep, owner: imperial, motion: anchored, radius: 3318.1, bearing: 187.17}
-- {id: HPBE-P-00015, class: keep, owner: imperial, motion: anchored, radius: 1579.5, bearing: 251.76}
-- {id: HPBE-P-00016, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 280.6}
-- {id: HPBE-P-00017, class: keep, owner: imperial, motion: anchored, radius: 513.6, bearing: 11.15}
-- {id: HPBE-P-00018, class: keep, owner: imperial, motion: anchored, radius: 3577.6, bearing: 282.02}
-- {id: HPBE-P-00019, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 262.9}
-- {id: HPBE-P-00020, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 35.1}
-- {id: HPBE-P-00021, class: keep, owner: imperial, motion: anchored, radius: 3635.8, bearing: 354.57}
-- {id: HPBE-P-00022, class: keep, owner: imperial, motion: anchored, radius: 693.7, bearing: 198.65}
-- {id: HPBE-P-00023, class: keep, owner: imperial, motion: anchored, radius: 5094, bearing: 147.51}
-- {id: HPBE-P-00024, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -160.1}
-- {id: HPBE-P-00025, class: keep, owner: imperial, motion: anchored, radius: 4400.3, bearing: 194.45}
-- {id: HPBE-P-00026, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -88.7}
-- {id: HPBE-P-00027, class: keep, owner: imperial, motion: anchored, radius: 1574.2, bearing: 12.55}
-- {id: HPBE-P-00028, class: keep, owner: imperial, motion: convoy, with: mort, offset: -32.2}
-- {id: HPBE-P-00029, class: keep, owner: imperial, motion: anchored, radius: 1565.3, bearing: 298.15}
-- {id: HPBE-P-00030, class: keep, owner: imperial, motion: anchored, radius: 1989.9, bearing: 185.34}
-- {id: HPBE-P-00031, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -70.8}
-- {id: HPBE-P-00032, class: keep, owner: imperial, motion: anchored, radius: 3662.5, bearing: 124.19}
-- {id: HPBE-P-00033, class: keep, owner: imperial, motion: anchored, radius: 616.5, bearing: 330.97}
-- {id: HPBE-P-00034, class: keep, owner: imperial, motion: convoy, with: continent-13, offset: 29}
-- {id: HPBE-P-00035, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: -10.7}
-- {id: HPBE-P-00036, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: -7.8}
-- {id: HPBE-P-00037, class: keep, owner: imperial, motion: anchored, radius: 4375.5, bearing: 268.12}
-- {id: HPBE-P-00038, class: keep, owner: imperial, motion: anchored, radius: 1586.9, bearing: 209.48}
-- {id: HPBE-P-00039, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 88.7}
-- {id: HPBE-P-00040, class: keep, owner: imperial, motion: anchored, radius: 5857.7, bearing: 284.86}
-- {id: HPBE-P-00041, class: keep, owner: imperial, motion: anchored, radius: 3325.1, bearing: 281.4}
+- {id: HPBE-P-00001, class: keep, owner: imperial, motion: lane, radius: 403, bearing: 245.8}
+- {id: HPBE-P-00002, class: keep, owner: imperial, motion: anchored, radius: 2028.4, bearing: 346.97}
+- {id: HPBE-P-00003, class: keep, owner: imperial, motion: anchored, radius: 5054.1, bearing: 40.25}
+- {id: HPBE-P-00004, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: -10.7}
+- {id: HPBE-P-00005, class: keep, owner: imperial, motion: anchored, radius: 2029.3, bearing: 241.03}
+- {id: HPBE-P-00006, class: keep, owner: imperial, motion: anchored, radius: 3627.9, bearing: 250.19}
+- {id: HPBE-P-00007, class: keep, owner: imperial, motion: anchored, radius: 3255.7, bearing: 12.45}
+- {id: HPBE-P-00008, class: keep, owner: imperial, motion: anchored, radius: 586.2, bearing: 157.75}
+- {id: HPBE-P-00009, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -35.1}
+- {id: HPBE-P-00010, class: keep, owner: imperial, motion: anchored, radius: 2090.1, bearing: 312.72}
+- {id: HPBE-P-00011, class: keep, owner: imperial, motion: anchored, radius: 3280.4, bearing: 163.33}
+- {id: HPBE-P-00012, class: keep, owner: imperial, motion: ring, around: continent-4, radius: 94, bearing: 209.3}
+- {id: HPBE-P-00013, class: keep, owner: imperial, motion: anchored, radius: 5091.6, bearing: 255.81}
+- {id: HPBE-P-00014, class: keep, owner: imperial, motion: lane, radius: 673, bearing: 15.5}
+- {id: HPBE-P-00015, class: keep, owner: imperial, motion: anchored, radius: 365.3, bearing: 22.66}
+- {id: HPBE-P-00016, class: grand, owner: imperial, motion: lane, radius: 2198, bearing: 14.3}
+- {id: HPBE-P-00017, class: keep, owner: imperial, motion: anchored, radius: 3549.6, bearing: 31.61}
+- {id: HPBE-P-00018, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: -94.4}
+- {id: HPBE-P-00019, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -17.2}
+- {id: HPBE-P-00020, class: keep, owner: imperial, motion: anchored, radius: 7169.8, bearing: 59.63}
+- {id: HPBE-P-00021, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -160.1}
+- {id: HPBE-P-00022, class: keep, owner: imperial, motion: anchored, radius: 1951.2, bearing: 263.5}
+- {id: HPBE-P-00023, class: keep, owner: imperial, motion: anchored, radius: 903.6, bearing: 294.72}
+- {id: HPBE-P-00024, class: keep, owner: imperial, motion: anchored, radius: 2588.4, bearing: 184.85}
+- {id: HPBE-P-00025, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -178}
+- {id: HPBE-P-00026, class: keep, owner: imperial, motion: anchored, radius: 598.6, bearing: 25.47}
+- {id: HPBE-P-00027, class: keep, owner: imperial, motion: anchored, radius: 921.1, bearing: 327.17}
+- {id: HPBE-P-00028, class: keep, owner: imperial, motion: anchored, radius: 647.4, bearing: 39.76}
+- {id: HPBE-P-00029, class: keep, owner: imperial, motion: anchored, radius: 3636.8, bearing: 301.43}
+- {id: HPBE-P-00030, class: keep, owner: imperial, motion: ring, around: continent-7, radius: 78, bearing: 335.7}
+- {id: HPBE-P-00031, class: keep, owner: imperial, motion: anchored, radius: 3567.6, bearing: 345.89}
+- {id: HPBE-P-00032, class: keep, owner: imperial, motion: anchored, radius: 5109.5, bearing: 276.73}
+- {id: HPBE-P-00033, class: keep, owner: imperial, motion: anchored, radius: 470.4, bearing: 282.89}
+- {id: HPBE-P-00034, class: keep, owner: imperial, motion: lane, radius: 403, bearing: 317.8}
+- {id: HPBE-P-00035, class: keep, owner: imperial, motion: anchored, radius: 3561.9, bearing: 6.53}
+- {id: HPBE-P-00036, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: 178}
+- {id: HPBE-P-00037, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 142.3}
+- {id: HPBE-P-00038, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: -92.9}
+- {id: HPBE-P-00039, class: keep, owner: imperial, motion: anchored, radius: 5160.9, bearing: 28.38}
+- {id: HPBE-P-00040, class: grand, owner: imperial, motion: anchored, radius: 287.8, bearing: 61.28}
+- {id: HPBE-P-00041, class: keep, owner: imperial, motion: anchored, radius: 2022.1, bearing: 178.12}
 - {id: HPBE-P-00042, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: 7.7}
-- {id: HPBE-P-00043, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 320.6}
-- {id: HPBE-P-00044, class: keep, owner: imperial, motion: ring, around: continent-7, radius: 78, bearing: 335.7}
-- {id: HPBE-P-00045, class: keep, owner: imperial, motion: anchored, radius: 3637.9, bearing: 40.1}
-- {id: HPBE-P-00046, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 92.9}
-- {id: HPBE-P-00047, class: keep, owner: imperial, motion: anchored, radius: 2015.9, bearing: 152.12}
-- {id: HPBE-P-00048, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 160.6}
-- {id: HPBE-P-00049, class: keep, owner: imperial, motion: convoy, with: continent-7, offset: 30.1}
-- {id: HPBE-P-00050, class: keep, owner: imperial, motion: anchored, radius: 903.6, bearing: 294.72}
-- {id: HPBE-P-00051, class: keep, owner: imperial, motion: anchored, radius: 598.6, bearing: 25.47}
-- {id: HPBE-P-00052, class: keep, owner: imperial, motion: convoy, with: continent-14, offset: 30.4}
-- {id: HPBE-P-00053, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 245.9}
-- {id: HPBE-P-00054, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 120.6}
-- {id: HPBE-P-00055, class: keep, owner: imperial, motion: anchored, radius: 4389.2, bearing: 168.28}
-- {id: HPBE-P-00056, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 305.9}
-- {id: HPBE-P-00057, class: grand, owner: imperial, motion: lane, radius: 2058, bearing: 190.9}
-- {id: HPBE-P-00058, class: grand, owner: imperial, motion: lane, radius: 2058, bearing: 118.9}
-- {id: HPBE-P-00059, class: keep, owner: imperial, motion: anchored, radius: 1584.3, bearing: 95.25}
-- {id: HPBE-P-00060, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 289.8}
-- {id: HPBE-P-00061, class: keep, owner: imperial, motion: anchored, radius: 636.2, bearing: 281.79}
-- {id: HPBE-P-00062, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 178}
-- {id: HPBE-P-00063, class: keep, owner: imperial, motion: anchored, radius: 3345.7, bearing: 257.29}
-- {id: HPBE-P-00064, class: keep, owner: imperial, motion: ring, around: continent-9, radius: 87, bearing: 157.5}
-- {id: HPBE-P-00065, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 94.4}
-- {id: HPBE-P-00066, class: keep, owner: imperial, motion: anchored, radius: 7311.8, bearing: 325.18}
-- {id: HPBE-P-00067, class: keep, owner: imperial, motion: anchored, radius: 7270.1, bearing: 44.83}
-- {id: HPBE-P-00068, class: grand, owner: imperial, motion: lane, radius: 1928, bearing: 239.1}
-- {id: HPBE-P-00069, class: keep, owner: imperial, motion: anchored, radius: 1950.1, bearing: 35.71}
-- {id: HPBE-P-00070, class: keep, owner: imperial, motion: anchored, radius: 3598.3, bearing: 197.8}
-- {id: HPBE-P-00071, class: keep, owner: imperial, motion: anchored, radius: 7389, bearing: 243.45}
-- {id: HPBE-P-00072, class: keep, owner: imperial, motion: anchored, radius: 1562.7, bearing: 38.83}
-- {id: HPBE-P-00073, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 293.6}
-- {id: HPBE-P-00074, class: keep, owner: imperial, motion: ring, around: continent-4, radius: 94, bearing: 29.3}
-- {id: HPBE-P-00075, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 178}
-- {id: HPBE-P-00076, class: keep, owner: imperial, motion: anchored, radius: 4394.4, bearing: 229.42}
-- {id: HPBE-P-00077, class: keep, owner: imperial, motion: anchored, radius: 2028.4, bearing: 346.97}
-- {id: HPBE-P-00078, class: grand, owner: imperial, motion: anchored, radius: 586.2, bearing: 157.75}
-- {id: HPBE-P-00079, class: keep, owner: imperial, motion: anchored, radius: 606.2, bearing: 214.48}
-- {id: HPBE-P-00080, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -106.5}
-- {id: HPBE-P-00081, class: keep, owner: imperial, motion: lane, radius: 2198, bearing: 245.8}
-- {id: HPBE-P-00082, class: keep, owner: imperial, motion: anchored, radius: 5177, bearing: 270.17}
-- {id: HPBE-P-00083, class: keep, owner: imperial, motion: anchored, radius: 912.3, bearing: 126.21}
-- {id: HPBE-P-00084, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 106.5}
-- {id: HPBE-P-00085, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 124.4}
-- {id: HPBE-P-00086, class: keep, owner: imperial, motion: anchored, radius: 2029.3, bearing: 241.03}
-- {id: HPBE-P-00087, class: keep, owner: imperial, motion: anchored, radius: 3659.9, bearing: 165.11}
-- {id: HPBE-P-00088, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 135.5}
-- {id: HPBE-P-00089, class: keep, owner: imperial, motion: anchored, radius: 3259.9, bearing: 328.62}
-- {id: HPBE-P-00090, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 341.3}
-- {id: HPBE-P-00091, class: keep, owner: imperial, motion: anchored, radius: 5071.6, bearing: 333.54}
-- {id: HPBE-P-00092, class: keep, owner: imperial, motion: anchored, radius: 3342.9, bearing: 87.01}
-- {id: HPBE-P-00093, class: keep, owner: imperial, motion: anchored, radius: 1589.8, bearing: 147.33}
-- {id: HPBE-P-00094, class: grand, owner: imperial, motion: lane, radius: 1928, bearing: 23.1}
-- {id: HPBE-P-00095, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -142.3}
-- {id: HPBE-P-00096, class: keep, owner: imperial, motion: lane, radius: 2198, bearing: 29.8}
-- {id: HPBE-P-00097, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: -7.7}
-- {id: HPBE-P-00098, class: keep, owner: imperial, motion: anchored, radius: 4404.8, bearing: 243.35}
-- {id: HPBE-P-00099, class: keep, owner: imperial, motion: anchored, radius: 5074.7, bearing: 348.9}
-- {id: HPBE-P-00100, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: 178}
-- {id: HPBE-P-00101, class: keep, owner: imperial, motion: anchored, radius: 7421, bearing: 166.24}
-- {id: HPBE-P-00102, class: keep, owner: imperial, motion: anchored, radius: 4383.1, bearing: 283.5}
-- {id: HPBE-P-00103, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 185.9}
-- {id: HPBE-P-00104, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 142.3}
-- {id: HPBE-P-00105, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 7.8}
-- {id: HPBE-P-00106, class: keep, owner: imperial, motion: anchored, radius: 2152.8, bearing: 208.13}
-- {id: HPBE-P-00107, class: keep, owner: imperial, motion: anchored, radius: 2153.4, bearing: 314.16}
-- {id: HPBE-P-00108, class: keep, owner: imperial, motion: anchored, radius: 3631.6, bearing: 237.53}
-- {id: HPBE-P-00109, class: keep, owner: imperial, motion: anchored, radius: 5122.2, bearing: 101.54}
-- {id: HPBE-P-00110, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 65.9}
-- {id: HPBE-P-00111, class: keep, owner: imperial, motion: anchored, radius: 3609.8, bearing: 144.54}
-- {id: HPBE-P-00112, class: keep, owner: imperial, motion: anchored, radius: 2098.5, bearing: 135.83}
-- {id: HPBE-P-00113, class: keep, owner: imperial, motion: anchored, radius: 3271.9, bearing: 306.42}
-- {id: HPBE-P-00114, class: keep, owner: imperial, motion: lane, radius: 2198, bearing: 101.8}
-- {id: HPBE-P-00115, class: keep, owner: imperial, motion: anchored, radius: 3654.2, bearing: 78.31}
-- {id: HPBE-P-00116, class: keep, owner: imperial, motion: anchored, radius: 2121.5, bearing: 46.5}
-- {id: HPBE-P-00117, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -35.1}
-- {id: HPBE-P-00118, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 240.6}
-- {id: HPBE-P-00119, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 70.8}
-- {id: HPBE-P-00120, class: keep, owner: imperial, motion: anchored, radius: 3303.1, bearing: 231.49}
-- {id: HPBE-P-00121, class: keep, owner: imperial, motion: anchored, radius: 3581, bearing: 328.64}
-- {id: HPBE-P-00122, class: keep, owner: imperial, motion: anchored, radius: 3603.5, bearing: 59.51}
-- {id: HPBE-P-00123, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 46.9}
-- {id: HPBE-P-00124, class: keep, owner: imperial, motion: anchored, radius: 3613.2, bearing: 14.4}
-- {id: HPBE-P-00125, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -178}
-- {id: HPBE-P-00126, class: keep, owner: imperial, motion: anchored, radius: 480.8, bearing: 253.34}
-- {id: HPBE-P-00127, class: grand, owner: imperial, motion: lane, radius: 1928, bearing: 311.1}
-- {id: HPBE-P-00128, class: keep, owner: imperial, motion: anchored, radius: 3651.1, bearing: 262.94}
-- {id: HPBE-P-00129, class: keep, owner: imperial, motion: anchored, radius: 5062.7, bearing: 180.72}
-- {id: HPBE-P-00130, class: keep, owner: imperial, motion: ring, around: mort, radius: 106, bearing: 37.3}
-- {id: HPBE-P-00131, class: keep, owner: imperial, motion: anchored, radius: 5090.8, bearing: 126.32}
-- {id: HPBE-P-00132, class: keep, owner: imperial, motion: anchored, radius: 921.1, bearing: 327.17}
-- {id: HPBE-P-00133, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 84.1}
-- {id: HPBE-P-00134, class: keep, owner: imperial, motion: anchored, radius: 904.7, bearing: 46.62}
-- {id: HPBE-P-00135, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 125.9}
-- {id: HPBE-P-00136, class: keep, owner: imperial, motion: lane, radius: 2198, bearing: 317.8}
-- {id: HPBE-P-00137, class: keep, owner: imperial, motion: anchored, radius: 3616.7, bearing: 308.67}
-- {id: HPBE-P-00138, class: keep, owner: imperial, motion: anchored, radius: 906.6, bearing: 263.49}
-- {id: HPBE-P-00139, class: keep, owner: imperial, motion: anchored, radius: 7104.3, bearing: 346.33}
-- {id: HPBE-P-00140, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: -94.4}
-- {id: HPBE-P-00141, class: keep, owner: imperial, motion: lane, radius: 2198, bearing: 173.8}
-- {id: HPBE-P-00142, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 334.9}
-- {id: HPBE-P-00143, class: keep, owner: imperial, motion: anchored, radius: 2029.3, bearing: 76.91}
-- {id: HPBE-P-00144, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: -92.9}
-- {id: HPBE-P-00145, class: keep, owner: imperial, motion: ring, around: magmarnus, radius: 125, bearing: 313.8}
-- {id: HPBE-P-00146, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 200.6}
-- {id: HPBE-P-00147, class: keep, owner: imperial, motion: anchored, radius: 473.7, bearing: 62.43}
-- {id: HPBE-P-00148, class: grand, owner: imperial, motion: lane, radius: 1928, bearing: 95.1}
-- {id: HPBE-P-00149, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 0.6}
-- {id: HPBE-P-00150, class: keep, owner: imperial, motion: convoy, with: continent-9, offset: 30.1}
-- {id: HPBE-P-00151, class: keep, owner: imperial, motion: ring, around: continent-4, radius: 94, bearing: 209.3}
-- {id: HPBE-P-00152, class: keep, owner: imperial, motion: anchored, radius: 5115.4, bearing: 320.44}
-- {id: HPBE-P-00153, class: keep, owner: imperial, motion: anchored, radius: 5161.7, bearing: 298.5}
-- {id: HPBE-P-00154, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 80.6}
-- {id: HPBE-P-00155, class: keep, owner: imperial, motion: anchored, radius: 2086, bearing: 166.11}
-- {id: HPBE-P-00156, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 53}
-- {id: HPBE-P-00157, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 10.7}
-- {id: HPBE-P-00158, class: keep, owner: imperial, motion: anchored, radius: 6648.8, bearing: 260.68}
-- {id: HPBE-P-00159, class: keep, owner: imperial, motion: anchored, radius: 917.4, bearing: 191.69}
-- {id: HPBE-P-00160, class: keep, owner: imperial, motion: anchored, radius: 1956.4, bearing: 123.98}
-- {id: HPBE-P-00161, class: keep, owner: imperial, motion: anchored, radius: 3284.3, bearing: 57.82}
-- {id: HPBE-P-00162, class: keep, owner: imperial, motion: anchored, radius: 3306.9, bearing: 347.11}
-- {id: HPBE-P-00163, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 53.6}
-- {id: HPBE-P-00164, class: keep, owner: imperial, motion: anchored, radius: 4357.6, bearing: 207.54}
-- {id: HPBE-P-00165, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 40.6}
-- {id: HPBE-P-00166, class: keep, owner: imperial, motion: anchored, radius: 3280.4, bearing: 163.33}
-- {id: HPBE-P-00167, class: keep, owner: imperial, motion: anchored, radius: 5145.9, bearing: 196.4}
-- {id: HPBE-P-00168, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -53}
-- {id: HPBE-P-00169, class: keep, owner: imperial, motion: anchored, radius: 3279.7, bearing: 106.65}
-- {id: HPBE-P-00170, class: keep, owner: imperial, motion: anchored, radius: 3257.6, bearing: 137.98}
-- {id: HPBE-P-00171, class: keep, owner: imperial, motion: anchored, radius: 3255.7, bearing: 12.45}
-- {id: HPBE-P-00172, class: keep, owner: imperial, motion: lane, radius: 549, bearing: 5.9}
-- {id: HPBE-P-00173, class: grand, owner: imperial, motion: lane, radius: 2610, bearing: 284.3}
-- {id: HPBE-P-00174, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -124.4}
-- {id: HPBE-P-00175, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 160.1}
-- {id: HPBE-P-00176, class: keep, owner: imperial, motion: anchored, radius: 3262.5, bearing: 33}
-- {id: HPBE-P-00177, class: keep, owner: imperial, motion: anchored, radius: 4349.7, bearing: 299.64}
-- {id: HPBE-P-00178, class: keep, owner: imperial, motion: anchored, radius: 637.5, bearing: 302.23}
-- {id: HPBE-P-00179, class: keep, owner: imperial, motion: anchored, radius: 3307.5, bearing: 210.09}
-- {id: HPBE-P-00180, class: grand, owner: imperial, motion: lane, radius: 2610, bearing: 104.3}
-- {id: HPBE-P-00181, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 178}
-- {id: HPBE-P-00182, class: keep, owner: imperial, motion: anchored, radius: 597.2, bearing: 50.34}
-- {id: HPBE-P-00183, class: keep, owner: imperial, motion: anchored, radius: 1982, bearing: 317.44}
-- {id: HPBE-P-00184, class: keep, owner: imperial, motion: anchored, radius: 500.4, bearing: 92.38}
-- {id: HPBE-P-00185, class: keep, owner: imperial, motion: anchored, radius: 7311.3, bearing: 123.96}
-- {id: HPBE-P-00186, class: keep, owner: imperial, motion: anchored, radius: 2103.5, bearing: 92.83}
-- {id: HPBE-P-00187, class: keep, owner: imperial, motion: anchored, radius: 3642.1, bearing: 100.36}
-- {id: HPBE-P-00188, class: keep, owner: imperial, motion: anchored, radius: 3664.2, bearing: 209.57}
-- {id: HPBE-P-00189, class: keep, owner: imperial, motion: anchored, radius: 627.1, bearing: 264.41}
-- {id: HPBE-P-00190, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 173.6}
-- {id: HPBE-P-00191, class: keep, owner: imperial, motion: anchored, radius: 5100.8, bearing: 284.35}
-- {id: HPBE-P-00192, class: keep, owner: imperial, motion: anchored, radius: 2157, bearing: 28.08}
-- {id: HPBE-P-00193, class: keep, owner: imperial, motion: convoy, with: mort, offset: 32.2}
-- {id: HPBE-P-00194, class: keep, owner: imperial, motion: anchored, radius: 5075.9, bearing: 111.03}
-- {id: HPBE-P-00195, class: keep, owner: imperial, motion: lane, radius: 669, bearing: 187}
-- {id: HPBE-X-00001, class: keep, owner: derelict, motion: anchored, radius: 5174.9, bearing: 18.74}
-- {id: HPBE-X-00002, class: keep, owner: independent, motion: anchored, radius: 5877.3, bearing: 195.59}
-- {id: HPBE-X-00003, class: keep, owner: independent, motion: anchored, radius: 6467.6, bearing: 167.57}
-- {id: HPBE-X-00004, class: keep, owner: independent, motion: anchored, radius: 5886.2, bearing: 345.64}
-- {id: HPBE-X-00005, class: keep, owner: derelict, motion: anchored, radius: 5156.2, bearing: 221.58}
-- {id: HPBE-X-00006, class: keep, owner: derelict, motion: anchored, radius: 5109.3, bearing: 158.06}
-- {id: HPBE-X-00007, class: keep, owner: independent, motion: anchored, radius: 7194.6, bearing: 81.01}
-- {id: HPBE-X-00008, class: keep, owner: independent, motion: anchored, radius: 7169.8, bearing: 59.63}
-- {id: HPBE-X-00009, class: keep, owner: derelict, motion: anchored, radius: 5097.8, bearing: 52.04}
-- {id: HPBE-X-00010, class: keep, owner: independent, motion: anchored, radius: 7152.8, bearing: 298.39}
+- {id: HPBE-P-00043, class: keep, owner: imperial, motion: anchored, radius: 476.7, bearing: 45.24}
+- {id: HPBE-P-00044, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 17.2}
+- {id: HPBE-P-00045, class: keep, owner: imperial, motion: convoy, with: continent-7, offset: 30.1}
+- {id: HPBE-P-00046, class: keep, owner: imperial, motion: lane, radius: 1928, bearing: 239.1}
+- {id: HPBE-P-00047, class: keep, owner: imperial, motion: anchored, radius: 3345.7, bearing: 257.29}
+- {id: HPBE-P-00048, class: keep, owner: imperial, motion: anchored, radius: 5090.8, bearing: 126.32}
+- {id: HPBE-P-00049, class: keep, owner: imperial, motion: anchored, radius: 3307.5, bearing: 210.09}
+- {id: HPBE-P-00050, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 40.6}
+- {id: HPBE-P-00051, class: keep, owner: imperial, motion: lane, radius: 403, bearing: 29.8}
+- {id: HPBE-P-00052, class: keep, owner: imperial, motion: anchored, radius: 3664.2, bearing: 209.57}
+- {id: HPBE-P-00053, class: keep, owner: imperial, motion: anchored, radius: 5894.1, bearing: 247.91}
+- {id: HPBE-P-00054, class: keep, owner: imperial, motion: anchored, radius: 1584.3, bearing: 95.25}
+- {id: HPBE-P-00055, class: keep, owner: imperial, motion: anchored, radius: 343.9, bearing: 190.28}
+- {id: HPBE-P-00056, class: grand, owner: imperial, motion: lane, radius: 553, bearing: 341.9}
+- {id: HPBE-P-00057, class: keep, owner: imperial, motion: anchored, radius: 2583.5, bearing: 144.37}
+- {id: HPBE-P-00058, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 200.6}
+- {id: HPBE-P-00059, class: keep, owner: imperial, motion: lane, radius: 673, bearing: 75.5}
+- {id: HPBE-P-00060, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 280.6}
+- {id: HPBE-P-00061, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 70.8}
+- {id: HPBE-P-00062, class: grand, owner: imperial, motion: lane, radius: 2198, bearing: 194.3}
+- {id: HPBE-P-00063, class: keep, owner: imperial, motion: anchored, radius: 3306.9, bearing: 347.11}
+- {id: HPBE-P-00064, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 334.9}
+- {id: HPBE-P-00065, class: keep, owner: imperial, motion: anchored, radius: 5089.3, bearing: 50.65}
+- {id: HPBE-P-00066, class: keep, owner: imperial, motion: anchored, radius: 2628.3, bearing: 300.8}
+- {id: HPBE-P-00067, class: keep, owner: imperial, motion: anchored, radius: 606.2, bearing: 214.48}
+- {id: HPBE-P-00068, class: keep, owner: imperial, motion: anchored, radius: 2573.2, bearing: 118.17}
+- {id: HPBE-P-00069, class: keep, owner: imperial, motion: anchored, radius: 2606.9, bearing: 329.95}
+- {id: HPBE-P-00070, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 118.9}
+- {id: HPBE-P-00071, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 160.6}
+- {id: HPBE-P-00072, class: keep, owner: imperial, motion: anchored, radius: 1580.2, bearing: 34.6}
+- {id: HPBE-P-00073, class: keep, owner: imperial, motion: anchored, radius: 3659.9, bearing: 165.11}
+- {id: HPBE-P-00074, class: keep, owner: imperial, motion: lane, radius: 1928, bearing: 95.1}
+- {id: HPBE-P-00075, class: keep, owner: imperial, motion: anchored, radius: 3303.1, bearing: 231.49}
+- {id: HPBE-P-00076, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 178}
+- {id: HPBE-P-00077, class: keep, owner: imperial, motion: lane, radius: 1928, bearing: 167.1}
+- {id: HPBE-P-00078, class: keep, owner: imperial, motion: anchored, radius: 5075.9, bearing: 111.03}
+- {id: HPBE-P-00079, class: keep, owner: imperial, motion: anchored, radius: 5081.6, bearing: 324.69}
+- {id: HPBE-P-00080, class: grand, owner: imperial, motion: lane, radius: 553, bearing: 197.9}
+- {id: HPBE-P-00081, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: -178}
+- {id: HPBE-P-00082, class: keep, owner: imperial, motion: anchored, radius: 298, bearing: 356.16}
+- {id: HPBE-P-00083, class: keep, owner: imperial, motion: anchored, radius: 492.9, bearing: 338.61}
+- {id: HPBE-P-00084, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 53.6}
+- {id: HPBE-P-00085, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 293.6}
+- {id: HPBE-P-00086, class: keep, owner: imperial, motion: convoy, with: mort, offset: 32.2}
+- {id: HPBE-P-00087, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -53}
+- {id: HPBE-P-00088, class: keep, owner: imperial, motion: anchored, radius: 5174.9, bearing: 18.74}
+- {id: HPBE-P-00089, class: keep, owner: imperial, motion: anchored, radius: 2595.1, bearing: 232.53}
+- {id: HPBE-P-00090, class: keep, owner: imperial, motion: anchored, radius: 3344.1, bearing: 60.17}
+- {id: HPBE-P-00091, class: keep, owner: imperial, motion: ring, around: magmarnus, radius: 125, bearing: 313.8}
+- {id: HPBE-P-00092, class: keep, owner: imperial, motion: anchored, radius: 2596, bearing: 52.62}
+- {id: HPBE-P-00093, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 124.4}
+- {id: HPBE-P-00094, class: keep, owner: imperial, motion: ring, around: continent-9, radius: 87, bearing: 157.5}
+- {id: HPBE-P-00095, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 35.1}
+- {id: HPBE-P-00096, class: keep, owner: imperial, motion: anchored, radius: 2028.1, bearing: 330.98}
+- {id: HPBE-P-00097, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 80.6}
+- {id: HPBE-P-00098, class: keep, owner: imperial, motion: anchored, radius: 1568, bearing: 208.26}
+- {id: HPBE-P-00099, class: keep, owner: imperial, motion: anchored, radius: 5140.6, bearing: 359.88}
+- {id: HPBE-P-00100, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -106.5}
+- {id: HPBE-P-00101, class: grand, owner: imperial, motion: lane, radius: 2198, bearing: 104.3}
+- {id: HPBE-P-00102, class: keep, owner: imperial, motion: anchored, radius: 3331.9, bearing: 107.1}
+- {id: HPBE-P-00103, class: keep, owner: imperial, motion: anchored, radius: 1953.8, bearing: 48.22}
+- {id: HPBE-P-00104, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: -7.8}
+- {id: HPBE-P-00105, class: keep, owner: imperial, motion: anchored, radius: 2015.9, bearing: 152.12}
+- {id: HPBE-P-00106, class: grand, owner: imperial, motion: lane, radius: 2198, bearing: 284.3}
+- {id: HPBE-P-00107, class: keep, owner: imperial, motion: anchored, radius: 2103.5, bearing: 92.83}
+- {id: HPBE-P-00108, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 240.6}
+- {id: HPBE-P-00109, class: keep, owner: imperial, motion: ring, around: brock, radius: 126, bearing: 133.9}
+- {id: HPBE-P-00110, class: keep, owner: imperial, motion: anchored, radius: 2571.4, bearing: 30.43}
+- {id: HPBE-P-00111, class: keep, owner: imperial, motion: anchored, radius: 932.4, bearing: 163.61}
+- {id: HPBE-P-00112, class: keep, owner: imperial, motion: anchored, radius: 500.4, bearing: 92.38}
+- {id: HPBE-P-00113, class: keep, owner: imperial, motion: lane, radius: 1928, bearing: 311.1}
+- {id: HPBE-P-00114, class: keep, owner: imperial, motion: anchored, radius: 441.7, bearing: 71.84}
+- {id: HPBE-P-00115, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -124.4}
+- {id: HPBE-P-00116, class: keep, owner: imperial, motion: lane, radius: 403, bearing: 173.8}
+- {id: HPBE-P-00117, class: keep, owner: imperial, motion: convoy, with: continent-9, offset: 30.1}
+- {id: HPBE-P-00118, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -88.7}
+- {id: HPBE-P-00119, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -142.3}
+- {id: HPBE-P-00120, class: keep, owner: imperial, motion: anchored, radius: 3649.5, bearing: 51.65}
+- {id: HPBE-P-00121, class: keep, owner: imperial, motion: anchored, radius: 3342.9, bearing: 87.01}
+- {id: HPBE-P-00122, class: keep, owner: imperial, motion: anchored, radius: 607.3, bearing: 107.28}
+- {id: HPBE-P-00123, class: keep, owner: imperial, motion: anchored, radius: 2628.8, bearing: 274.04}
+- {id: HPBE-P-00124, class: keep, owner: imperial, motion: anchored, radius: 2096.2, bearing: 194.94}
+- {id: HPBE-P-00125, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 88.7}
+- {id: HPBE-P-00126, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 120.6}
+- {id: HPBE-P-00127, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 94.4}
+- {id: HPBE-P-00128, class: keep, owner: imperial, motion: anchored, radius: 3589.5, bearing: 134.15}
+- {id: HPBE-P-00129, class: keep, owner: imperial, motion: anchored, radius: 1570.5, bearing: 349.06}
+- {id: HPBE-P-00130, class: grand, owner: imperial, motion: lane, radius: 553, bearing: 53.9}
+- {id: HPBE-P-00131, class: keep, owner: imperial, motion: convoy, with: magmarnus, offset: -7.7}
+- {id: HPBE-P-00132, class: keep, owner: imperial, motion: anchored, radius: 5123.1, bearing: 58.69}
+- {id: HPBE-P-00133, class: keep, owner: imperial, motion: anchored, radius: 5796.5, bearing: 94.58}
+- {id: HPBE-P-00134, class: keep, owner: imperial, motion: anchored, radius: 4931.6, bearing: 236.13}
+- {id: HPBE-P-00135, class: keep, owner: imperial, motion: anchored, radius: 2597.1, bearing: 83.23}
+- {id: HPBE-P-00136, class: keep, owner: imperial, motion: convoy, with: continent-13, offset: 29}
+- {id: HPBE-P-00137, class: keep, owner: imperial, motion: lane, radius: 673, bearing: 195.5}
+- {id: HPBE-P-00138, class: keep, owner: imperial, motion: anchored, radius: 3605.2, bearing: 96.95}
+- {id: HPBE-P-00139, class: keep, owner: imperial, motion: lane, radius: 403, bearing: 101.8}
+- {id: HPBE-P-00140, class: keep, owner: imperial, motion: anchored, radius: 636.2, bearing: 281.79}
+- {id: HPBE-P-00141, class: keep, owner: imperial, motion: anchored, radius: 3587.8, bearing: 315.73}
+- {id: HPBE-P-00142, class: keep, owner: imperial, motion: ring, around: continent-2, radius: 82, bearing: 173.6}
+- {id: HPBE-P-00143, class: keep, owner: imperial, motion: anchored, radius: 2096.8, bearing: 45.71}
+- {id: HPBE-P-00144, class: keep, owner: imperial, motion: anchored, radius: 1565.3, bearing: 298.15}
+- {id: HPBE-P-00145, class: keep, owner: imperial, motion: anchored, radius: 1956.5, bearing: 207.34}
+- {id: HPBE-P-00146, class: keep, owner: imperial, motion: lane, radius: 1928, bearing: 23.1}
+- {id: HPBE-P-00147, class: keep, owner: imperial, motion: anchored, radius: 1984.8, bearing: 89.61}
+- {id: HPBE-P-00148, class: keep, owner: imperial, motion: lane, radius: 673, bearing: 255.5}
+- {id: HPBE-P-00149, class: keep, owner: imperial, motion: anchored, radius: 5055.9, bearing: 91.48}
+- {id: HPBE-P-00150, class: keep, owner: imperial, motion: anchored, radius: 2609.1, bearing: 216.19}
+- {id: HPBE-P-00151, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 106.5}
+- {id: HPBE-P-00152, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 92.9}
+- {id: HPBE-P-00153, class: keep, owner: imperial, motion: ring, around: magmarnus, radius: 125, bearing: 133.8}
+- {id: HPBE-P-00154, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 46.9}
+- {id: HPBE-P-00155, class: keep, owner: imperial, motion: anchored, radius: 2619.9, bearing: 358.7}
+- {id: HPBE-P-00156, class: keep, owner: imperial, motion: anchored, radius: 3641.5, bearing: 76.45}
+- {id: HPBE-P-00157, class: keep, owner: imperial, motion: anchored, radius: 2108.4, bearing: 120.35}
+- {id: HPBE-P-00158, class: grand, owner: imperial, motion: lane, radius: 673, bearing: 135.5}
+- {id: HPBE-P-00159, class: grand, owner: imperial, motion: lane, radius: 553, bearing: 269.9}
+- {id: HPBE-P-00160, class: keep, owner: imperial, motion: anchored, radius: 3318.1, bearing: 187.17}
+- {id: HPBE-P-00161, class: keep, owner: imperial, motion: anchored, radius: 338.5, bearing: 139.81}
+- {id: HPBE-P-00162, class: keep, owner: imperial, motion: anchored, radius: 4993.8, bearing: 208.74}
+- {id: HPBE-P-00163, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 178}
+- {id: HPBE-P-00164, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 53}
+- {id: HPBE-P-00165, class: keep, owner: imperial, motion: anchored, radius: 2103.1, bearing: 270.47}
+- {id: HPBE-P-00166, class: keep, owner: imperial, motion: anchored, radius: 3662.7, bearing: 269.62}
+- {id: HPBE-P-00167, class: keep, owner: imperial, motion: anchored, radius: 3300.9, bearing: 35.09}
+- {id: HPBE-P-00168, class: keep, owner: imperial, motion: anchored, radius: 1568.3, bearing: 141.08}
+- {id: HPBE-P-00169, class: keep, owner: imperial, motion: anchored, radius: 1579.5, bearing: 251.76}
+- {id: HPBE-P-00170, class: keep, owner: imperial, motion: anchored, radius: 5061, bearing: 77.43}
+- {id: HPBE-P-00171, class: keep, owner: imperial, motion: anchored, radius: 5129.7, bearing: 287.23}
+- {id: HPBE-P-00172, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: 160.1}
+- {id: HPBE-P-00173, class: keep, owner: imperial, motion: anchored, radius: 3259.9, bearing: 328.62}
+- {id: HPBE-P-00174, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 0.6}
+- {id: HPBE-P-00175, class: keep, owner: imperial, motion: convoy, with: continent-4, offset: 7.8}
+- {id: HPBE-P-00176, class: keep, owner: imperial, motion: anchored, radius: 311.4, bearing: 288.18}
+- {id: HPBE-P-00177, class: keep, owner: imperial, motion: anchored, radius: 904.7, bearing: 46.62}
+- {id: HPBE-P-00178, class: keep, owner: imperial, motion: convoy, with: continent-14, offset: 30.4}
+- {id: HPBE-P-00179, class: keep, owner: imperial, motion: lane, radius: 673, bearing: 315.5}
+- {id: HPBE-P-00180, class: keep, owner: imperial, motion: anchored, radius: 5141.3, bearing: 140.66}
+- {id: HPBE-P-00181, class: keep, owner: imperial, motion: anchored, radius: 2023.4, bearing: 303.04}
+- {id: HPBE-P-00182, class: keep, owner: imperial, motion: anchored, radius: 906.6, bearing: 263.49}
+- {id: HPBE-P-00183, class: keep, owner: imperial, motion: anchored, radius: 5144.2, bearing: 345.46}
+- {id: HPBE-P-00184, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 178}
+- {id: HPBE-P-00185, class: keep, owner: imperial, motion: anchored, radius: 3271.9, bearing: 306.42}
+- {id: HPBE-P-00186, class: keep, owner: imperial, motion: anchored, radius: 3257.6, bearing: 137.98}
+- {id: HPBE-P-00187, class: keep, owner: imperial, motion: anchored, radius: 3564.3, bearing: 185.97}
+- {id: HPBE-P-00188, class: keep, owner: imperial, motion: anchored, radius: 6622.5, bearing: 267.7}
+- {id: HPBE-P-00189, class: keep, owner: imperial, motion: anchored, radius: 3549.8, bearing: 230.42}
+- {id: HPBE-P-00190, class: keep, owner: imperial, motion: anchored, radius: 530.6, bearing: 199.72}
+- {id: HPBE-P-00191, class: keep, owner: imperial, motion: anchored, radius: 917.2, bearing: 101.11}
+- {id: HPBE-P-00192, class: keep, owner: imperial, motion: anchored, radius: 269.2, bearing: 103.25}
+- {id: HPBE-P-00193, class: keep, owner: imperial, motion: anchored, radius: 3582.5, bearing: 121.19}
+- {id: HPBE-P-00194, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 190.9}
+- {id: HPBE-P-00195, class: grand, owner: imperial, motion: convoy, with: holy-purple-homeland, offset: -70.8}
+- {id: HPBE-P-00196, class: keep, owner: imperial, motion: anchored, radius: 1975.4, bearing: 134.23}
+- {id: HPBE-P-00197, class: keep, owner: imperial, motion: anchored, radius: 1995.7, bearing: 13.27}
+- {id: HPBE-P-00198, class: keep, owner: imperial, motion: anchored, radius: 3325.1, bearing: 281.4}
+- {id: HPBE-P-00199, class: grand, owner: imperial, motion: lane, radius: 553, bearing: 125.9}
+- {id: HPBE-P-00200, class: keep, owner: imperial, motion: convoy, with: continent-2, offset: 10.7}
+- {id: HPBE-P-00201, class: grand, owner: imperial, motion: ring, around: holy-purple-homeland, radius: 243, bearing: 320.6}
+- {id: HPBE-P-00202, class: keep, owner: imperial, motion: convoy, with: mort, offset: -32.2}
+- {id: HPBE-P-00203, class: keep, owner: imperial, motion: anchored, radius: 2113.6, bearing: 20.37}
+- {id: HPBE-P-00204, class: keep, owner: imperial, motion: ring, around: continent-4, radius: 94, bearing: 29.3}
+- {id: HPBE-P-00205, class: keep, owner: imperial, motion: lane, radius: 2058, bearing: 262.9}
+- {id: HPBE-P-00206, class: keep, owner: imperial, motion: ring, around: mort, radius: 106, bearing: 37.3}
+- {id: HPBE-X-00001, class: keep, owner: derelict, motion: anchored, radius: 5886.2, bearing: 345.64}
+- {id: HPBE-X-00002, class: keep, owner: independent, motion: anchored, radius: 7104.3, bearing: 346.33}
+- {id: HPBE-X-00003, class: keep, owner: derelict, motion: anchored, radius: 5844.2, bearing: 151.62}
+- {id: HPBE-X-00004, class: keep, owner: independent, motion: anchored, radius: 7270.1, bearing: 44.83}
+- {id: HPBE-X-00005, class: keep, owner: independent, motion: anchored, radius: 5156.6, bearing: 171.7}
+- {id: HPBE-X-00006, class: keep, owner: derelict, motion: anchored, radius: 5031.3, bearing: 159.61}
+- {id: HPBE-X-00007, class: keep, owner: independent, motion: anchored, radius: 7311.3, bearing: 123.96}
+- {id: HPBE-X-00008, class: keep, owner: independent, motion: anchored, radius: 7100.8, bearing: 358.54}
+- {id: HPBE-X-00009, class: keep, owner: independent, motion: anchored, radius: 7212, bearing: 71.38}
+- {id: HPBE-X-00010, class: keep, owner: derelict, motion: anchored, radius: 7421, bearing: 166.24}
 - {id: HPBE-X-00011, class: keep, owner: independent, motion: anchored, radius: 7429.8, bearing: 206.39}
-- {id: HPBE-X-00012, class: keep, owner: derelict, motion: anchored, radius: 5089.1, bearing: 238.5}
-- {id: HPBE-X-00013, class: keep, owner: independent, motion: anchored, radius: 5796.5, bearing: 94.58}
-- {id: HPBE-X-00014, class: keep, owner: independent, motion: ring, around: brock, radius: 126, bearing: 133.9}
-- {id: HPBE-X-00015, class: keep, owner: independent, motion: anchored, radius: 7103.2, bearing: 11.5}
-- {id: HPBE-X-00016, class: keep, owner: independent, motion: anchored, radius: 7212, bearing: 71.38}
-- {id: HPBE-X-00017, class: keep, owner: derelict, motion: anchored, radius: 5094, bearing: 83.41}
+- {id: HPBE-X-00012, class: keep, owner: independent, motion: anchored, radius: 7389, bearing: 243.45}
+- {id: HPBE-X-00013, class: keep, owner: derelict, motion: anchored, radius: 6467.6, bearing: 167.57}
+- {id: HPBE-X-00014, class: keep, owner: derelict, motion: anchored, radius: 5103.6, bearing: 219.59}
+- {id: HPBE-X-00015, class: keep, owner: independent, motion: anchored, radius: 6496.6, bearing: 185.76}
+- {id: HPBE-X-00016, class: keep, owner: independent, motion: anchored, radius: 6449.8, bearing: 207.76}
+- {id: HPBE-X-00017, class: keep, owner: independent, motion: anchored, radius: 7103.2, bearing: 11.5}
 - {id: HPBE-X-00018, class: keep, owner: independent, motion: anchored, radius: 7121.9, bearing: 288.76}
-- {id: HPBE-X-00019, class: keep, owner: derelict, motion: anchored, radius: 5089.7, bearing: 64.14}
-- {id: HPBE-X-00020, class: keep, owner: independent, motion: anchored, radius: 7100.8, bearing: 358.54}
-- {id: HPBE-X-00021, class: keep, owner: independent, motion: anchored, radius: 5113.4, bearing: 36.77}
+- {id: HPBE-X-00019, class: keep, owner: derelict, motion: anchored, radius: 7152.8, bearing: 298.39}
+- {id: HPBE-X-00020, class: keep, owner: independent, motion: anchored, radius: 7194.6, bearing: 81.01}
+- {id: HPBE-X-00021, class: keep, owner: independent, motion: anchored, radius: 7311.8, bearing: 325.18}
+- {id: HPBE-X-00022, class: keep, owner: derelict, motion: anchored, radius: 5092.4, bearing: 197.86}
+- {id: HPBE-X-00023, class: keep, owner: independent, motion: anchored, radius: 4498.5, bearing: 310.03}

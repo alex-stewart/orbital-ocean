@@ -43,19 +43,7 @@ central:
   radius: 210          # ≈ 140,000 IL², between Iceland and Great Britain
   seed: 11
   description: The largest known landmass, at the centre of the Orbital Ocean.
-  moons:
-    - id: land-of-the-large-i
-      name: Land of the Large I
-      orbit_radius: 320
-      bearing: 60
-      period_days: 30
-      radius: 12
-    - id: land-of-the-large-ii
-      name: Land of the Large II
-      orbit_radius: 430
-      bearing: 250
-      period_days: 52
-      radius: 8
+  # No moons: whatever orbits the centre is a continent.
 
 orbitals:
   - id: continent-2

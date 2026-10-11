@@ -264,6 +264,8 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
     return body;
   };
 
+  // Everything orbiting the centre is a continent, so the central landmass has no moons.
+  if (raw.central.moons?.length) throw new Error('world.yaml: the central landmass has no moons; whatever orbits the centre is a continent (list it under orbitals)');
   const central = toBody(raw.central, 'central', null);
   const isles = (raw.orbitals ?? []).map((o) => toBody(o, 'isle', central));
   const bodies = [central, ...isles, ...central.moons, ...isles.flatMap((i) => i.moons)];

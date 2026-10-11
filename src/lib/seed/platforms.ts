@@ -362,7 +362,7 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
       const net = planShipping(w, t, pos, platformPositions(w.platforms, t, pos));
       wanted += net.routes.length + net.unreachable.length;
       failed += net.unreachable.length;
-      for (const [a, b] of net.unreachable.slice(0, 6)) {
+      for (const [a, b] of net.unreachable.slice(0, 12)) {
         const pa = net.ports.find((p) => p.id === a)!;
         const pb = net.ports.find((p) => p.id === b)!;
         const ca = pos.get(pa.body.id)!;
