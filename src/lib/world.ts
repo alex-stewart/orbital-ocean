@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import type { Calendar } from './calendar';
+import { generatePlatforms, type Platform, type PlatformRules, type RawPlatformConfig } from './platforms';
 import { rng } from './random';
 
 export type BodyKind = 'central' | 'isle' | 'moon';
@@ -58,6 +59,11 @@ export interface World {
   bodies: Body[];
   belts: Belt[];
   bands: Band[];
+  platforms: Platform[];
+  /** Platform register number → index into `platforms`. */
+  platformIndex: Map<string, number>;
+  /** The generated lanes and rings platforms use; null if there are none. */
+  platformRules: PlatformRules | null;
   /** Radius of the whole chart (the ocean's edge), IL. */
   extent: number;
 }
@@ -95,6 +101,7 @@ interface RawWorld {
     islet_radius?: [number, number];
   }[];
   bands?: { id: string; name?: string; inner: BandLimit; outer: BandLimit; description?: string }[];
+  platforms?: RawPlatformConfig;
 }
 
 function hash(s: string): number {
@@ -133,7 +140,7 @@ export function parseWorld(source: string, cal: Calendar): World {
 
   const central = toBody(raw.central, 'central', null);
   const isles = (raw.orbitals ?? []).map((o) => toBody(o, 'isle', central));
-  const bodies = [central, ...isles, ...isles.flatMap((i) => i.moons)];
+  const bodies = [central, ...isles, ...central.moons, ...isles.flatMap((i) => i.moons)];
 
   const belts: Belt[] = (raw.belts ?? []).map((b) => {
     const rand = rng(b.seed ?? hash(b.id));
@@ -184,6 +191,14 @@ export function parseWorld(source: string, cal: Calendar): World {
     description: b.description ?? null,
   }));
 
+  const { platforms, rules: platformRules } = generatePlatforms(raw.platforms, {
+    central,
+    continents: isles,
+    belts,
+    bands,
+    oceanRadius,
+  });
+
   return {
     units: {
       name: raw.units?.name ?? 'League',
@@ -196,6 +211,9 @@ export function parseWorld(source: string, cal: Calendar): World {
     bodies,
     belts,
     bands,
+    platforms,
+    platformIndex: new Map(platforms.map((p, i) => [p.id, i])),
+    platformRules,
     extent: oceanRadius,
   };
 }

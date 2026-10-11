@@ -7,6 +7,8 @@ import { replaceParams } from '../../lib/route';
 import { AtlasMap, type AtlasMapHandle } from './AtlasMap';
 import { Compass, CursorReadout, ScaleBar } from './Instruments';
 import { Gazetteer } from './Gazetteer';
+import { loadLayers, saveLayers, type Layers } from './layers';
+import { LayersPanel } from './LayersPanel';
 import { Timeline } from './Timeline';
 import '../../styles/atlas.css';
 
@@ -25,7 +27,16 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
   const [t, setT] = useState(() => parseDateParam(params.get('date')) ?? calendar.defaultDay);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(30);
-  const [selectedId, setSelectedId] = useState<string | null>(params.get('isle'));
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const id = params.get('place') ?? params.get('isle');
+    return id && (world.bodies.some((b) => b.id === id) || world.platformIndex.has(id)) ? id : null;
+  });
+  const [layers, setLayersState] = useState<Layers>(loadLayers);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const setLayers = useCallback((l: Layers) => {
+    setLayersState(l);
+    saveLayers(l);
+  }, []);
   const [followId, setFollowId] = useState<string | null>(null);
   const [view, setView] = useState<View | null>(null);
   const [cursor, setCursor] = useState<Point | null>(null);
@@ -54,7 +65,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
 
   // Keep the date and selection in the URL so a view can be shared.
   useEffect(() => {
-    const id = setTimeout(() => replaceParams({ date: dateParam(t), isle: selectedId }), 250);
+    const id = setTimeout(() => replaceParams({ date: dateParam(t), place: selectedId, isle: null }), 250);
     return () => clearTimeout(id);
   }, [t, selectedId]);
 
@@ -69,6 +80,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
       } else if (e.key === '+' || e.key === '=') mapRef.current?.zoomBy(1.6);
       else if (e.key === '-' || e.key === '_') mapRef.current?.zoomBy(1 / 1.6);
       else if (e.key === '0') mapRef.current?.reset();
+      else if (e.key === 'l' || e.key === 'L') setLayersOpen((o) => !o);
       else if (e.key === 'Escape') {
         setSelectedId(null);
         setFollowId(null);
@@ -99,6 +111,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             t={t}
             selectedId={selectedId}
             followId={followId}
+            layers={layers}
             onSelect={select}
             onFollowEnd={() => setFollowId(null)}
             onViewChange={setView}
@@ -130,7 +143,17 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             <button onClick={() => mapRef.current?.reset()} aria-label="Whole ocean" title="Whole ocean (0)">
               ◎
             </button>
+            <button
+              className={layersOpen ? 'active' : ''}
+              onClick={() => setLayersOpen((o) => !o)}
+              aria-label="Map layers"
+              aria-expanded={layersOpen}
+              title="Map layers (L)"
+            >
+              ☰
+            </button>
           </div>
+          {layersOpen && <LayersPanel layers={layers} onChange={setLayers} onClose={() => setLayersOpen(false)} />}
 
           <div className="map-foot">
             {view && <ScaleBar view={view} units={world.units} />}

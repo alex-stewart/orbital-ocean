@@ -9,7 +9,9 @@
 #  Periods may be given as `period_years` (calendar years) or `period_days`.
 #  `seed` picks the generated placeholder coastline; change it to reroll.
 #  `description` (optional) is shown in the gazetteer.
-#  Bodies may also carry `moons:` (same fields as an orbital) — none do yet.
+#  `moons:` orbit their continent (same fields as an orbital). Keep each
+#  continent's moons within reach so they clear the neighbouring orbits —
+#  the tests check this.
 #
 #  Sizes, distances, bearings and periods are placeholders. Positions without
 #  a name in the lore are called "Continent N" until they are named.
@@ -33,6 +35,19 @@ central:
   radius: 210          # ≈ 140,000 IL², between Iceland and Great Britain
   seed: 11
   description: The largest known landmass, at the centre of the Orbital Ocean.
+  moons:
+    - id: land-of-the-large-i
+      name: Land of the Large I
+      orbit_radius: 320
+      bearing: 60
+      period_days: 30
+      radius: 12
+    - id: land-of-the-large-ii
+      name: Land of the Large II
+      orbit_radius: 430
+      bearing: 250
+      period_days: 52
+      radius: 8
 
 orbitals:
   - id: continent-2
@@ -53,6 +68,25 @@ orbitals:
     radius: 95
     seed: 103
     description: Homeland of the Holy Purple Bureaucratic Empire.
+    moons:
+      - id: holy-purple-homeland-i
+        name: Holy Purple Homeland I
+        orbit_radius: 150
+        bearing: 10
+        period_days: 14
+        radius: 8
+      - id: holy-purple-homeland-ii
+        name: Holy Purple Homeland II
+        orbit_radius: 210
+        bearing: 140
+        period_days: 23
+        radius: 6
+      - id: holy-purple-homeland-iii
+        name: Holy Purple Homeland III
+        orbit_radius: 280
+        bearing: 300
+        period_days: 36
+        radius: 10
 
   - id: continent-4
     name: Continent 4
@@ -62,6 +96,13 @@ orbitals:
     period_years: 1.62
     radius: 55
     seed: 104
+    moons:
+      - id: continent-4-i
+        name: Continent 4 I
+        orbit_radius: 130
+        bearing: 200
+        period_days: 16
+        radius: 7
 
   - id: magmarnus
     name: Magmarnus
@@ -71,6 +112,19 @@ orbitals:
     period_years: 3.45
     radius: 85
     seed: 106
+    moons:
+      - id: magmarnus-i
+        name: Magmarnus I
+        orbit_radius: 160
+        bearing: 80
+        period_days: 18
+        radius: 9
+      - id: magmarnus-ii
+        name: Magmarnus II
+        orbit_radius: 240
+        bearing: 320
+        period_days: 33
+        radius: 6
 
   - id: continent-7
     name: Continent 7
@@ -89,6 +143,25 @@ orbitals:
     period_years: 5.69
     radius: 70
     seed: 108
+    moons:
+      - id: mort-i
+        name: Mort I
+        orbit_radius: 140
+        bearing: 30
+        period_days: 15
+        radius: 6
+      - id: mort-ii
+        name: Mort II
+        orbit_radius: 200
+        bearing: 170
+        period_days: 26
+        radius: 10
+      - id: mort-iii
+        name: Mort III
+        orbit_radius: 270
+        bearing: 280
+        period_days: 40
+        radius: 5
 
   - id: continent-9
     name: Continent 9
@@ -98,6 +171,13 @@ orbitals:
     period_years: 7.12
     radius: 50
     seed: 109
+    moons:
+      - id: continent-9-i
+        name: Continent 9 I
+        orbit_radius: 120
+        bearing: 100
+        period_days: 13
+        radius: 5
 
   - id: continent-10
     name: Continent 10
@@ -107,6 +187,19 @@ orbitals:
     period_years: 8.77
     radius: 60
     seed: 110
+    moons:
+      - id: continent-10-i
+        name: Continent 10 I
+        orbit_radius: 130
+        bearing: 330
+        period_days: 15
+        radius: 6
+      - id: continent-10-ii
+        name: Continent 10 II
+        orbit_radius: 190
+        bearing: 90
+        period_days: 25
+        radius: 8
 
   - id: windstones
     name: Windstones
@@ -116,6 +209,13 @@ orbitals:
     period_years: 12.66
     radius: 65
     seed: 112
+    moons:
+      - id: windstones-i
+        name: Windstones I
+        orbit_radius: 170
+        bearing: 215
+        period_days: 20
+        radius: 7
 
   - id: continent-13
     name: Continent 13
@@ -134,6 +234,25 @@ orbitals:
     period_years: 16.86
     radius: 75
     seed: 114
+    moons:
+      - id: continent-14-i
+        name: Continent 14 I
+        orbit_radius: 150
+        bearing: 45
+        period_days: 17
+        radius: 8
+      - id: continent-14-ii
+        name: Continent 14 II
+        orbit_radius: 220
+        bearing: 190
+        period_days: 29
+        radius: 5
+      - id: continent-14-iii
+        name: Continent 14 III
+        orbit_radius: 290
+        bearing: 300
+        period_days: 43
+        radius: 11
 
   - id: continent-15
     name: Continent 15
@@ -143,6 +262,13 @@ orbitals:
     period_years: 19.34
     radius: 50
     seed: 115
+    moons:
+      - id: continent-15-i
+        name: Continent 15 I
+        orbit_radius: 120
+        bearing: 260
+        period_days: 12
+        radius: 6
 
   - id: brock
     name: Brock
@@ -152,6 +278,19 @@ orbitals:
     period_years: 22.1
     radius: 80
     seed: 116
+    moons:
+      - id: brock-i
+        name: Brock I
+        orbit_radius: 170
+        bearing: 120
+        period_days: 21
+        radius: 9
+      - id: brock-ii
+        name: Brock II
+        orbit_radius: 250
+        bearing: 15
+        period_days: 37
+        radius: 12
 
 # Bands of tiny islands. Each islet's period scales from the inner edge as
 # (r / inner_radius)^1.5, so the inner edge of a belt overtakes the outer.
@@ -194,3 +333,52 @@ bands:
     inner: far-belt
     outer: edge
     description: The region between the Far Belt and the Endless Gunk.
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  OCEAN PLATFORMS
+#
+#  Platforms are generated from these rules rather than listed one by one;
+#  the same seed always produces the same platforms. Each gets a number in
+#  the Imperial register (HPBE-P-… for Imperial platforms, HPBE-X-… for
+#  platforms the Empire registers but does not own).
+#
+#  Motions:
+#    anchored    fixed in place, in water no orbit ever crosses
+#    lane        orbiting the centre in a shared lane between continent orbits
+#    convoy      sharing a continent's orbit, a fixed distance ahead or behind
+#    continent   orbiting a continent, clear of its moons
+#  Nothing is placed where it could ever meet a continent, moon, belt or
+#  another platform; `clearance` is the minimum gap in IL.
+# ─────────────────────────────────────────────────────────────────────────────
+
+platforms:
+  seed: 1
+  registry: HPBE
+  clearance: 20        # IL kept clear of continents, moons, belts and lanes
+  spacing: 1.5         # IL between neighbouring platforms
+
+  # How many platforms each band holds, and what share are anchored.
+  bands:
+    home:     { count: 1100, anchored: 0.7 }
+    second:   { count: 800,  anchored: 0.25 }
+    frontier: { count: 500,  anchored: 0.15 }
+
+  # How orbital (non-anchored) platforms divide between kinds of orbit.
+  orbital:
+    lane: 0.45
+    convoy: 0.25
+    continent: 0.30
+
+  # Size classes. `radius` in IL (1 IL ≈ 1 km); `reveal` is the zoom, in
+  # pixels per IL, at which the class appears as individual symbols.
+  sizes:
+    - { id: grand,   name: Grand platform, like: a large cathedral, radius: 0.1,   share: 0.06, reveal: 0.12 }
+    - { id: keep,    name: Keep,           like: a castle keep,     radius: 0.05,  share: 0.16, reveal: 0.35 }
+    - { id: station, name: Station,        like: a manor house,     radius: 0.025, share: 0.3,  reveal: 1 }
+    - { id: beacon,  name: Beacon,         like: a lighthouse,      radius: 0.008, share: 0.48, reveal: 3 }
+
+  # Who holds them. `code` is the register letter; `imperial` marks the Empire.
+  owners:
+    - { id: imperial,    name: Holy Purple Bureaucratic Empire, share: 0.88, code: P, imperial: true }
+    - { id: independent, name: Independent,                     share: 0.08, code: X }
+    - { id: derelict,    name: Derelict,                        share: 0.04, code: X }

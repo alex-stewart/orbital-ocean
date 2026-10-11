@@ -1,3 +1,4 @@
+import type { Platform } from './platforms';
 import type { Belt, Body, Islet } from './world';
 
 /**
@@ -61,4 +62,20 @@ export function bearingBetween(a: Point, b: Point): number {
 export function compassPoint(bearing: number): string {
   const pts = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   return pts[Math.round(bearing / 22.5) % 16];
+}
+
+/**
+ * Positions of every platform at day `t`, as [x0, y0, x1, y1, …].
+ * `bodyPositions` must already hold every platform's parent.
+ */
+export function platformPositions(platforms: Platform[], t: number, bodyPositions: Map<string, Point>, out?: Float64Array): Float64Array {
+  const xy = out && out.length === platforms.length * 2 ? out : new Float64Array(platforms.length * 2);
+  for (let i = 0; i < platforms.length; i++) {
+    const p = platforms[i];
+    const o = polar(p.orbitRadius, bearingAt(p, t));
+    const c = p.parent ? bodyPositions.get(p.parent.id)! : { x: 0, y: 0 };
+    xy[i * 2] = c.x + o.x;
+    xy[i * 2 + 1] = c.y + o.y;
+  }
+  return xy;
 }
