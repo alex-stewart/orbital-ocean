@@ -15,6 +15,8 @@
 #  ground in metres; `settlement_density` overrides its band's density
 #  (see src/parameters/settlements.yaml).
 #  To hand-draw a continent, see docs/designing-continents.md.
+#  `shape: islands` (with `islands: <how many>`) makes a body a scatter of
+#  small islands within its radius instead of one landmass.
 #  `moons:` orbit their continent (same fields as an orbital). Keep each
 #  continent's moons within reach so they clear the neighbouring orbits —
 #  the tests check this.
@@ -216,6 +218,9 @@ orbitals:
     period_years: 12.66
     radius: 65
     seed: 112
+    shape: islands
+    islands: 9
+    description: A scatter of small, windswept islands.
     moons:
       - id: windstones-i
         name: Windstones I

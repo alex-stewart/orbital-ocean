@@ -71,6 +71,25 @@ describe('siting platforms', () => {
   });
 });
 
+describe('platforms where the lore has them', () => {
+  const around = (id: string) => rows.filter((r) => r.with === id || r.around === id).length;
+  const rows = sitePlatforms(world, cal.yearLength).rows;
+
+  it('gives the Holy Purple Homeland the most orbiting platforms, and Brock exactly one', () => {
+    for (const c of world.bodies.filter((b) => b.kind === 'isle' && b.id !== 'holy-purple-homeland'))
+      expect(around('holy-purple-homeland'), c.id).toBeGreaterThan(around(c.id));
+    expect(rows.filter((r) => r.around === 'brock')).toHaveLength(1);
+    expect(rows.filter((r) => r.with === 'brock')).toHaveLength(0);
+  });
+
+  it('keeps few anchored platforms near the Far Belt', () => {
+    const belt = world.belts.find((b) => b.id === 'far-belt')!;
+    const reach = world.params.platforms.near_belt_reach;
+    const near = rows.filter((r) => r.motion === 'anchored' && r.radius! > belt.innerRadius - reach && r.radius! < belt.outerRadius + reach);
+    expect(near.length).toBeLessThan(10);
+  });
+});
+
 describe('platforms as listed', () => {
   it('load without problems, with unique register numbers', () => {
     expect(world.warnings.filter((w) => w.startsWith('HPBE') || w.startsWith('platforms'))).toEqual([]);

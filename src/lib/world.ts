@@ -142,6 +142,10 @@ interface RawBody {
   short_name?: string;
   max_elevation?: number;
   settlement_density?: number;
+  /** `islands`: a scatter of small islands within the body's radius, rather than one landmass. */
+  shape?: 'single' | 'islands';
+  /** For `shape: islands`, how many. */
+  islands?: number;
   moons?: RawBody[];
 }
 
@@ -239,8 +243,11 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
     if (design) {
       body.coast = design.coast;
     } else {
-      const unit = coastlinePoints(body.seed, params.terrain.coast[kind === 'isle' ? 'continent' : kind]);
-      body.coast = [Array.from(unit, (v) => v * r.radius)];
+      if (r.shape === 'islands') body.coast = islandGroup(body.seed, r.radius, r.islands ?? 7, params.terrain.coast.islet);
+      else {
+        const unit = coastlinePoints(body.seed, params.terrain.coast[kind === 'isle' ? 'continent' : kind]);
+        body.coast = [Array.from(unit, (v) => v * r.radius)];
+      }
     }
     body.outerRadius = Math.max(...body.coast.flatMap((ring) => ring.filter((_, i) => i % 2 === 0).map((x, i) => Math.hypot(x, ring[i * 2 + 1]))));
     // Belt islands are packed by their coasts' reach, so a drawn one must keep to it.
@@ -469,4 +476,37 @@ export function checkArchipelagos(archipelagos: Archipelago[], gap: number): str
       }
     }
   return out;
+}
+
+/**
+ * A body made of many small islands: a few larger and more smaller ones
+ * (a power law), together about a third of the land a single body of this
+ * radius would have, scattered within it and kept apart by open water.
+ */
+function islandGroup(seed: number, radius: number, count: number, coast: { roughness: number; resolution: number }): number[][] {
+  const rand = rng(seed * 7 + 1);
+  const reach = 1 + coast.roughness; // how far a coast can stray from its island's radius
+  let sizes = Array.from({ length: Math.max(1, count) }, () => Math.pow(rand(), -1 / 1.6)).sort((a, b) => b - a);
+  const k = (radius * 0.5) / Math.sqrt(sizes.reduce((s, r) => s + r * r, 0));
+  sizes = sizes.map((r) => Math.min(radius * 0.35, r * k));
+  const gap = radius * 0.08;
+  const placed: { x: number; y: number; r: number }[] = [];
+  for (const r of sizes) {
+    for (let attempt = 0; attempt < 2000; attempt++) {
+      // Out to the body's radius, so the islands are scattered rather than huddled.
+      const room = Math.max(0, radius * 1.15 - r * reach);
+      const a = rand() * Math.PI * 2;
+      const d = Math.sqrt(rand()) * room;
+      const x = Math.cos(a) * d;
+      const y = Math.sin(a) * d;
+      if (placed.every((q) => Math.hypot(q.x - x, q.y - y) >= (q.r + r) * reach + gap)) {
+        placed.push({ x, y, r });
+        break;
+      }
+    }
+  }
+  return placed.map((q, i) => {
+    const unit = coastlinePoints(seed * 131 + i + 1, coast);
+    return Array.from(unit, (v, j) => v * q.r + (j % 2 === 0 ? q.x : q.y));
+  });
 }

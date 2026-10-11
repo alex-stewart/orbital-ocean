@@ -132,8 +132,22 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   // ── How many of each motion ─────────────────────────────────────────────────
   const m = P.motion;
   const [nAnchored, nLane, nConvoy, nRing] = apportion(total, [m.anchored, m.lane, m.convoy, m.ring]);
-  const value = (c: Body) => portOf.get(c.id) ?? 0;
+  // Fewer platforms near some belts (near_belts), by distance from the centre.
+  const nearBelt = (r: number) =>
+    Math.min(
+      1,
+      ...world.belts
+        .filter((b) => P.near_belts?.[b.id] !== undefined && r > b.innerRadius - P.near_belt_reach && r < b.outerRadius + P.near_belt_reach)
+        .map((b) => P.near_belts[b.id]),
+    );
+  const own = (c: Body) => P.continents?.[c.id] ?? {};
+  const value = (c: Body) => (portOf.get(c.id) ?? 0) * (own(c).weight ?? 1) * nearBelt(c.orbitRadius);
+  // Busier continents get more convoys and rings, but not all of them: by the square root of trade.
+  const share = (c: Body) => Math.sqrt(portOf.get(c.id) ?? 0) * (own(c).weight ?? 1) * nearBelt(c.orbitRadius);
   const sited: Sited[] = [];
+  /** Continents with an exact number of `kind` (from parameters), and how many that takes from the share. */
+  const fixed = (kind: 'ring' | 'convoy') => continents.filter((c) => own(c)[kind] !== undefined);
+  const fixedCount = (kind: 'ring' | 'convoy') => fixed(kind).reduce((s, c) => s + (own(c)[kind] ?? 0), 0);
 
   // Rings about the continents that trade most (one ring each, in the clear water before the moons).
   const ringFor = new Map<string, number>();
@@ -141,8 +155,16 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
     const water = ringWater(c, clearance, P.moonless_ring_reach).filter(([a, b]) => b - a >= 4);
     if (water.length) ringFor.set(c.id, Math.round((water[0][0] + water[0][1]) / 2));
   }
-  const ringed = continents.filter((c) => ringFor.has(c.id) && value(c) > 0);
-  apportion(nRing, ringed.map(value)).forEach((n, i) => {
+  const ringed = continents.filter((c) => ringFor.has(c.id) && value(c) > 0 && own(c).ring === undefined);
+  const ringCounts = apportion(Math.max(0, nRing - fixedCount('ring')), ringed.map(share));
+  for (const c of fixed('ring')) {
+    if (!ringFor.has(c.id) && own(c).ring) report.push(`warning: no clear water for a ring about ${c.name}`);
+    else if (own(c).ring) {
+      ringed.push(c);
+      ringCounts.push(own(c).ring!);
+    }
+  }
+  ringCounts.forEach((n, i) => {
     const c = ringed[i];
     const radius = ringFor.get(c.id)!;
     const start = rand() * 360;
@@ -153,8 +175,14 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   for (const s of sited) if (s.motion === 'ring') rings.set(s.around!, [{ radius: s.radius! }]);
 
   // Convoys ahead of and behind the busiest continents.
-  const convoyed = continents.filter((c) => value(c) > 0 && convoyMinOffset(c, rings.get(c.id) ?? [], clearance) < 150);
-  apportion(nConvoy, convoyed.map(value)).forEach((n, i) => {
+  const convoyed = continents.filter((c) => value(c) > 0 && convoyMinOffset(c, rings.get(c.id) ?? [], clearance) < 150 && own(c).convoy === undefined);
+  const convoyCounts = apportion(Math.max(0, nConvoy - fixedCount('convoy')), convoyed.map(share));
+  for (const c of fixed('convoy'))
+    if (own(c).convoy) {
+      convoyed.push(c);
+      convoyCounts.push(own(c).convoy!);
+    }
+  convoyCounts.forEach((n, i) => {
     const c = convoyed[i];
     const min = convoyMinOffset(c, rings.get(c.id) ?? [], clearance);
     // Alternate ahead and behind, spreading out from the nearest allowed angle.
@@ -174,7 +202,7 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
     for (let r = a + clearance; r <= b - clearance; r += laneBin) {
       let v = 0;
       for (let d = -2; d <= 2; d++) v += laneValue.get(Math.floor(r / laneBin) + d) ?? 0;
-      laneCandidates.push({ r: Math.round(r), v });
+      laneCandidates.push({ r: Math.round(r), v: v * nearBelt(r) });
     }
   }
   laneCandidates.sort((x, y) => y.v - x.v);
@@ -202,7 +230,7 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
     return anchoredWater.some(([a, b]) => r > a + 1 && r < b - 1);
   };
   const candidates = [...anchoredCells.values()]
-    .map((c) => ({ v: c.v, at: { x: c.x / c.v, y: c.y / c.v } }))
+    .map((c) => ({ v: c.v * nearBelt(Math.hypot(c.x / c.v, c.y / c.v)), at: { x: c.x / c.v, y: c.y / c.v } }))
     .filter((c) => c.v > 0 && inWater(c.at))
     .sort((a, b) => b.v - a.v);
   const anchored: Sited[] = [];
@@ -225,12 +253,15 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
       }
       let v = 0;
       for (let r = a; r < b; r += laneBin) v += laneValue.get(Math.floor(r / laneBin)) ?? 0;
-      return { r: best, v, n: Math.max(3, Math.ceil((2 * Math.PI * best) / step)) };
+      // Near a thinned belt, only that share of the ring (spaced further apart).
+      const f = nearBelt(best);
+      return { r: best, v, n: f < 1 ? Math.round(Math.ceil((2 * Math.PI * best) / step) * f) : Math.max(3, Math.ceil((2 * Math.PI * best) / step)) };
     })
     .sort((x, y) => y.v - x.v);
   let left = backboneBudget;
   for (const ring of rings_) {
     if (left <= 0 || ring.v <= 0) break;
+    if (!ring.n) continue;
     const n = Math.min(ring.n, left);
     const start = rand() * 360;
     for (let j = 0; j < n; j++) {
@@ -353,7 +384,8 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
       const steps = Math.ceil(len / (S.resupply_range * 0.6));
       for (let s = 1; s < steps && added < P.siting.repair; s++) {
         const p = { x: a.x + ((b.x - a.x) * s) / steps, y: a.y + ((b.y - a.y) * s) / steps };
-        if (!inWater(p) || !far(p, S.resupply_range * 0.5)) continue;
+        // Near a thinned belt, only where there is nothing at all within range.
+        if (!inWater(p) || !far(p, S.resupply_range * (nearBelt(Math.hypot(p.x, p.y)) < 1 ? 0.9 : 0.5))) continue;
         const k = anchorAt(p, 0);
         anchored.push(k);
         sited.push(k);
@@ -364,6 +396,11 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
     check = evaluate(rows);
   }
   if (added) report.push(`Added ${added} keeps to close gaps; now ${Math.round(check.share * 100)}% within range.`);
+  for (const b of world.belts)
+    if (P.near_belts?.[b.id] !== undefined) {
+      const near = sited.filter((x) => x.at && Math.hypot(x.at.x, x.at.y) > b.innerRadius - P.near_belt_reach && Math.hypot(x.at.x, x.at.y) < b.outerRadius + P.near_belt_reach).length;
+      report.push(`${near} anchored within ${P.near_belt_reach} IL of the ${b.name}.`);
+    }
   if (check.warnings.length) report.push(...check.warnings.map((w) => `warning: ${w}`));
   return { rows, report };
 }

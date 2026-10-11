@@ -3,12 +3,12 @@ import { contourLevels, isoSegments, joinSegments } from './contours';
 import type { ContinentDesign } from './design';
 import { contourElevation, generatedElevation } from './elevation';
 import { chaikin, polylineLength } from './geometry';
-import { cellAt, makeGrid, rasterize, sample, type Grid } from './grid';
+import { cellAt, makeGrid, NEIGHBOURS, rasterize, sample, type Grid } from './grid';
 import { hydrology, type River } from './hydrology';
 import { slug } from './names';
 import { routeRoads, type Road } from './routes';
 import { placeSettlements, type Settlement, type SettlementKind } from './settlements';
-import { archipelagoPlan } from './archipelago';
+import { archipelagoPlan, type Ferry } from './archipelago';
 
 export type { Road, RoadRank } from './routes';
 export type { Settlement, SettlementKind } from './settlements';
@@ -36,6 +36,8 @@ export interface ContinentMap {
   rivers: River[];
   settlements: Settlement[];
   roads: Road[];
+  /** Ferries between the body's own islands (where its settlements stand on more than one). */
+  ferries: Ferry[];
   /** Notes about a design (skipped shapes and why). */
   warnings: string[];
 }
@@ -260,9 +262,21 @@ export function generatePlaces(world: World, body: Body): PlaceRow[] {
     const fromCentre = body.kind === 'moon' ? (body.parent!.parent ? body.parent!.orbitRadius : 0) : body.parent ? body.orbitRadius : 0;
     const band = world.bands.find((b) => fromCentre >= b.innerRadius && fromCentre < b.outerRadius);
     const sp = P.settlements;
-    const density = body.settlementDensity ?? (band ? sp.density[band.id] : undefined);
+    const own = sp.bodies?.[body.id];
+    const density = own?.density ?? body.settlementDensity ?? (band ? sp.density[band.id] : undefined);
     if (density === undefined) throw new Error(`parameters/settlements.yaml: density.${band?.id ?? '(no band)'} is missing`);
-    placed = placeSettlements(seed + sp.seed * 1000, g, elevation, land, water, maxElevation, { density, minimum: body.kind === 'moon' ? sp.minimum.moon : sp.minimum.continent }, sp, world.names);
+    if (density <= 0) return [];
+    placed = placeSettlements(
+      seed + sp.seed * 1000,
+      g,
+      elevation,
+      land,
+      water,
+      maxElevation,
+      { density, minimum: body.kind === 'moon' ? sp.minimum.moon : sp.minimum.continent, coastWithin: own?.coast },
+      sp,
+      world.names,
+    );
   }
   return placed.map((s) => ({ name: s.name, kind: s.kind, x: round2(s.x), y: round2(s.y), ...(s.port ? { harbour: true } : {}) }));
 }
@@ -298,6 +312,7 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
       bridges: 0,
     }));
   } else roads = routeRoads(settlements, { grid: g, elevation, land, water }, P.roads);
+  const ferries = islandFerries(g, land, water.lake, settlements);
 
   const top = elevation.reduce((m, v) => Math.max(m, v), 0);
   // Drawn contours and lakes are shown exactly as drawn; traced ones are smoothed
@@ -332,6 +347,72 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
     rivers: water.rivers,
     settlements,
     roads,
+    ferries,
     warnings,
   };
+}
+
+/**
+ * Ferries between the landmasses of one body, where settlements stand on more
+ * than one: a minimum spanning network, each link between the closest pair of
+ * places on the two islands. (Roads join places on the same landmass.)
+ */
+function islandFerries(g: Grid, land: Uint8Array, lake: Int16Array, settlements: Settlement[]): Ferry[] {
+  if (settlements.length < 2) return [];
+  const { n } = g;
+  const label = new Int32Array(n * n).fill(-1);
+  const dry = (k: number) => land[k] === 1 && lake[k] < 0;
+  const groupOf = settlements.map((st) => {
+    const k0 = cellAt(g, st.x, st.y);
+    if (k0 < 0 || !dry(k0)) return -1;
+    if (label[k0] < 0) {
+      // Flood this landmass.
+      const stack = [k0];
+      label[k0] = k0;
+      while (stack.length) {
+        const k = stack.pop()!;
+        const i = k % n;
+        const j = (k / n) | 0;
+        for (const [di, dj] of NEIGHBOURS) {
+          const ii = i + di;
+          const jj = j + dj;
+          if (ii < 0 || jj < 0 || ii >= n || jj >= n) continue;
+          const m = jj * n + ii;
+          if (label[m] < 0 && dry(m)) {
+            label[m] = k0;
+            stack.push(m);
+          }
+        }
+      }
+    }
+    return label[k0];
+  });
+  const groups = [...new Set(groupOf.filter((x) => x >= 0))];
+  if (groups.length < 2) return [];
+  const links: { a: number; b: number; from: Settlement; to: Settlement; d: number }[] = [];
+  for (let a = 0; a < groups.length; a++)
+    for (let b = a + 1; b < groups.length; b++) {
+      let best: (typeof links)[number] | null = null;
+      settlements.forEach((p, i) => {
+        if (groupOf[i] !== groups[a]) return;
+        settlements.forEach((q, j) => {
+          if (groupOf[j] !== groups[b]) return;
+          const d = Math.hypot(p.x - q.x, p.y - q.y);
+          if (!best || d < best.d) best = { a, b, from: p, to: q, d };
+        });
+      });
+      if (best) links.push(best);
+    }
+  links.sort((x, y) => x.d - y.d);
+  const parent = groups.map((_, i) => i);
+  const find = (x: number): number => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  const out: Ferry[] = [];
+  for (const l of links) {
+    const ra = find(l.a);
+    const rb = find(l.b);
+    if (ra === rb) continue;
+    parent[ra] = rb;
+    out.push({ from: l.from.id, to: l.to.id, rank: l.from.kind !== 'village' && l.to.kind !== 'village' ? 'main' : 'local', length: l.d });
+  }
+  return out;
 }

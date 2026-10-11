@@ -537,7 +537,7 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
   const chief = shipping?.ports.find((pt) => pt.body.id === body.id);
   const arch = body.archipelago;
   const ids = new Set(map.settlements.map((x) => x.id));
-  const ferries = arch ? (ferriesOf(world, arch) ?? []).filter((f) => ids.has(f.from) || ids.has(f.to)) : [];
+  const ferries = arch ? (ferriesOf(world, arch) ?? []).filter((f) => ids.has(f.from) || ids.has(f.to)) : map.ferries;
 
   const kind =
     body.kind === 'central'
@@ -851,7 +851,7 @@ function SettlementEntry({ world, body, settlement: st, shipping, onFocus, onMea
   const chief = shipping?.ports.some((pt) => pt.id === st.id);
   const seaRoutes = chief ? routesFrom(shipping, body.id) : [];
   const features = [chief ? 'the chief port' : st.port && 'a harbour', st.riverPort && 'a river port', st.river && !st.riverPort && 'on a river'].filter(Boolean);
-  const ferries = body.archipelago ? (ferriesOf(world, body.archipelago) ?? []).filter((f) => f.from === st.id || f.to === st.id) : [];
+  const ferries = (body.archipelago ? (ferriesOf(world, body.archipelago) ?? []) : map.ferries).filter((f) => f.from === st.id || f.to === st.id);
 
   return (
     <article className="gz-entry">

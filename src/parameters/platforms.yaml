@@ -46,6 +46,19 @@ siting:
   # resupply range on some dates.
   repair: 40
 
+# Continents that draw more or fewer orbiting platforms than their trade
+# alone would, by id: `weight` multiplies their share of convoys and rings;
+# `ring` and `convoy` set exact numbers instead.
+continents:
+  holy-purple-homeland: { weight: 2 }
+  brock: { ring: 1, convoy: 0 }
+
+# Far fewer platforms near these belts: the share of what siting would put
+# within `near_belt_reach` IL of each belt that is kept there.
+near_belts:
+  far-belt: 0.15
+near_belt_reach: 700
+
 # A moonless continent's platform ring sits within this × its coast's reach.
 moonless_ring_reach: 1.3
 

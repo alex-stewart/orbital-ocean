@@ -13,13 +13,50 @@ const maps = mappedBodies(world).map((b) => ({ body: b, map: continentMap(world,
 
 describe('seeded continents', () => {
   it('gives every continent terrain, water and at least one settlement', () => {
+    const own = world.params.settlements.bodies;
     for (const { body, map } of maps.filter(({ body }) => body.kind !== 'islet')) {
-      expect(map.maxElevation, body.id).toBeGreaterThan(300);
-      expect(map.rivers.length, body.id).toBeGreaterThan(0);
+      // A scatter of small islands has lower ground and fewer rivers.
+      if (body.coast.length === 1) {
+        expect(map.maxElevation, body.id).toBeGreaterThan(300);
+        expect(map.rivers.length, body.id).toBeGreaterThan(0);
+      }
+      if (own[body.id]?.density === 0) continue;
       expect(map.settlements.length, body.id).toBeGreaterThan(0);
       // Continents have at least a town; moons at least a village.
       if (body.kind !== 'moon') expect(map.settlements.some((s) => s.kind !== 'village'), body.id).toBe(true);
     }
+  });
+
+  it('settles bodies as the lore has them', () => {
+    const map = (id: string) => maps.find((m) => m.body.id === id)!.map;
+    const perArea = (id: string) => map(id).settlements.length / (map(id).land.reduce((a, v) => a + v, 0) * map(id).grid.cell ** 2);
+    // The Land of the Large: a few footholds, all on the coast.
+    const lotl = map('land-of-the-large');
+    expect(lotl.settlements.length).toBeGreaterThan(2);
+    expect(lotl.settlements.length).toBeLessThan(20);
+    const coast = world.params.settlements.bodies['land-of-the-large'].coast!;
+    for (const s of lotl.settlements) {
+      let near = false;
+      for (let a = 0; a < 360 && !near; a += 10)
+        for (let d = 0; d <= coast + lotl.grid.cell; d += lotl.grid.cell / 2) {
+          const k = cellAt(lotl.grid, s.x + Math.cos((a * Math.PI) / 180) * d, s.y + Math.sin((a * Math.PI) / 180) * d);
+          if (k < 0 || !lotl.land[k]) near = true;
+        }
+      expect(near, s.name).toBe(true);
+    }
+    // The Holy Purple Homeland: the most crowded land of any continent.
+    for (const c of world.bodies.filter((b) => b.kind === 'isle' && b.id !== 'holy-purple-homeland'))
+      expect(perArea('holy-purple-homeland'), c.id).toBeGreaterThan(perArea(c.id));
+    // Nobody lives on Brock.
+    expect(map('brock').settlements).toEqual([]);
+  });
+
+  it('makes Windstones a scatter of islands, joined by ferry where settled', () => {
+    const ws = world.bodies.find((b) => b.id === 'windstones')!;
+    expect(ws.coast.length).toBeGreaterThan(4);
+    const m = maps.find((x) => x.body.id === 'windstones')!.map;
+    const islands = new Set(m.settlements.map((s) => s.id));
+    for (const f of m.ferries) expect(islands.has(f.from) && islands.has(f.to)).toBe(true);
   });
 
   it('gives moons settlements too', () => {

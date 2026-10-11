@@ -46,6 +46,15 @@ tracks. Harbours are marked with an anchor. Navigable rivers carry a dashed
 route line. Each continent's gazetteer entry lists its settlements, waters
 and roads; each settlement's entry lists its road links and their lengths.
 
+Some bodies follow the lore rather than their band: the Land of the Large has
+only a few footholds on its coast (it has been hard to colonise), the Holy
+Purple Homeland is the most crowded land in the ocean, nobody lives on Brock,
+and Windstones is a scatter of small islands (`shape: islands` in
+`world.yaml`). These are `bodies:` in `src/parameters/settlements.yaml`, and
+`continents:` and `near_belts:` in `src/parameters/platforms.yaml`, which give
+the Homeland the most orbiting platforms, leave Brock a single one, and keep
+few platforms near the Far Belt.
+
 Every continent starts as a **generated placeholder**. Inner continents are
 settled more densely than outer ones, and roads are routed over the terrain:
 they avoid steep ground, never cross sea or lakes, bridge rivers sparingly

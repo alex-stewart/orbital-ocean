@@ -25,7 +25,11 @@ describe('parameters', () => {
   it('really drives seeding: changing a parameter changes what is seeded', () => {
     const base = loadWorld();
     const denser = loadWorld({}, { ...parameters, settlements: { ...parameters.settlements, density: { home: 30, second: 3.5, frontier: 1.4 } } });
-    expect(seedPlaces(denser, denser.central).length).toBeGreaterThan(seedPlaces(base, base.central).length * 2);
+    const c2 = (w: typeof base) => w.bodies.find((b) => b.id === 'continent-2')!;
+    expect(seedPlaces(denser, c2(denser)).length).toBeGreaterThan(seedPlaces(base, c2(base)).length * 2);
+    // A body's own setting wins over its band.
+    const empty = loadWorld({}, { ...parameters, settlements: { ...parameters.settlements, bodies: { 'continent-2': { density: 0 } } } });
+    expect(seedPlaces(empty, c2(empty))).toEqual([]);
   });
 
   it('and the data files are what the world is built from', () => {
