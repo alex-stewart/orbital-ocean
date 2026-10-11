@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import calendarSource from '../../data/calendar.yaml?raw';
-import worldSource from '../../data/world.yaml?raw';
-import { parseCalendar } from '../calendar';
+import { loadWorld } from './world';
 import { buildContinentMap, continentMap, mappedBodies } from '../terrain';
 import { flattenPath, parseDesign, parseSettlementLabel } from '../terrain/design';
 import { cellAt, sample } from '../terrain/grid';
 import { designTemplate } from '../terrain/template';
-import { parseWorld } from '../world';
 import exampleSource from '../../../docs/example-continent.svg?raw';
 
-const cal = parseCalendar(calendarSource);
-const world = parseWorld(worldSource, cal);
+const world = loadWorld();
 const maps = mappedBodies(world).map((b) => ({ body: b, map: continentMap(world, b) }));
 
 describe('generated continents', () => {
@@ -19,8 +15,23 @@ describe('generated continents', () => {
       expect(map.maxElevation, body.id).toBeGreaterThan(300);
       expect(map.rivers.length, body.id).toBeGreaterThan(0);
       expect(map.settlements.length, body.id).toBeGreaterThan(0);
-      expect(map.settlements.some((s) => s.kind !== 'village'), body.id).toBe(true);
+      // Continents have at least a town; moons at least a village.
+      if (body.kind !== 'moon') expect(map.settlements.some((s) => s.kind !== 'village'), body.id).toBe(true);
     }
+  });
+
+  it('gives moons settlements too', () => {
+    const moons = maps.filter(({ body }) => body.kind === 'moon');
+    expect(moons.length).toBeGreaterThan(10);
+    for (const { map } of moons) expect(map.settlements.length).toBeGreaterThan(0);
+  });
+
+  it('mostly builds villages, then towns, then a real share of cities', () => {
+    const all = maps.flatMap((m) => m.map.settlements);
+    const share = (k: string) => all.filter((s) => s.kind === k).length / all.length;
+    expect(share('village')).toBeGreaterThan(share('town'));
+    expect(share('town')).toBeGreaterThan(share('city'));
+    expect(share('city')).toBeGreaterThan(0.06);
   });
 
   it('settles the inner ocean more densely than the outer', () => {
@@ -110,7 +121,7 @@ describe('designed continents', () => {
     expect(design.warnings).toEqual([]);
     expect(design.settlements.length).toBe(generated.settlements.length);
     expect(design.roads).toBeNull(); // the roads layer is empty, so roads are routed
-    const designed = parseWorld(worldSource, cal, { 'holy-purple-homeland': svg });
+    const designed = loadWorld({ 'holy-purple-homeland': svg });
     const map = buildContinentMap(designed, designed.bodies.find((b) => b.id === body.id)!);
     expect(map.source).toBe('designed');
     expect(map.settlements.map((s) => s.name)).toEqual(generated.settlements.map((s) => s.name));
@@ -133,8 +144,8 @@ describe('designed continents', () => {
 
   it('rejects designs for unknown continents or drawn too large', () => {
     const big = `<svg xmlns="http://www.w3.org/2000/svg"><g id="coast"><circle cx="0" cy="0" r="500"/></g></svg>`;
-    expect(() => parseWorld(worldSource, cal, { mort: big })).toThrow(/guide circle/);
-    expect(() => parseWorld(worldSource, cal, { atlantis: big })).toThrow(/no continent/);
+    expect(() => loadWorld({ mort: big })).toThrow(/guide circle/);
+    expect(() => loadWorld({ atlantis: big })).toThrow(/no continent or moon/);
     expect(() => parseDesign('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).toThrow(/coast/);
   });
 
@@ -151,7 +162,7 @@ describe('designed continents', () => {
       'village High Hale',
       'village Westby port',
     ]);
-    const w = parseWorld(worldSource, cal, { 'continent-7': exampleSource });
+    const w = loadWorld({ 'continent-7': exampleSource });
     const map = buildContinentMap(w, w.bodies.find((b) => b.id === 'continent-7')!);
     expect(map.source).toBe('designed');
     expect(map.maxElevation).toBeGreaterThan(900);

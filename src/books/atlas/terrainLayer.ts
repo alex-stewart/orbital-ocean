@@ -7,16 +7,10 @@ import { fonts, theme } from './theme';
 
 /**
  * Continent detail: shaded relief, contours, lakes, rivers, roads and
- * settlements. Everything is revealed by zoom, measured by how large the
- * continent is on screen (its radius in px):
- *
- *   relief tint  > 14 px     cities, highways   > 30 px
- *   rivers       > 30 px     towns, roads       > 90 px
- *   contours     > 50 px     villages, tracks   > 220 px
+ * settlements, each revealed by zoom as the body grows on screen
+ * (thresholds in src/parameters/display.yaml → reveal).
  */
 
-export const REVEAL: Record<SettlementKind, number> = { city: 30, town: 90, village: 220 };
-const ROAD_REVEAL: Record<RoadRank, number> = { highway: 30, road: 90, track: 220 };
 
 const water = '#4f7a96';
 const lakeFill = '#cfdfe0';
@@ -152,6 +146,9 @@ export function drawTerrain(ctx: CanvasRenderingContext2D, s: RenderInput, body:
   const d = drawables(map);
   const scale = view.scale;
   const px = 1 / scale; // one screen pixel in local IL
+  const reveal = s.world.params.display.reveal;
+  // Each kind of detail fades in from 70% of its reveal size.
+  const fade = (at: number) => smoothstep(at * 0.7, at, sr);
 
   ctx.save();
   // Clip to the coast (shapes are unit-scale), then switch to local IL.
@@ -162,7 +159,7 @@ export function drawTerrain(ctx: CanvasRenderingContext2D, s: RenderInput, body:
   if (layers.terrain) {
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(d.relief, -map.grid.half, -map.grid.half, map.grid.half * 2, map.grid.half * 2);
-    const a = smoothstep(50, 110, sr);
+    const a = fade(reveal.contours);
     if (a > 0) {
       ctx.globalAlpha = a;
       ctx.lineWidth = 0.6 * px;
@@ -180,7 +177,7 @@ export function drawTerrain(ctx: CanvasRenderingContext2D, s: RenderInput, body:
     ctx.strokeStyle = water;
     ctx.lineWidth = 0.8 * px;
     ctx.stroke(d.lakes);
-    const a = smoothstep(30, 60, sr);
+    const a = fade(reveal.rivers);
     if (a > 0) {
       ctx.globalAlpha = a;
       ctx.strokeStyle = water;
@@ -207,8 +204,8 @@ export function drawTerrain(ctx: CanvasRenderingContext2D, s: RenderInput, body:
   if (layers.roads) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    const reveal = (rank: RoadRank) => smoothstep(ROAD_REVEAL[rank] * 0.7, ROAD_REVEAL[rank], sr);
-    let a = reveal('track');
+    const show = (rank: RoadRank) => fade(reveal.roads[rank]);
+    let a = show('track');
     if (a > 0) {
       ctx.globalAlpha = a;
       ctx.strokeStyle = theme.inkSoft;
@@ -217,14 +214,14 @@ export function drawTerrain(ctx: CanvasRenderingContext2D, s: RenderInput, body:
       ctx.stroke(d.roads.track);
       ctx.setLineDash([]);
     }
-    a = reveal('road');
+    a = show('road');
     if (a > 0) {
       ctx.globalAlpha = a;
       ctx.strokeStyle = theme.accent;
       ctx.lineWidth = 1.2 * px;
       ctx.stroke(d.roads.road);
     }
-    a = reveal('highway');
+    a = show('highway');
     if (a > 0) {
       ctx.globalAlpha = a;
       ctx.strokeStyle = theme.ink;
@@ -270,8 +267,9 @@ export function drawSettlements(
   const labels: SettlementLabel[] = [];
   if (!s.layers.settlements) return { hits, labels };
   const scale = s.view.scale;
+  const REVEAL = s.world.params.display.reveal.settlements;
   for (const { b, p, sr } of bodies) {
-    if (b.kind === 'moon' || sr < REVEAL.city * 0.7) continue;
+    if (sr < Math.min(REVEAL.city, REVEAL.town, REVEAL.village) * 0.7) continue;
     const map = continentMap(s.world, b);
     // Smaller places first, so cities draw on top.
     const order = [...map.settlements].sort((a, c) => REVEAL[c.kind] - REVEAL[a.kind]);

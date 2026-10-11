@@ -22,10 +22,11 @@ Endless Gunk.
 
 - **Pan:** drag the map. Flicks carry on with inertia.
 - **Zoom:** scroll, pinch, double-click (shift + double-click zooms out), or use the + / − buttons. Press `0` or ◎ to see the whole ocean again.
-- **Islands:** click an island for its gazetteer entry. Double-click one to fly to it. *Follow* keeps the chart centred on it as time passes.
+- **Islands:** the strip along the top lists the Land of the Large and the 13 continents by band; click one to fly there. Click anything on the chart for its gazetteer entry; double-click to fly to it. *Follow* keeps the chart centred on it as time passes.
+- **Gazetteer:** search for any place or platform number. The index has a *Places* tab (by band) and a *Sea* tab (shipping routes and the platform register). Entries fold their details into sections, with a breadcrumb back to the body and the index.
 - **Measure:** with an island selected, hover another island to see the distance and bearing between them on the current date.
-- **Time:** drag the timeline, step by day, month or year, play at one of several speeds (`space` plays and pauses), or click the date to type one in.
-- **Layers:** ☰ (or `L`) toggles moons, belts, anchored and orbital platforms, orbit lines, the imperial bands, range rings and names, with a key to the platform symbols. Choices are remembered in this browser.
+- **Time:** the timeline is one slim row: play (`space`), the date (click to type one in), the slider and the speed. ⌃ expands it to step by day, month or year and see the year scale; ⌄ folds it back. The choice is remembered.
+- **Layers:** ☰ (or `L`) toggles relief, water, settlements, roads, moons, belts, shipping routes, anchored and orbital platforms, orbit lines, the imperial bands, range rings and names, with a key to the platform symbols. Choices are remembered in this browser.
 - **Platforms:** look one up by register number in the gazetteer (just the digits work too, e.g. `1423`).
 - **Sharing:** the date and selected place are kept in the URL (`#/atlas?date=1000-1-1&place=mort`).
 
@@ -51,10 +52,28 @@ download the continent's template from its gazetteer entry, draw in Inkscape
 using the named layers (coast, contours, peaks, lakes, rivers, settlements,
 roads), and save it as `src/data/continents/<id>.svg`.
 
+## Imperial shipping
+
+Cargo routes run between each body's **chief port** (its largest harbour).
+How much two ports trade grows with the size of the places they serve and
+falls with distance; the busiest routes are drawn, heavier for more traffic.
+Ships must resupply: no leg may be longer than the resupply range, so routes
+hop between the larger Imperial platforms (grand platforms and keeps), which
+become ringed hubs. Long open-water legs cost more than short hops, crossing
+a belt costs extra, and no leg crosses land.
+
+Because everything moves, routes are re-planned for the date on the timeline
+(a few times a second while playing), so the network bends and re-forms as
+continents swing round. Click a route for its stops, distance and traffic.
+Frontier ports can fall out of reach on some dates, when no chain of
+platforms spans the gap. The rules and numbers are in
+`src/parameters/shipping.yaml`.
+
 ## Ocean platforms
 
-Platforms are generated from rules in `world.yaml` (seed, counts per band,
-size classes, owners), so there are thousands without listing each one. Every
+Platforms are generated (thousands of them) rather than listed one by one.
+Their kinds and owners are named in `world.yaml`; their counts per band, sizes,
+shares and spacing are in `src/parameters/platforms.yaml`. Every
 platform has an Imperial register number: `HPBE-P-…` for Imperial platforms
 and `HPBE-X-…` for those the Empire registers but does not own.
 
@@ -77,6 +96,19 @@ as symbols first, then keeps and stations, and beacons only up close. When a
 platform is larger on screen than its symbol, it is drawn to scale. Register
 numbers appear only when zoomed well in.
 
+## How it's organised
+
+Three kinds of thing are kept apart:
+
+| | Where | What |
+| --- | --- | --- |
+| **Data** | `src/data/` | What exists and what it's called: the calendar, the roster of bodies and orbits, belts, bands, platform kinds and owners, the sounds of place names, and hand-drawn continents. |
+| **Parameters** | `src/parameters/` | How much, how often and how strongly: settlement density and mix, terrain and water thresholds, road costs, platform counts and spacing, shipping range and costs, and when things appear as you zoom. See [src/parameters/README.md](src/parameters/README.md). |
+| **Mechanics** | `src/lib/` | How it all works: orbits, terrain, water, settlement siting, road and shipping routing, platform placement. It reads every number from the parameters. |
+
+Every parameter file is checked when the Atlas loads. A missing or mistyped
+value stops it with a message naming the file and key.
+
 ## Editing the world
 
 The world is defined by these files in `src/data`:
@@ -84,8 +116,9 @@ The world is defined by these files in `src/data`:
 | File | Contents |
 | --- | --- |
 | `src/data/calendar.yaml` | Era name, months and their lengths, intercalary/festival days, weekdays, the date the atlas opens on, and the range of the timeline. |
-| `src/data/continents/<id>.svg` | Optional hand-drawn continents; see [docs/designing-continents.md](docs/designing-continents.md). |
-| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description) and their moons, the belts, the Empire's bands, and the rules for generating platforms and settlements. |
+| `src/data/continents/<id>.svg` | Optional hand-drawn continents and moons; see [docs/designing-continents.md](docs/designing-continents.md). |
+| `src/data/names.yaml` | The sounds placeholder place names are built from. |
+| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description) and their moons, the belts, the Empire's bands, and the kinds and owners of platforms. |
 
 The roster and the bands follow the lore. Sizes, distances, bearings and
 periods are placeholders, and positions without a name in the lore are called
@@ -99,7 +132,7 @@ between Iceland and Great Britain). Brock, the outermost continent, orbits at
 ```sh
 npm install
 npm run dev        # http://localhost:5173/orbital-ocean/
-npm test           # calendar and orbit maths
+npm test           # orbits, terrain, settlements, roads, platforms, shipping, parameters
 npm run build      # typecheck + production build into dist/
 ```
 
@@ -115,9 +148,10 @@ Built with React, TypeScript and Vite. The chart is drawn on a 2D canvas
 
 ```
 src/
-  data/            calendar.yaml, world.yaml (edit these)
-  data/continents/ hand-drawn continent designs (SVG)
-  lib/             calendar, orbits, world parsing, platform generator, coastlines, camera
+  data/            calendar.yaml, world.yaml, names.yaml (the world's content)
+  data/continents/ hand-drawn continent and moon designs (SVG)
+  parameters/      tuning: terrain, settlements, roads, platforms, shipping, display
+  lib/             calendar, orbits, world parsing, platforms, shipping, coastlines, camera
   lib/terrain/     elevation, water, settlements, roads, design reader and template
   books/atlas/     the Atlas: map canvas, renderer, timeline, gazetteer, instruments
   Library.tsx      the Imperial Reference Shelf (home page)

@@ -1,3 +1,4 @@
+import type { PlatformParams } from '../parameters/schema';
 import { rng } from './random';
 import type { Band, Belt, Body } from './world';
 
@@ -62,15 +63,11 @@ export interface PlatformRules {
   rings: Map<string, { radius: number; periodDays: number }[]>;
 }
 
-export interface RawPlatformConfig {
-  seed?: number;
-  registry?: string;
-  clearance?: number;
-  spacing?: number;
-  bands?: Record<string, { count?: number; anchored?: number }>;
-  orbital?: { lane?: number; convoy?: number; continent?: number };
-  sizes?: { id: string; name?: string; like?: string; radius: number; share: number; reveal: number }[];
-  owners?: { id: string; name?: string; share: number; code?: string; imperial?: boolean }[];
+/** What platforms exist and are called (src/data/world.yaml). */
+export interface PlatformContent {
+  register: string;
+  classes: { id: string; name: string; like: string | null }[];
+  owners: { id: string; name: string; code: string; imperial: boolean }[];
 }
 
 /** Furthest any satellite of a body reaches from it, including the body itself. */
@@ -118,7 +115,8 @@ function angularGap(b: number, others: number[]): number {
 }
 
 export function generatePlatforms(
-  raw: RawPlatformConfig | undefined,
+  content: PlatformContent | null,
+  p: PlatformParams,
   ctx: {
     central: Body;
     continents: Body[];
@@ -127,27 +125,22 @@ export function generatePlatforms(
     oceanRadius: number;
   },
 ): { platforms: Platform[]; rules: PlatformRules | null } {
-  if (!raw) return { platforms: [], rules: null };
+  if (!content) return { platforms: [], rules: null };
   const { central, continents, belts, bands, oceanRadius } = ctx;
-  const rand = rng(raw.seed ?? 1);
-  const clearance = raw.clearance ?? 20;
-  const spacing = raw.spacing ?? 1.5;
-  const sizes: (SizeClass & { share: number })[] = (raw.sizes ?? []).map((s) => ({
-    id: s.id,
-    name: s.name ?? s.id,
-    like: s.like ?? null,
-    radius: s.radius,
-    share: s.share,
-    reveal: s.reveal,
-  }));
-  const owners: (Owner & { share: number })[] = (raw.owners ?? []).map((o) => ({
-    id: o.id,
-    name: o.name ?? o.id,
-    share: o.share,
-    code: o.code ?? 'X',
-    imperial: !!o.imperial,
-  }));
-  if (!sizes.length || !owners.length) throw new Error('world.yaml: platforms need `sizes` and `owners`');
+  const rand = rng(p.seed);
+  const { clearance, spacing } = p;
+  // Join each class and owner (content) with its numbers (parameters).
+  const sizes: (SizeClass & { share: number })[] = content.classes.map((c) => {
+    const n = p.sizes[c.id];
+    if (!n) throw new Error(`parameters/platforms.yaml: sizes.${c.id} is missing (class "${c.name}" in world.yaml)`);
+    return { ...c, ...n };
+  });
+  const owners: (Owner & { share: number })[] = content.owners.map((o) => {
+    const share = p.owners[o.id];
+    if (share === undefined) throw new Error(`parameters/platforms.yaml: owners.${o.id} is missing (owner "${o.name}" in world.yaml)`);
+    return { ...o, share };
+  });
+  if (!sizes.length || !owners.length) throw new Error('world.yaml: platform_classes and platform_owners must not be empty');
   const bandAt = (r: number) => bands.find((b) => r >= b.innerRadius && r < b.outerRadius) ?? null;
 
   // Orbital periods follow the continents' own law: P ∝ r^1.5.
@@ -170,7 +163,7 @@ export function generatePlatforms(
     ]);
     const lo = c.outerRadius + clearance;
     // A moonless continent keeps its platforms close, within ~1.3× its coast.
-    const hi = c.moons.length ? reach(c) - clearance : c.outerRadius * 1.3 + clearance;
+    const hi = c.moons.length ? reach(c) - clearance : c.outerRadius * p.moonless_ring_reach + clearance;
     const out: { radius: number; periodDays: number }[] = [];
     for (const [a, b] of freeIntervals(blocked, lo, hi)) {
       if (b - a < 4) continue;
@@ -192,7 +185,7 @@ export function generatePlatforms(
   // Lanes: up to three per gap, evenly spaced, each with clearance either side.
   const lanes: PlatformRules['lanes'] = [];
   for (const [a, b] of gaps) {
-    const n = Math.min(3, Math.floor((b - a) / (clearance * 6)));
+    const n = Math.min(p.lanes.max_per_gap, Math.floor((b - a) / (clearance * p.lanes.min_gap_in_clearances)));
     for (let i = 1; i <= n; i++) {
       const r = Math.round(a + ((b - a) * i) / (n + 1));
       lanes.push({ radius: r, periodDays: centralPeriod(r), band: bandAt(r) });
@@ -243,12 +236,12 @@ export function generatePlatforms(
     return true;
   };
 
-  const weights = { lane: 0.45, convoy: 0.25, continent: 0.3, ...raw.orbital };
+  const weights = p.orbital;
 
   for (const band of bands) {
-    const rule = raw.bands?.[band.id];
+    const rule = p.bands[band.id];
     if (!rule?.count) continue;
-    const anchoredCount = Math.round(rule.count * (rule.anchored ?? 0.5));
+    const anchoredCount = Math.round(rule.count * rule.anchored);
     const water = anchoredWater
       .map(([a, b]) => [Math.max(a, band.innerRadius), Math.min(b, band.outerRadius)] as [number, number])
       .filter(([a, b]) => b > a);
@@ -320,7 +313,7 @@ export function generatePlatforms(
   }
 
   // Register numbers: shuffled so numbering doesn't follow band or kind.
-  const registry = raw.registry ?? 'HPBE';
+  const registry = content.register;
   const order = platforms.map((_, i) => i);
   for (let i = order.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));

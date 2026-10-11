@@ -7,7 +7,7 @@ import { cellAt, makeGrid, rasterize, sample, type Grid } from './grid';
 import { hydrology, type River } from './hydrology';
 import { slug } from './names';
 import { routeRoads, type Road } from './routes';
-import { placeSettlements, type Settlement, type SettlementKind } from './settlements';
+import { placeSettlements, type Settlement } from './settlements';
 
 export type { Road, RoadRank } from './routes';
 export type { Settlement, SettlementKind } from './settlements';
@@ -39,13 +39,6 @@ export interface ContinentMap {
   warnings: string[];
 }
 
-export interface SettlementConfig {
-  seed: number;
-  /** Settlements per 10,000 IL² of land, by band id. */
-  density: Record<string, number>;
-  mix: Record<SettlementKind, number>;
-}
-
 const cache = new WeakMap<World, Map<string, ContinentMap>>();
 
 /** The map of a continent (cached per world). */
@@ -57,19 +50,24 @@ export function continentMap(world: World, body: Body): ContinentMap {
   return m;
 }
 
+/** Whether a body's map is already built (so using it costs nothing). */
+export function hasContinentMap(world: World, body: Body): boolean {
+  return cache.get(world)?.has(body.id) ?? false;
+}
+
 /** A settlement by id (`<continent id>/<slug>`), with its continent. */
 export function findSettlement(world: World, id: string): { body: Body; settlement: Settlement } | null {
   const slash = id.indexOf('/');
   if (slash < 0) return null;
-  const body = world.bodies.find((b) => b.id === id.slice(0, slash) && b.kind !== 'moon');
+  const body = world.bodies.find((b) => b.id === id.slice(0, slash));
   if (!body) return null;
   const settlement = continentMap(world, body).settlements.find((st) => st.id === id);
   return settlement ? { body, settlement } : null;
 }
 
-/** Continents that get detailed maps: the central isle and the orbiting continents. */
+/** Bodies with detailed maps: the central isle, the continents and their moons. */
 export function mappedBodies(world: World): Body[] {
-  return world.bodies.filter((b) => b.kind !== 'moon');
+  return world.bodies;
 }
 
 /** Mark the grid cells a polyline passes through. */
@@ -85,20 +83,22 @@ function rasterLine(g: Grid, pts: number[], mask: Uint8Array) {
 }
 
 export function buildContinentMap(world: World, body: Body): ContinentMap {
+  const P = world.params;
   const design: ContinentDesign | undefined = world.designs.get(body.id);
   const coast = body.coast;
   const radius = body.radius;
   const half = body.outerRadius * 1.08;
-  const n = Math.max(96, Math.min(200, Math.round(radius * 0.9)));
+  const gp = P.terrain.grid;
+  const n = Math.max(gp.min_cells, Math.min(gp.max_cells, Math.round(radius * gp.cells_per_il_of_radius)));
   const g = makeGrid(half, n);
   const land = rasterize(g, coast);
-  const maxElevation = body.maxElevation ?? Math.round(500 + radius * 12);
+  const maxElevation = body.maxElevation ?? Math.round(P.terrain.elevation.base + radius * P.terrain.elevation.per_il_of_radius);
   const seed = body.seed;
   const warnings = [...(design?.warnings ?? [])];
 
   const elevation = design?.contours.length
     ? contourElevation(g, land, design.contours, design.peaks)
-    : generatedElevation(g, land, seed, radius, maxElevation);
+    : generatedElevation(g, land, seed, radius, maxElevation, P.terrain.elevation.mountain_ranges);
 
   // Lakes: drawn ones are fixed (and generated ones switched off); otherwise found from the terrain.
   let fixedLakes: Int16Array | undefined;
@@ -110,10 +110,10 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
     });
   }
   const water = hydrology(g, elevation, land, {
-    lakeDepth: fixedLakes ? Infinity : Math.max(8, maxElevation * 0.012),
-    lakeCells: 4,
-    riverShare: 0.012,
-    navigableShare: 0.09,
+    lakeDepth: fixedLakes ? Infinity : Math.max(P.terrain.water.lake_min_depth, maxElevation * P.terrain.water.lake_min_depth_share_of_relief),
+    lakeCells: P.terrain.water.lake_min_cells,
+    riverShare: P.terrain.water.river_share,
+    navigableShare: P.terrain.water.navigable_share,
     fixedLakes,
   });
 
@@ -136,12 +136,10 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
     for (const r of water.rivers) rasterLine(g, r.points, water.riverMask);
   }
 
-  // Settlements: drawn ones as given, otherwise placed by population density for the band.
-  const band = world.bands.find((b) => {
-    const r = body.parent ? body.orbitRadius : 0;
-    return r >= b.innerRadius && r < b.outerRadius;
-  });
-  const cfg = world.settlementConfig;
+  // Settlements: drawn ones as given, otherwise placed by population density for the band
+  // (a moon is in its parent's band).
+  const fromCentre = body.kind === 'moon' ? (body.parent!.parent ? body.parent!.orbitRadius : 0) : body.parent ? body.orbitRadius : 0;
+  const band = world.bands.find((b) => fromCentre >= b.innerRadius && fromCentre < b.outerRadius);
   const used = new Set<string>();
   const uniqueId = (name: string) => {
     let id = `${body.id}/${slug(name) || 'place'}`;
@@ -171,19 +169,28 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
         riverPort: nearRiver && water.rivers.some((r) => r.navigableFrom >= 0 && r.points.some((_, v) => v % 2 === 0 && v / 2 >= r.navigableFrom && Math.hypot(r.points[v] - s.x, r.points[v + 1] - s.y) < g.cell * 2)),
       };
     });
-  } else if (cfg) {
-    const density = (band && cfg.density[band.id]) ?? cfg.density.default ?? 2;
-    settlements = placeSettlements(seed + cfg.seed * 1000, g, elevation, land, water, maxElevation, {
-      density: body.settlementDensity ?? density,
-      mix: cfg.mix,
-    }).map((s) => ({ ...s, id: uniqueId(s.name) }));
-  } else settlements = [];
+  } else {
+    const sp = P.settlements;
+    const density = body.settlementDensity ?? (band ? sp.density[band.id] : undefined);
+    if (density === undefined) throw new Error(`parameters/settlements.yaml: density.${band?.id ?? '(no band)'} is missing`);
+    settlements = placeSettlements(
+      seed + sp.seed * 1000,
+      g,
+      elevation,
+      land,
+      water,
+      maxElevation,
+      { density, minimum: body.kind === 'moon' ? sp.minimum.moon : sp.minimum.continent },
+      sp,
+      world.names,
+    ).map((s) => ({ ...s, id: uniqueId(s.name) }));
+  }
 
   // Roads: drawn ones as given (ends snapped to nearby settlements), otherwise routed.
   let roads: Road[];
   if (design?.roads) {
     const near = (x: number, y: number) =>
-      settlements.find((s) => Math.hypot(s.x - x, s.y - y) < Math.max(2, radius * 0.04))?.id ?? null;
+      settlements.find((s) => Math.hypot(s.x - x, s.y - y) < Math.max(2, radius * P.terrain.design.road_snap_share_of_radius))?.id ?? null;
     roads = design.roads.map((r) => ({
       from: near(r.points[0], r.points[1]),
       to: near(r.points[r.points.length - 2], r.points[r.points.length - 1]),
@@ -192,7 +199,7 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
       length: polylineLength(r.points),
       bridges: 0,
     }));
-  } else roads = routeRoads(settlements, { grid: g, elevation, land, water });
+  } else roads = routeRoads(settlements, { grid: g, elevation, land, water }, P.roads);
 
   const top = elevation.reduce((m, v) => Math.max(m, v), 0);
   // Drawn contours and lakes are shown exactly as drawn; traced ones are smoothed

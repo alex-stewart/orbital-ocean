@@ -16,7 +16,14 @@ function smoothstep(a: number, b: number, x: number) {
  * Generated terrain: land rises from the coast, with one to three mountain
  * ranges along random lines, ridged noise for crests, and gentle fBm hills.
  */
-export function generatedElevation(g: Grid, land: Uint8Array, seed: number, radius: number, maxElevation: number): Float32Array {
+export function generatedElevation(
+  g: Grid,
+  land: Uint8Array,
+  seed: number,
+  radius: number,
+  maxElevation: number,
+  ranges: { min: number; max: number },
+): Float32Array {
   const rand = rng(seed * 7919 + 13);
   const { n } = g;
   const sea = new Uint8Array(n * n);
@@ -26,15 +33,15 @@ export function generatedElevation(g: Grid, land: Uint8Array, seed: number, radi
   // Mountain ranges: segments through the interior.
   const interior: number[] = [];
   for (let k = 0; k < n * n; k++) if (inland[k] > radius * 0.25) interior.push(k);
-  const ranges: { ax: number; ay: number; bx: number; by: number; h: number; w: number }[] = [];
-  const count = 1 + Math.floor(rand() * 3);
+  const chains: { ax: number; ay: number; bx: number; by: number; h: number; w: number }[] = [];
+  const count = ranges.min + Math.floor(rand() * (ranges.max - ranges.min + 1));
   for (let r = 0; r < count && interior.length; r++) {
     const k = interior[Math.floor(rand() * interior.length)];
     const cx = cellX(g, k % n);
     const cy = cellY(g, Math.floor(k / n));
     const a = rand() * Math.PI;
     const len = radius * (0.35 + rand() * 0.55);
-    ranges.push({
+    chains.push({
       ax: cx - (Math.cos(a) * len) / 2,
       ay: cy - (Math.sin(a) * len) / 2,
       bx: cx + (Math.cos(a) * len) / 2,
@@ -59,7 +66,7 @@ export function generatedElevation(g: Grid, land: Uint8Array, seed: number, radi
       const coastRamp = smoothstep(0, radius * 0.12, inland[k]);
       const plateau = smoothstep(0, radius * 0.45, inland[k]);
       let range = 0;
-      for (const r of ranges) {
+      for (const r of chains) {
         const d = segmentDistance(x, y, r.ax, r.ay, r.bx, r.by);
         range = Math.max(range, r.h * Math.exp(-(d * d) / (2 * r.w * r.w)));
       }

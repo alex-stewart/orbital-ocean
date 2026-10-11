@@ -9,7 +9,10 @@ import { Compass, CursorReadout, ScaleBar } from './Instruments';
 import { Gazetteer } from './Gazetteer';
 import { loadLayers, saveLayers, type Layers } from './layers';
 import { LayersPanel } from './LayersPanel';
+import { QuickSelect } from './QuickSelect';
 import { Timeline } from './Timeline';
+import { findSettlement } from '../../lib/terrain';
+import type { ShippingNetwork } from '../../lib/shipping';
 import '../../styles/atlas.css';
 
 function parseDateParam(v: string | null): number | null {
@@ -29,7 +32,10 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
   const [speed, setSpeed] = useState(30);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const id = params.get('place') ?? params.get('isle');
-    return id && (world.bodies.some((b) => b.id === id) || world.platformIndex.has(id)) ? id : null;
+    if (!id) return null;
+    // Places in the URL: bodies, settlements (body/slug) and platforms. Routes are re-planned, so not kept.
+    const known = world.bodies.some((b) => b.id === id) || world.platformIndex.has(id) || (id.includes('/') && !!findSettlement(world, id));
+    return known ? id : null;
   });
   const [layers, setLayersState] = useState<Layers>(loadLayers);
   const [layersOpen, setLayersOpen] = useState(false);
@@ -38,6 +44,23 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
     saveLayers(l);
   }, []);
   const [followId, setFollowId] = useState<string | null>(null);
+  const [shipping, setShipping] = useState<ShippingNetwork | null>(null);
+  // The timeline starts as one slim row; the choice is remembered in this browser.
+  const [compactTime, setCompactTime] = useState(() => {
+    try {
+      return localStorage.getItem('orbital-ocean.timeline') !== 'full';
+    } catch {
+      return true;
+    }
+  });
+  const setCompact = useCallback((c: boolean) => {
+    setCompactTime(c);
+    try {
+      localStorage.setItem('orbital-ocean.timeline', c ? 'compact' : 'full');
+    } catch {
+      // Not saved; applies for this visit.
+    }
+  }, []);
   const [view, setView] = useState<View | null>(null);
   const [cursor, setCursor] = useState<Point | null>(null);
   // The gazetteer starts closed on narrow screens, where it would cover the chart.
@@ -65,7 +88,8 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
 
   // Keep the date and selection in the URL so a view can be shared.
   useEffect(() => {
-    const id = setTimeout(() => replaceParams({ date: dateParam(t), place: selectedId, isle: null }), 250);
+    const place = selectedId?.startsWith('route:') ? null : selectedId;
+    const id = setTimeout(() => replaceParams({ date: dateParam(t), place, isle: null }), 250);
     return () => clearTimeout(id);
   }, [t, selectedId]);
 
@@ -101,6 +125,14 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
     mapRef.current?.flyTo(id);
   }, [select]);
 
+  // The major island the selection belongs to, for the quick-select strip.
+  const activeBodyId = (() => {
+    if (!selectedId) return null;
+    const id = selectedId.includes('/') ? selectedId.slice(0, selectedId.indexOf('/')) : selectedId;
+    const body = world.bodies.find((b) => b.id === id);
+    return body ? (body.kind === 'moon' ? body.parent!.id : body.id) : null;
+  })();
+
   return (
     <div className="atlas">
       <div className="plate">
@@ -116,6 +148,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             onFollowEnd={() => setFollowId(null)}
             onViewChange={setView}
             onCursor={setCursor}
+            onShipping={setShipping}
           />
           <div className="paper-grain" aria-hidden />
 
@@ -123,13 +156,13 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             <a className="cartouche-back" href="#/">
               ← The Reference Shelf
             </a>
-            <p className="cartouche-plate">Plate I</p>
-            <h1>General Chart of the Orbital Ocean</h1>
-            <p className="cartouche-sub">
-              Polar projection, centred upon the {world.central.name} · North uppermost
-            </p>
+            <h1>
+              <span className="cartouche-plate">Plate I</span> General Chart of the Orbital Ocean
+            </h1>
             <p className="cartouche-authority">By authority of the Holy Purple Bureaucratic Empire</p>
           </header>
+
+          <QuickSelect world={world} activeBodyId={activeBodyId} onPick={focus} />
 
           <Compass />
 
@@ -168,6 +201,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             t={t}
             selectedId={selectedId}
             followId={followId}
+            shipping={layers.shipping ? shipping : null}
             onSelect={select}
             onFocus={focus}
             onFollow={(id) => {
@@ -185,6 +219,8 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
           onPlayingChange={setPlaying}
           speed={speed}
           onSpeedChange={setSpeed}
+          compact={compactTime}
+          onCompactChange={setCompact}
         />
       </div>
     </div>

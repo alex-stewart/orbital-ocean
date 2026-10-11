@@ -6,6 +6,8 @@ import { rng } from '../../lib/random';
 import type { Layers } from './layers';
 import { drawPlatformLabels, drawPlatforms } from './platformLayer';
 import { drawSettlementLabels, drawSettlements, drawTerrain } from './terrainLayer';
+import { drawShipping, type RouteLine } from './shippingLayer';
+import type { ShippingNetwork } from '../../lib/shipping';
 import { findSettlement } from '../../lib/terrain';
 import { bandWash, fonts, theme, washedOcean } from './theme';
 
@@ -23,6 +25,13 @@ export interface RenderInput {
   layers: Layers;
   /** Platform positions at `t`, [x0, y0, x1, y1, …]. */
   platformXY: Float64Array;
+  /** Shipping planned for (about) this date, or null if not planned yet. */
+  shipping: ShippingNetwork | null;
+}
+
+export interface RenderResult {
+  hits: HitTarget[];
+  routes: RouteLine[];
 }
 
 /** On-screen footprint of a body or platform, used for hit testing. */
@@ -33,10 +42,6 @@ export interface HitTarget {
   r: number;
 }
 
-/** Below this on-screen radius a body is drawn as a fixed-size atlas symbol. */
-const SYMBOL_BELOW = 7;
-/** Below this, the true coastline is not drawn at all. */
-const COAST_FROM = 2.5;
 
 function symbolRadius(b: Body): number {
   if (b.kind === 'moon') return 2.6;
@@ -69,7 +74,7 @@ export function circlePath(ctx: CanvasRenderingContext2D, cx: number, cy: number
 
 const fmt = new Intl.NumberFormat('en-GB');
 
-export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget[] {
+export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderResult {
   const { view, width: w, height: h, dpr, world } = s;
   const base = () => ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const toScreen = (p: Point) => worldToScreen(view, w, h, p);
@@ -80,6 +85,8 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   const ringVisible = (r: number) => Math.abs(viewDist - r) < halfDiag;
 
   const { layers } = s;
+  // Below `symbol_below` px a body is a fixed-size symbol; below `coast_from` its coast isn't drawn.
+  const { symbol_below: SYMBOL_BELOW, coast_from: COAST_FROM, reveal } = world.params.display;
   /** Map position of a body or platform by id. */
   const placeAt = (id: string): Point | null => {
     const body = s.positions.get(id);
@@ -166,6 +173,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     }
   }
 
+  // ── Shipping (over the sea, under the land) ─────────────────────────────────
+  const routes = drawShipping(ctx, s, s.shipping, toScreen);
+
   // ── Bodies ────────────────────────────────────────────────────────────────
   const drawn = world.bodies.filter(visibleMoon).map((b) => {
     const p = toScreen(s.positions.get(b.id)!);
@@ -211,22 +221,10 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     withShape(b, p, sr, (shape) => {
       ctx.fillStyle = theme.land;
       ctx.fill(shape.coast);
-      if (sr > 14 && b.kind !== 'moon') {
-        drawTerrain(ctx, s, b, p, sr, shape);
-      } else if (sr > 14) {
-        shape.contours.forEach((c, i) => {
-          ctx.fillStyle = theme.relief[i];
-          ctx.fill(c);
-          if (sr > 60) {
-            ctx.strokeStyle = 'rgba(59, 47, 36, 0.25)';
-            ctx.lineWidth = 0.6 / sr;
-            ctx.stroke(c);
-          }
-        });
-      }
+      if (sr > reveal.relief) drawTerrain(ctx, s, b, p, sr, shape);
       // A selected continent gets a heavier coast (not red: roads are red).
       const selected = b.id === s.selectedId && sr > 40;
-      ctx.strokeStyle = selected && b.kind === 'moon' ? theme.accent : theme.ink;
+      ctx.strokeStyle = theme.ink;
       ctx.lineWidth = (selected ? 2.2 : Math.min(1.4, 0.6 + sr / 40)) / sr;
       ctx.stroke(shape.coast);
     });
@@ -305,7 +303,7 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   const placed = drawLabels(ctx, s, drawn, new Map(bodyHits.map((t) => [t.id, t])));
   drawSettlementLabels(ctx, s, settled.labels, placed);
   drawPlatformLabels(ctx, s, platformHits, placed);
-  return hits;
+  return { hits, routes };
 }
 
 function haloText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string) {

@@ -9,8 +9,9 @@
 #  Periods may be given as `period_years` (calendar years) or `period_days`.
 #  `seed` picks the generated placeholder coastline; change it to reroll.
 #  `description` (optional) is shown in the gazetteer.
-#  `max_elevation` (optional) sets the height of a generated continent's
-#  highest ground in metres; `settlement_density` overrides its band's density.
+#  `max_elevation` (optional) sets the height of a generated body's highest
+#  ground in metres; `settlement_density` overrides its band's density
+#  (see src/parameters/settlements.yaml).
 #  To hand-draw a continent, see docs/designing-continents.md.
 #  `moons:` orbit their continent (same fields as an orbital). Keep each
 #  continent's moons within reach so they clear the neighbouring orbits —
@@ -340,67 +341,23 @@ bands:
 # ─────────────────────────────────────────────────────────────────────────────
 #  OCEAN PLATFORMS
 #
-#  Platforms are generated from these rules rather than listed one by one;
-#  the same seed always produces the same platforms. Each gets a number in
-#  the Imperial register (HPBE-P-… for Imperial platforms, HPBE-X-… for
-#  platforms the Empire registers but does not own).
-#
-#  Motions:
-#    anchored    fixed in place, in water no orbit ever crosses
-#    lane        orbiting the centre in a shared lane between continent orbits
-#    convoy      sharing a continent's orbit, a fixed distance ahead or behind
-#    continent   orbiting a continent, clear of its moons
-#  Nothing is placed where it could ever meet a continent, moon, belt or
-#  another platform; `clearance` is the minimum gap in IL.
+#  Platforms are generated (thousands of them); how many, where and how
+#  spaced is tuned in src/parameters/platforms.yaml. Here is only what kinds
+#  exist and what they're called. Each platform gets a number in the Imperial
+#  register: <register>-<owner code>-<number>, e.g. HPBE-P-01423.
 # ─────────────────────────────────────────────────────────────────────────────
 
-platforms:
-  seed: 1
-  registry: HPBE
-  clearance: 20        # IL kept clear of continents, moons, belts and lanes
-  spacing: 1.5         # IL between neighbouring platforms
+platform_register: HPBE
 
-  # How many platforms each band holds, and what share are anchored.
-  bands:
-    home:     { count: 1100, anchored: 0.7 }
-    second:   { count: 800,  anchored: 0.25 }
-    frontier: { count: 500,  anchored: 0.15 }
+# Size classes, smallest last. Their sizes and shares are parameters.
+platform_classes:
+  - { id: grand,   name: Grand platform, like: a large cathedral }
+  - { id: keep,    name: Keep,           like: a castle keep }
+  - { id: station, name: Station,        like: a manor house }
+  - { id: beacon,  name: Beacon,         like: a lighthouse }
 
-  # How orbital (non-anchored) platforms divide between kinds of orbit.
-  orbital:
-    lane: 0.45
-    convoy: 0.25
-    continent: 0.30
-
-  # Size classes. `radius` in IL (1 IL ≈ 1 km); `reveal` is the zoom, in
-  # pixels per IL, at which the class appears as individual symbols.
-  sizes:
-    - { id: grand,   name: Grand platform, like: a large cathedral, radius: 0.1,   share: 0.06, reveal: 0.12 }
-    - { id: keep,    name: Keep,           like: a castle keep,     radius: 0.05,  share: 0.16, reveal: 0.35 }
-    - { id: station, name: Station,        like: a manor house,     radius: 0.025, share: 0.3,  reveal: 1 }
-    - { id: beacon,  name: Beacon,         like: a lighthouse,      radius: 0.008, share: 0.48, reveal: 3 }
-
-  # Who holds them. `code` is the register letter; `imperial` marks the Empire.
-  owners:
-    - { id: imperial,    name: Holy Purple Bureaucratic Empire, share: 0.88, code: P, imperial: true }
-    - { id: independent, name: Independent,                     share: 0.08, code: X }
-    - { id: derelict,    name: Derelict,                        share: 0.04, code: X }
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  SETTLEMENTS
-#
-#  Continents without a hand-drawn design get generated settlements. How many
-#  depends on the land area and the band: the inner ocean is more densely
-#  settled than the frontier. A design's own settlements always win.
-# ─────────────────────────────────────────────────────────────────────────────
-
-settlements:
-  seed: 1
-  # Settlements per 10,000 IL² of land, by band id.
-  density:
-    home: 9
-    second: 3.5
-    frontier: 1.4
-  # Share of each size. Every continent gets at least a town, and any with
-  # six or more settlements at least one city.
-  mix: { city: 0.06, town: 0.26, village: 0.68 }
+# Who holds platforms. `code` is the register letter; `imperial` marks the Empire.
+platform_owners:
+  - { id: imperial,    name: Holy Purple Bureaucratic Empire, code: P, imperial: true }
+  - { id: independent, name: Independent,                     code: X }
+  - { id: derelict,    name: Derelict,                        code: X }

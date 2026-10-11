@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
-import type { Platform } from '../../lib/platforms';
+import { useMemo, useState, type ReactNode } from 'react';
 import { formatDuration, ordinal, type Calendar } from '../../lib/calendar';
 import { bearingAt, bearingBetween, compassPoint, distance, platformPositions, positionsAt, type Point } from '../../lib/orbits';
-import { bandAt, orbitalDistance, type Body, type World } from '../../lib/world';
-import { continentMap, findSettlement, type Settlement, type SettlementKind } from '../../lib/terrain';
+import type { Platform } from '../../lib/platforms';
+import type { ShippingNetwork, ShippingRoute } from '../../lib/shipping';
+import { continentMap, findSettlement, hasContinentMap, type Settlement, type SettlementKind } from '../../lib/terrain';
 import { designTemplate } from '../../lib/terrain/template';
+import { bandAt, orbitalDistance, type Body, type World } from '../../lib/world';
 
 interface Props {
   open: boolean;
@@ -14,6 +15,7 @@ interface Props {
   t: number;
   selectedId: string | null;
   followId: string | null;
+  shipping: ShippingNetwork | null;
   onSelect(id: string | null): void;
   onFocus(id: string): void;
   onFollow(id: string | null): void;
@@ -21,304 +23,599 @@ interface Props {
 
 const fmt = new Intl.NumberFormat('en-GB');
 const deg = (b: number) => `${Math.round(b).toString().padStart(3, '0')}°`;
+const KIND: Record<SettlementKind, [string, string]> = {
+  city: ['city', 'cities'],
+  town: ['town', 'towns'],
+  village: ['village', 'villages'],
+};
+const count = (n: number, k: SettlementKind) => `${n} ${KIND[k][n === 1 ? 0 : 1]}`;
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
-/** Highest position number in the ocean, e.g. 16. */
-function positionCount(world: World): number {
-  return Math.max(0, ...world.bodies.map((b) => b.position ?? 0), ...world.belts.map((b) => b.position ?? 0));
+/** What a selection id refers to. */
+type Selection =
+  | { type: 'body'; body: Body }
+  | { type: 'settlement'; body: Body; settlement: Settlement }
+  | { type: 'platform'; platform: Platform }
+  | { type: 'route'; route: ShippingRoute | null; id: string }
+  | null;
+
+function resolve(world: World, shipping: ShippingNetwork | null, id: string | null): Selection {
+  if (!id) return null;
+  if (id.startsWith('route:')) return { type: 'route', route: shipping?.routes.find((r) => r.id === id) ?? null, id };
+  const body = world.bodies.find((b) => b.id === id);
+  if (body) return { type: 'body', body };
+  const st = findSettlement(world, id);
+  if (st) return { type: 'settlement', ...st };
+  const i = world.platformIndex.get(id);
+  if (i !== undefined) return { type: 'platform', platform: world.platforms[i] };
+  return null;
 }
 
-function describe(b: Body, world: World): string {
-  if (b.kind === 'central') return 'The central landmass';
-  if (b.kind === 'moon') return `Lesser isle in orbit about ${b.parent!.name}`;
-  return b.position ? `Continent, ${ordinal(b.position)} of ${positionCount(world)} from the centre` : 'Continent';
+function bandOfBody(world: World, b: Body) {
+  return bandAt(world, orbitalDistance(b));
 }
 
 export function Gazetteer(p: Props) {
-  const { world, calendar: cal, t } = p;
-  const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
-  const body = p.selectedId ? world.bodies.find((b) => b.id === p.selectedId) : undefined;
-  const platform = p.selectedId ? world.platforms[world.platformIndex.get(p.selectedId) ?? -1] : undefined;
-  const settled = p.selectedId ? findSettlement(world, p.selectedId) : null;
+  const { world, shipping } = p;
+  const sel = resolve(world, shipping, p.selectedId);
 
-  // Continents and belts together, in order outward from the centre.
-  const index = useMemo(
-    () =>
-      [
-        ...world.bodies
-          .filter((b) => b.kind !== 'moon')
-          .map((b) => ({ kind: 'body' as const, body: b, r: b.orbitRadius, position: b.position })),
-        ...world.belts.map((b) => ({ kind: 'belt' as const, belt: b, r: b.innerRadius, position: b.position })),
-      ].sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity) || a.r - b.r),
-    [world],
-  );
+  // Breadcrumb: Index › body › place.
+  const crumbs: { id: string | null; label: string }[] = [{ id: null, label: 'Index' }];
+  if (sel?.type === 'body') {
+    if (sel.body.kind === 'moon') crumbs.push({ id: sel.body.parent!.id, label: sel.body.parent!.name });
+  } else if (sel?.type === 'settlement') {
+    if (sel.body.kind === 'moon') crumbs.push({ id: sel.body.parent!.id, label: sel.body.parent!.name });
+    crumbs.push({ id: sel.body.id, label: sel.body.name });
+  } else if (sel?.type === 'route' || sel?.type === 'platform') {
+    crumbs.push({ id: null, label: 'Sea' });
+  }
 
   return (
-    <aside className={`gazetteer ${p.open ? 'open' : ''}`} aria-label="Gazetteer">
-      <button className="gazetteer-tab" onClick={p.onToggle} aria-expanded={p.open}>
-        {p.open ? 'Close ›' : '‹ Gazetteer'}
-      </button>
+    <aside className={`gazetteer ${p.open ? 'open' : 'closed'}`} aria-label="Gazetteer">
+      <header className="gz-head">
+        <button className="gz-title" onClick={p.onToggle} aria-expanded={p.open}>
+          <span>Gazetteer</span>
+          <span className="gz-toggle" aria-hidden>
+            {p.open ? '–' : '+'}
+          </span>
+        </button>
+      </header>
       {p.open && (
-        <div className="gazetteer-body">
-          {body ? (
-            <Entry {...p} body={body} positions={positions} cal={cal} />
-          ) : settled ? (
-            <SettlementEntry {...p} body={settled.body} settlement={settled.settlement} />
-          ) : platform ? (
-            <PlatformEntry {...p} platform={platform} positions={positions} cal={cal} />
-          ) : (
-            <>
-              <h2>Index of Places</h2>
-              <p className="hint">In order outward from the centre. Select a place to centre it on the chart.</p>
-              <ul className="index">
-                {index.map((item) =>
-                  item.kind === 'body' ? (
-                    <li key={item.body.id}>
-                      <button onClick={() => p.onFocus(item.body.id)}>
-                        <span className="pos">{item.position ?? ''}</span>
-                        <span>{item.body.name}</span>
-                        <span className="dots" />
-                        <span className="num">
-                          {item.body.kind === 'central' ? '—' : `${fmt.format(item.body.orbitRadius)} ${world.units.abbr}`}
-                        </span>
-                      </button>
-                      {item.body.moons.length > 0 && (
-                        <p className="index-moons">
-                          {item.body.moons.length === 1 ? 'Moon' : 'Moons'}{' '}
-                          {item.body.moons.map((m, i) => (
-                            <span key={m.id}>
-                              {i > 0 && ', '}
-                              <button className="link" onClick={() => p.onFocus(m.id)}>
-                                {m.name.slice(item.body.name.length).trim() || m.name}
-                              </button>
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                    </li>
-                  ) : (
-                    <li key={item.belt.id} className="index-belt">
-                      <span className="pos">{item.position ?? ''}</span>
-                      <span>{item.belt.name}</span>
-                      <span className="dots" />
-                      <span className="num">
-                        {fmt.format(item.belt.innerRadius)}–{fmt.format(item.belt.outerRadius)} {world.units.abbr}
-                      </span>
-                    </li>
-                  ),
-                )}
-              </ul>
-
-              {world.bands.length > 0 && (
-                <>
-                  <h3>The Imperial Bands</h3>
-                  <p className="hint">The Holy Purple Bureaucratic Empire divides the ocean into {world.bands.length} bands.</p>
-                  <dl className="bands">
-                    {world.bands.map((b) => (
-                      <div key={b.id}>
-                        <dt>{b.name}</dt>
-                        <dd>
-                          {b.description}{' '}
-                          <span className="num">
-                            ({fmt.format(b.innerRadius)}–{fmt.format(b.outerRadius)} {world.units.abbr})
-                          </span>
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </>
-              )}
-              <p className="hint edge-note">
-                Beyond {fmt.format(world.oceanRadius)} {world.units.abbr} the ocean ends at {world.edgeName}.
-              </p>
-              {world.platforms.length > 0 && <PlatformIndex world={world} onFocus={p.onFocus} />}
-            </>
+        <>
+          <Search world={world} onFocus={p.onFocus} />
+          {sel && (
+            <nav className="gz-crumbs" aria-label="Breadcrumb">
+              {crumbs.map((c, i) => (
+                <span key={i}>
+                  <button className="link" onClick={() => p.onSelect(c.id)}>
+                    {c.label}
+                  </button>
+                  <span aria-hidden> › </span>
+                </span>
+              ))}
+            </nav>
           )}
-        </div>
+          <div className="gz-body">
+            {!sel && <Index {...p} />}
+            {sel?.type === 'body' && <BodyEntry {...p} body={sel.body} />}
+            {sel?.type === 'settlement' && <SettlementEntry {...p} body={sel.body} settlement={sel.settlement} />}
+            {sel?.type === 'platform' && <PlatformEntry {...p} platform={sel.platform} />}
+            {sel?.type === 'route' && <RouteEntry {...p} route={sel.route} />}
+          </div>
+        </>
       )}
     </aside>
   );
 }
 
-function Entry({
-  world,
-  body,
-  positions,
-  cal,
-  t,
-  followId,
-  onSelect,
-  onFocus,
-  onFollow,
-}: Props & { body: Body; positions: Map<string, { x: number; y: number }>; cal: Calendar }) {
+// ── Building blocks ─────────────────────────────────────────────────────────
+
+function Section({ title, children, open = true, count }: { title: string; children: ReactNode; open?: boolean; count?: number | string }) {
+  return (
+    <details className="gz-section" open={open}>
+      <summary>
+        {title}
+        {count !== undefined && <span className="gz-count">{count}</span>}
+      </summary>
+      <div className="gz-section-body">{children}</div>
+    </details>
+  );
+}
+
+function Facts({ rows }: { rows: [string, ReactNode][] }) {
+  return (
+    <dl className="gz-facts">
+      {rows.map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Links<T extends { id: string; name: string }>({ items, onFocus }: { items: T[]; onFocus(id: string): void }) {
+  return (
+    <>
+      {items.map((x, i) => (
+        <span key={x.id}>
+          {i > 0 && ', '}
+          <button className="link" onClick={() => onFocus(x.id)}>
+            {x.name}
+          </button>
+        </span>
+      ))}
+    </>
+  );
+}
+
+function Head({ title, kind, description }: { title: string; kind: ReactNode; description?: string | null }) {
+  return (
+    <div className="gz-entry-head">
+      <h2>{title}</h2>
+      <p className="gz-kind">{kind}</p>
+      {description && <p className="gz-desc">{description}</p>}
+    </div>
+  );
+}
+
+// ── Search ──────────────────────────────────────────────────────────────────
+
+function Search({ world, onFocus }: { world: World; onFocus(id: string): void }) {
+  const [q, setQ] = useState('');
+  const results = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (query.length < 2) return [];
+    const out: { id: string; label: string; kind: string }[] = [];
+    for (const b of world.bodies)
+      if (b.name.toLowerCase().includes(query)) out.push({ id: b.id, label: b.name, kind: b.kind === 'moon' ? 'moon' : b.kind === 'central' ? 'central landmass' : 'continent' });
+    // Settlements on bodies whose maps are built (all of them, shortly after opening).
+    for (const b of world.bodies) {
+      if (!hasContinentMap(world, b)) continue;
+      for (const s of continentMap(world, b).settlements)
+        if (s.name.toLowerCase().includes(query)) out.push({ id: s.id, label: s.name, kind: `${s.kind} on ${b.name}` });
+    }
+    // Platform register numbers: full or digits only ("1423" → HPBE-…-01423).
+    const digits = query.replace(/\D/g, '');
+    if (digits.length >= 2) {
+      for (const pf of world.platforms) {
+        if (pf.id.toLowerCase().includes(query) || (/^\d+$/.test(query) && pf.id.endsWith(digits.padStart(5, '0')))) {
+          out.push({ id: pf.id, label: pf.id, kind: `${pf.size.name.toLowerCase()}, ${pf.motion}` });
+        }
+        if (out.length > 40) break;
+      }
+    }
+    return out.slice(0, 8);
+  }, [q, world]);
+
+  const go = (id: string) => {
+    onFocus(id);
+    setQ('');
+  };
+
+  return (
+    <div className="gz-search">
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && results[0]) go(results[0].id);
+          if (e.key === 'Escape') setQ('');
+        }}
+        placeholder="Find a place or platform number…"
+        aria-label="Find a place or platform number"
+      />
+      {results.length > 0 && (
+        <ul className="gz-results" role="listbox">
+          {results.map((r) => (
+            <li key={r.id}>
+              <button onClick={() => go(r.id)}>
+                <span>{r.label}</span>
+                <span className="gz-result-kind">{r.kind}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {q.trim().length >= 2 && results.length === 0 && <p className="hint">Nothing by that name.</p>}
+    </div>
+  );
+}
+
+// ── Index ───────────────────────────────────────────────────────────────────
+
+function Index(p: Props) {
+  const [tab, setTab] = useState<'places' | 'sea'>('places');
+  return (
+    <>
+      <div className="gz-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'places'} className={tab === 'places' ? 'active' : ''} onClick={() => setTab('places')}>
+          Places
+        </button>
+        <button role="tab" aria-selected={tab === 'sea'} className={tab === 'sea' ? 'active' : ''} onClick={() => setTab('sea')}>
+          Sea
+        </button>
+      </div>
+      {tab === 'places' ? <PlacesIndex {...p} /> : <SeaIndex {...p} />}
+    </>
+  );
+}
+
+function PlacesIndex({ world, onFocus }: Props) {
+  const majors = world.bodies.filter((b) => b.kind !== 'moon');
+  return (
+    <>
+      {world.bands.map((band) => {
+        const bodies = majors.filter((b) => bandOfBody(world, b)?.id === band.id);
+        const belts = world.belts.filter((bt) => bt.innerRadius >= band.innerRadius && bt.outerRadius <= band.outerRadius);
+        return (
+          <Section key={band.id} title={band.name} count={bodies.length}>
+            {band.description && <p className="hint">{band.description}</p>}
+            <ul className="gz-list">
+              {bodies.map((b) => {
+                const places = hasContinentMap(world, b) ? continentMap(world, b).settlements.length : null;
+                return (
+                  <li key={b.id}>
+                    <button onClick={() => onFocus(b.id)}>
+                      <span className="gz-pos">{b.position ?? ''}</span>
+                      <span className="gz-name">{b.name}</span>
+                      <span className="gz-meta">
+                        {[b.moons.length ? `${b.moons.length} ${b.moons.length === 1 ? 'moon' : 'moons'}` : '', places !== null ? `${places} ${places === 1 ? 'place' : 'places'}` : '']
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {belts.length > 0 && (
+              <p className="hint">
+                Bounded by{' '}
+                {belts.map((bt) => `the ${bt.name} (${fmt.format(bt.innerRadius)}–${fmt.format(bt.outerRadius)} ${world.units.abbr})`).join(' and ')}.
+              </p>
+            )}
+          </Section>
+        );
+      })}
+      <p className="hint">
+        Beyond {fmt.format(world.oceanRadius)} {world.units.abbr} the ocean ends at {world.edgeName}.
+      </p>
+    </>
+  );
+}
+
+function SeaIndex({ world, shipping, onFocus }: Props) {
+  const routes = shipping ? [...shipping.routes].sort((a, b) => b.traffic - a.traffic) : [];
+  const counts = (band: string, anchored: boolean) =>
+    world.platforms.filter((q) => q.band?.id === band && (q.motion === 'anchored') === anchored).length;
+  return (
+    <>
+      <Section title="Imperial shipping" count={routes.length || undefined}>
+        {!shipping ? (
+          <p className="hint">Turn on shipping routes in Layers to plan them for this date.</p>
+        ) : (
+          <>
+            <p className="hint">
+              Cargo routes between {shipping.ports.length} chief ports for this date, calling at {shipping.hubs.size} resupply platforms. Busiest
+              first.
+            </p>
+            <ul className="gz-list">
+              {routes.map((r) => (
+                <li key={r.id}>
+                  <button onClick={() => onFocus(r.id)}>
+                    <span className="gz-name">
+                      {r.from.body.name} ⇄ {r.to.body.name}
+                    </span>
+                    <span className="gz-meta">
+                      {fmt.format(Math.round(r.length))} {world.units.abbr}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {shipping.unreachable.length > 0 && (
+              <p className="hint">
+                {shipping.unreachable.length} wanted {shipping.unreachable.length === 1 ? 'route lies' : 'routes lie'} beyond resupply range on this
+                date.
+              </p>
+            )}
+          </>
+        )}
+      </Section>
+      <Section title="Ocean platforms" count={fmt.format(world.platforms.length)} open={false}>
+        <table className="gz-table">
+          <thead>
+            <tr>
+              <th />
+              <th>Anchored</th>
+              <th>Orbital</th>
+            </tr>
+          </thead>
+          <tbody>
+            {world.bands.map((b) => (
+              <tr key={b.id}>
+                <th>{b.name.replace(/^The /, '')}</th>
+                <td>{fmt.format(counts(b.id, true))}</td>
+                <td>{fmt.format(counts(b.id, false))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="hint">
+          {(world.platformRules?.owners ?? [])
+            .map((o) => `${o.name}: ${fmt.format(world.platforms.filter((q) => q.owner.id === o.id).length)}`)
+            .join(' · ')}
+          . Find one by its register number in the search above.
+        </p>
+      </Section>
+    </>
+  );
+}
+
+// ── Entries ─────────────────────────────────────────────────────────────────
+
+function Actions({ id, followable, followId, onFocus, onFollow }: { id: string; followable: boolean } & Pick<Props, 'followId' | 'onFocus' | 'onFollow'>) {
+  return (
+    <div className="gz-actions">
+      <button onClick={() => onFocus(id)}>Centre on chart</button>
+      {followable && (
+        <button className={followId === id ? 'active' : ''} onClick={() => onFollow(followId === id ? null : id)}>
+          {followId === id ? 'Following' : 'Follow'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function routesFrom(shipping: ShippingNetwork | null, bodyId: string) {
+  return (shipping?.routes ?? []).filter((r) => r.from.body.id === bodyId || r.to.body.id === bodyId).sort((a, b) => b.traffic - a.traffic);
+}
+
+function RouteList({ routes, bodyId, world, onFocus }: { routes: ShippingRoute[]; bodyId: string; world: World; onFocus(id: string): void }) {
+  return (
+    <ul className="gz-list">
+      {routes.map((r) => {
+        const other = r.from.body.id === bodyId ? r.to : r.from;
+        return (
+          <li key={r.id}>
+            <button onClick={() => onFocus(r.id)}>
+              <span className="gz-name">to {other.body.name}</span>
+              <span className="gz-meta">
+                {fmt.format(Math.round(r.length))} {world.units.abbr} · {r.stops.length} {r.stops.length === 1 ? 'stop' : 'stops'}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function downloadTemplate(world: World, body: Body) {
+  const svg = designTemplate(body, continentMap(world, body));
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${body.id}.svg`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect }: Props & { body: Body }) {
   const u = world.units.abbr;
-  const here = positions.get(body.id)!;
-  const others = world.bodies
-    .filter((b) => b.id !== body.id && b.kind !== 'moon')
-    .map((b) => {
-      const there = positions.get(b.id)!;
-      return { b, d: distance(here, there), bearing: bearingBetween(here, there) };
-    })
-    .sort((a, b) => a.d - b.d);
-  const band = bandAt(world, orbitalDistance(body));
+  const map = continentMap(world, body);
+  const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
+  const band = bandOfBody(world, body);
+  const by = (k: SettlementKind) => map.settlements.filter((s) => s.kind === k);
+  const ports = map.settlements.filter((s) => s.port).length;
+  const roadLength = (rank: string) => map.roads.filter((r) => r.rank === rank).reduce((sum, r) => sum + r.length, 0);
+  const navigable = map.rivers.filter((r) => r.navigableFrom >= 0).length;
   const orbiting = world.platforms.filter((q) => q.parent?.id === body.id && q.motion === 'continent').length;
   const convoy = world.platforms.filter((q) => q.companion?.id === body.id).length;
+  const seaRoutes = routesFrom(shipping, body.id);
+  const chief = shipping?.ports.find((pt) => pt.body.id === body.id);
 
-  const rows: [string, string][] = [];
-  if (band) rows.push(['Band', band.name]);
-  if (orbiting || convoy) {
-    rows.push([
-      'Platforms',
-      [orbiting && `${orbiting} in orbit about it`, convoy && `${convoy} in convoy on its orbit`].filter(Boolean).join('; '),
-    ]);
-  }
-  rows.push(
-    ['Breadth', `≈ ${fmt.format(Math.round(body.radius * 2))} ${u}`],
-    ['Area', `≈ ${fmt.format(Math.round((Math.PI * body.radius * body.radius) / 100) * 100)} ${u}²`],
-  );
+  const kind =
+    body.kind === 'central'
+      ? 'The central landmass'
+      : body.kind === 'moon'
+        ? `Moon of ${body.parent!.name}`
+        : `Continent, ${ordinal(body.position ?? 0)} of 16 from the centre`;
+
+  const facts: [string, ReactNode][] = [];
+  if (band) facts.push(['Band', band.name.replace(/^The /, '')]);
+  facts.push(['Breadth', `≈ ${fmt.format(Math.round(body.radius * 2))} ${u}`], ['Highest', `${fmt.format(map.maxElevation)} m`]);
   if (body.parent) {
-    rows.push(
-      ['Orbit', `${fmt.format(body.orbitRadius)} ${u} from ${body.parent.name}`],
-      ['Period', formatDuration(cal, body.periodDays)],
-      ['Circuit', `${fmt.format(Math.round((2 * Math.PI * body.orbitRadius) / body.periodDays))} ${u} per day, clockwise`],
-      ['Bearing now', `${deg(bearingAt(body, t))} ${compassPoint(bearingAt(body, t))} of ${body.parent.name}`],
+    const b = bearingAt(body, t);
+    facts.push(
+      ['Orbit', `${fmt.format(body.orbitRadius)} ${u}, every ${formatDuration(cal, body.periodDays)}`],
+      ['Bearing', `${deg(b)} ${compassPoint(b)} of ${body.parent.name}`],
     );
   }
 
+  const here = positions.get(body.id)!;
+  const others = world.bodies
+    .filter((b) => b.id !== body.id && b.kind !== 'moon')
+    .map((b) => ({ b, d: distance(here, positions.get(b.id)!), bearing: bearingBetween(here, positions.get(b.id)!) }))
+    .sort((a, b) => a.d - b.d);
+
   return (
-    <article className="entry">
-      <button className="entry-back" onClick={() => onSelect(null)}>
-        ‹ Index of Places
-      </button>
-      <h2>{body.name}</h2>
-      <p className="entry-kind">{describe(body, world)}</p>
-      {body.description && <p className="entry-desc">{body.description}</p>}
-      <div className="entry-actions">
-        <button onClick={() => onFocus(body.id)}>Centre on chart</button>
-        <button className={followId === body.id ? 'active' : ''} onClick={() => onFollow(followId === body.id ? null : body.id)}>
-          {followId === body.id ? 'Following' : 'Follow'}
-        </button>
-      </div>
-      <dl className="entry-facts">
-        {rows.map(([k, v]) => (
-          <div key={k}>
-            <dt>{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      {body.moons.length > 0 && (
-        <p className="entry-moons">
-          Attended by{' '}
-          {body.moons.map((m, i) => (
-            <span key={m.id}>
-              {i > 0 && (i === body.moons.length - 1 ? ' and ' : ', ')}
-              <button className="link" onClick={() => onFocus(m.id)}>
-                {m.name}
-              </button>
-            </span>
-          ))}
-          .
+    <article className="gz-entry">
+      <Head title={body.name} kind={kind} description={body.description} />
+      <Actions id={body.id} followable={body.kind !== 'central'} followId={followId} onFocus={onFocus} onFollow={onFollow} />
+      <Facts rows={facts} />
+
+      <Section title="Settlements" count={map.settlements.length}>
+        <p className="gz-line">
+          {(['city', 'town', 'village'] as SettlementKind[]).map((k) => count(by(k).length, k)).join(', ')}
+          {ports ? `; ${ports} with harbours` : ''}.
         </p>
+        {by('city').length > 0 && (
+          <p className="gz-line">
+            <span className="gz-label">Cities</span> <Links items={by('city')} onFocus={onFocus} />
+          </p>
+        )}
+        {by('town').length > 0 && (
+          <p className="gz-line">
+            <span className="gz-label">Towns</span> <Links items={by('town')} onFocus={onFocus} />
+          </p>
+        )}
+        {by('village').length > 0 && (
+          <details className="gz-more">
+            <summary>{count(by('village').length, 'village')}</summary>
+            <p className="gz-line">
+              <Links items={by('village')} onFocus={onFocus} />
+            </p>
+          </details>
+        )}
+      </Section>
+
+      {(chief || seaRoutes.length > 0) && (
+        <Section title="Sea routes" count={seaRoutes.length}>
+          {chief && (
+            <p className="gz-line">
+              <span className="gz-label">Chief port</span>{' '}
+              <button className="link" onClick={() => onFocus(chief.id)}>
+                {chief.settlement.name}
+              </button>
+            </p>
+          )}
+          <RouteList routes={seaRoutes} bodyId={body.id} world={world} onFocus={onFocus} />
+        </Section>
       )}
 
-      {body.kind !== 'moon' && <LandSection world={world} body={body} onFocus={onFocus} />}
+      <Section title="Land and water" open={false}>
+        <Facts
+          rows={[
+            ['Waters', `${map.rivers.length} rivers${navigable ? ` (${navigable} navigable)` : ''}, ${map.lakes.length} ${map.lakes.length === 1 ? 'lake' : 'lakes'}`],
+            [
+              'Roads',
+              (['highway', 'road', 'track'] as const)
+                .filter((r) => roadLength(r) > 0)
+                .map((r) => `${fmt.format(Math.round(roadLength(r)))} ${u} ${r}`)
+                .join(', ') || 'None',
+            ],
+            ['Area', `≈ ${fmt.format(Math.round((Math.PI * body.radius * body.radius) / 100) * 100)} ${u}²`],
+          ]}
+        />
+      </Section>
 
-      <h3>Distances on this date</h3>
-      <p className="hint">Hover another place on the chart to measure to it.</p>
-      <table className="distances">
-        <tbody>
-          {others.map(({ b, d, bearing }) => (
-            <tr key={b.id} onClick={() => onSelect(b.id)}>
-              <th>{b.name}</th>
-              <td>
-                {fmt.format(Math.round(d))} {u}
-              </td>
-              <td className="brg">{deg(bearing)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {body.moons.length > 0 && (
+        <Section title="Moons" count={body.moons.length} open={false}>
+          <p className="gz-line">
+            <Links items={body.moons} onFocus={onFocus} />
+          </p>
+        </Section>
+      )}
+
+      {(orbiting > 0 || convoy > 0) && (
+        <Section title="Platforms" count={orbiting + convoy} open={false}>
+          <p className="gz-line">{[orbiting && `${orbiting} in orbit about it`, convoy && `${convoy} in convoy on its orbit`].filter(Boolean).join('; ')}.</p>
+        </Section>
+      )}
+
+      <Section title="Distances on this date" open={false}>
+        <table className="gz-table">
+          <tbody>
+            {others.map(({ b, d, bearing }) => (
+              <tr key={b.id} onClick={() => onSelect(b.id)}>
+                <th>{b.name}</th>
+                <td>
+                  {fmt.format(Math.round(d))} {u}
+                </td>
+                <td className="gz-dim">{deg(bearing)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="hint">Hover another place on the chart to measure to it.</p>
+      </Section>
+
+      <Section title="Design" open={false}>
+        <p className="gz-line">
+          {map.source === 'designed' ? 'Drawn by hand.' : 'Generated placeholder.'}{' '}
+          <button className="link" onClick={() => downloadTemplate(world, body)}>
+            Download design template
+          </button>
+        </p>
+        {map.warnings.length > 0 && <p className="hint warn">{map.warnings.length} design notes; see the browser console.</p>}
+      </Section>
     </article>
   );
 }
 
-/** Summary of the platform register, with lookup by register number. */
-function PlatformIndex({ world, onFocus }: { world: World; onFocus(id: string): void }) {
-  const [query, setQuery] = useState('');
-  const [missing, setMissing] = useState(false);
-  const count = (band: string, anchored: boolean) =>
-    world.platforms.filter((q) => q.band?.id === band && (q.motion === 'anchored') === anchored).length;
-  const owners = world.platformRules!.owners.map((o) => ({
-    o,
-    n: world.platforms.filter((q) => q.owner.id === o.id).length,
-  }));
+function SettlementEntry({ world, body, settlement: st, shipping, onFocus }: Props & { body: Body; settlement: Settlement }) {
+  const map = continentMap(world, body);
+  const u = world.units.abbr;
+  const name = (id: string | null) => map.settlements.find((x) => x.id === id);
+  const links = map.roads
+    .filter((r) => r.from === st.id || r.to === st.id)
+    .map((r) => ({ r, other: name(r.from === st.id ? r.to : r.from) }))
+    .filter((l) => l.other)
+    .sort((a, b) => a.r.length - b.r.length);
+  const near = map.settlements
+    .filter((x) => x.id !== st.id)
+    .map((x) => ({ x, d: Math.hypot(x.x - st.x, x.y - st.y) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 5);
+  const chief = shipping?.ports.some((pt) => pt.id === st.id);
+  const seaRoutes = chief ? routesFrom(shipping, body.id) : [];
+  const features = [chief ? 'the chief port' : st.port && 'a harbour', st.riverPort && 'a river port', st.river && !st.riverPort && 'on a river'].filter(Boolean);
 
   return (
-    <>
-      <h3>Ocean Platforms</h3>
-      <p className="hint">
-        {fmt.format(world.platforms.length)} platforms in the Imperial register, from beacons to cathedral-sized grand
-        platforms.
-      </p>
-      <table className="register">
-        <thead>
-          <tr>
-            <th />
-            <th>Anchored</th>
-            <th>Orbital</th>
-          </tr>
-        </thead>
-        <tbody>
-          {world.bands.map((b) => (
-            <tr key={b.id}>
-              <th>{b.name.replace(/^The /, '')}</th>
-              <td>{fmt.format(count(b.id, true))}</td>
-              <td>{fmt.format(count(b.id, false))}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="owners">
-        {owners.map(({ o, n }, i) => (
-          <span key={o.id}>
-            {i > 0 && ' · '}
-            {o.name}: {fmt.format(n)}
-          </span>
-        ))}
-      </p>
-      <form
-        className="lookup"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const raw = query.trim().toUpperCase();
-          // Accept the full number or just its digits, e.g. "1423" → HPBE-P-01423.
-          const digits = raw.match(/^\d+$/) ? raw.padStart(5, '0') : null;
-          const id = digits
-            ? world.platforms.find((q) => q.id.endsWith(`-${digits}`))?.id
-            : world.platformIndex.has(raw)
-              ? raw
-              : undefined;
-          setMissing(!id);
-          if (id) onFocus(id);
-        }}
-      >
-        <label htmlFor="register-lookup">Find by register number</label>
-        <div>
-          <input
-            id="register-lookup"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setMissing(false);
-            }}
-            placeholder="HPBE-P-01423"
-            spellCheck={false}
-          />
-          <button type="submit">Find</button>
-        </div>
-        {missing && <p className="hint">No platform with that number is on the register.</p>}
-      </form>
-    </>
+    <article className="gz-entry">
+      <Head
+        title={st.name}
+        kind={`${cap(KIND[st.kind][0])} on ${body.name}${features.length ? `; ${features.join(', ')}` : ''}`}
+      />
+      <Actions id={st.id} followable={false} followId={null} onFocus={onFocus} onFollow={() => undefined} />
+      <Facts
+        rows={[
+          ['Elevation', `${fmt.format(st.elevation)} m`],
+          ['Position', `${fmt.format(Math.round(Math.hypot(st.x, st.y)))} ${u} ${compassPoint(bearingBetween({ x: 0, y: 0 }, st))} of ${body.name}'s centre`],
+        ]}
+      />
+      {links.length > 0 && (
+        <Section title="By road" count={links.length}>
+          <table className="gz-table">
+            <tbody>
+              {links.map(({ r, other }) => (
+                <tr key={`${r.from}-${r.to}`} onClick={() => onFocus(other!.id)}>
+                  <th>{other!.name}</th>
+                  <td>
+                    {fmt.format(Math.round(r.length))} {u}
+                  </td>
+                  <td className="gz-dim">{r.rank}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Section>
+      )}
+      {seaRoutes.length > 0 && (
+        <Section title="Sea routes" count={seaRoutes.length}>
+          <RouteList routes={seaRoutes} bodyId={body.id} world={world} onFocus={onFocus} />
+        </Section>
+      )}
+      <Section title="Nearest settlements" open={!links.length}>
+        <table className="gz-table">
+          <tbody>
+            {near.map(({ x, d }) => (
+              <tr key={x.id} onClick={() => onFocus(x.id)}>
+                <th>{x.name}</th>
+                <td>
+                  {fmt.format(Math.round(d))} {u}
+                </td>
+                <td className="gz-dim">{x.kind}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+    </article>
   );
 }
 
@@ -339,269 +636,120 @@ function describeMotion(p: Platform, world: World, cal: Calendar): string {
   }
 }
 
-function PlatformEntry({
-  world,
-  platform: pf,
-  positions,
-  cal,
-  t,
-  followId,
-  onSelect,
-  onFocus,
-  onFollow,
-}: Props & { platform: Platform; positions: Map<string, Point>; cal: Calendar }) {
+function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect }: Props & { platform: Platform }) {
   const u = world.units.abbr;
-  const here = useMemo(() => {
-    const i = world.platformIndex.get(pf.id)!;
-    const one = platformPositions([world.platforms[i]], t, positions);
+  const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
+  const here = useMemo<Point>(() => {
+    const one = platformPositions([pf], t, positions);
     return { x: one[0], y: one[1] };
-  }, [world, pf, t, positions]);
-  const others = world.bodies
+  }, [pf, t, positions]);
+  const nearest = world.bodies
     .filter((b) => b.kind !== 'moon')
-    .map((b) => {
-      const there = positions.get(b.id)!;
-      return { b, d: distance(here, there), bearing: bearingBetween(here, there) };
-    })
+    .map((b) => ({ b, d: distance(here, positions.get(b.id)!), bearing: bearingBetween(here, positions.get(b.id)!) }))
     .sort((a, b) => a.d - b.d)
-    .slice(0, 6);
+    .slice(0, 5);
+  const onRoutes = (shipping?.routes ?? []).filter((r) => r.stops.includes(pf.id)).sort((a, b) => b.traffic - a.traffic);
   const breadth = pf.size.radius * 2;
 
   return (
-    <article className="entry">
-      <button className="entry-back" onClick={() => onSelect(null)}>
-        ‹ Index of Places
-      </button>
-      <h2>{pf.id}</h2>
-      <p className="entry-kind">
-        {pf.motion === 'anchored' ? 'Anchored' : 'Orbital'} platform · {pf.size.name}
-        {pf.size.like ? `, the size of ${pf.size.like}` : ''}
-      </p>
-      <div className="entry-actions">
-        <button onClick={() => onFocus(pf.id)}>Centre on chart</button>
-        {pf.motion !== 'anchored' && (
-          <button className={followId === pf.id ? 'active' : ''} onClick={() => onFollow(followId === pf.id ? null : pf.id)}>
-            {followId === pf.id ? 'Following' : 'Follow'}
-          </button>
-        )}
-      </div>
-      <dl className="entry-facts">
-        <div>
-          <dt>Held by</dt>
-          <dd>{pf.owner.name}</dd>
-        </div>
-        {pf.band && (
-          <div>
-            <dt>Band</dt>
-            <dd>{pf.band.name}</dd>
-          </div>
-        )}
-        <div>
-          <dt>Breadth</dt>
-          <dd>
-            ≈ {breadth < 1 ? breadth.toFixed(breadth < 0.1 ? 3 : 2) : fmt.format(breadth)} {u}
-          </dd>
-        </div>
-        <div>
-          <dt>Station</dt>
-          <dd>{describeMotion(pf, world, cal)}</dd>
-        </div>
-      </dl>
-
-      <h3>Nearest places on this date</h3>
-      <table className="distances">
-        <tbody>
-          {others.map(({ b, d, bearing }) => (
-            <tr key={b.id} onClick={() => onSelect(b.id)}>
-              <th>{b.name}</th>
-              <td>
-                {fmt.format(Math.round(d))} {u}
-              </td>
-              <td className="brg">{deg(bearing)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <article className="gz-entry">
+      <Head
+        title={pf.id}
+        kind={`${pf.motion === 'anchored' ? 'Anchored' : 'Orbital'} platform · ${pf.size.name}${pf.size.like ? `, the size of ${pf.size.like}` : ''}`}
+      />
+      <Actions id={pf.id} followable={pf.motion !== 'anchored'} followId={followId} onFocus={onFocus} onFollow={onFollow} />
+      <Facts
+        rows={[
+          ['Held by', pf.owner.name],
+          ['Band', pf.band?.name.replace(/^The /, '') ?? '—'],
+          ['Breadth', `≈ ${breadth < 1 ? breadth.toFixed(breadth < 0.1 ? 3 : 2) : fmt.format(breadth)} ${u}`],
+          ['Station', describeMotion(pf, world, cal)],
+        ]}
+      />
+      {onRoutes.length > 0 && (
+        <Section title="Resupplies" count={onRoutes.length}>
+          <ul className="gz-list">
+            {onRoutes.map((r) => (
+              <li key={r.id}>
+                <button onClick={() => onFocus(r.id)}>
+                  <span className="gz-name">
+                    {r.from.body.name} ⇄ {r.to.body.name}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+      <Section title="Nearest places on this date" open={!onRoutes.length}>
+        <table className="gz-table">
+          <tbody>
+            {nearest.map(({ b, d, bearing }) => (
+              <tr key={b.id} onClick={() => onSelect(b.id)}>
+                <th>{b.name}</th>
+                <td>
+                  {fmt.format(Math.round(d))} {u}
+                </td>
+                <td className="gz-dim">{deg(bearing)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
     </article>
   );
 }
 
-const KIND_NAME: Record<SettlementKind, [string, string]> = {
-  city: ['city', 'cities'],
-  town: ['town', 'towns'],
-  village: ['village', 'villages'],
-};
-
-function plural(n: number, kind: SettlementKind) {
-  return `${n} ${KIND_NAME[kind][n === 1 ? 0 : 1]}`;
-}
-
-/** Offer the continent's current map as an SVG to draw over. */
-function downloadTemplate(world: World, body: Body) {
-  const svg = designTemplate(body, continentMap(world, body));
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${body.id}.svg`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/** Terrain, water, roads and settlements of a continent. */
-function LandSection({ world, body, onFocus }: { world: World; body: Body; onFocus(id: string): void }) {
-  const map = continentMap(world, body);
-  const by = (k: SettlementKind) => map.settlements.filter((st) => st.kind === k);
-  const roadLength = (rank: string) => map.roads.filter((r) => r.rank === rank).reduce((sum, r) => sum + r.length, 0);
-  const navigable = map.rivers.filter((r) => r.navigableFrom >= 0).length;
-  const ports = map.settlements.filter((st) => st.port).length;
-  const list = (items: Settlement[]) =>
-    items.map((st, i) => (
-      <span key={st.id}>
-        {i > 0 && ', '}
-        <button className="link" onClick={() => onFocus(st.id)}>
-          {st.name}
-        </button>
-      </span>
-    ));
-
-  return (
-    <>
-      <h3>The land</h3>
-      <dl className="entry-facts">
-        <div>
-          <dt>Highest point</dt>
-          <dd>{fmt.format(map.maxElevation)} m</dd>
-        </div>
-        <div>
-          <dt>Waters</dt>
-          <dd>
-            {map.rivers.length} rivers{navigable ? ` (${navigable} navigable)` : ''}, {map.lakes.length} {map.lakes.length === 1 ? 'lake' : 'lakes'}
-          </dd>
-        </div>
-        <div>
-          <dt>Settlements</dt>
-          <dd>
-            {(['city', 'town', 'village'] as SettlementKind[])
-              .map((k) => plural(by(k).length, k))
-              .join(', ')}
-            {ports ? `; ${ports} with harbours` : ''}
-          </dd>
-        </div>
-        <div>
-          <dt>Roads</dt>
-          <dd>
-            {[
-              ['highway', 'of highway'],
-              ['road', 'of road'],
-              ['track', 'of track'],
-            ]
-              .filter(([r]) => roadLength(r) > 0)
-              .map(([r, label]) => `${fmt.format(Math.round(roadLength(r)))} ${world.units.abbr} ${label}`)
-              .join(', ') || 'None'}
-          </dd>
-        </div>
-      </dl>
-      {by('city').length > 0 && <p className="entry-moons">Cities: {list(by('city'))}.</p>}
-      {by('town').length > 0 && <p className="entry-moons">Towns: {list(by('town'))}.</p>}
-      {by('village').length > 0 && (
-        <details className="villages">
-          <summary>{plural(by('village').length, 'village')}</summary>
-          <p className="entry-moons">{list(by('village'))}.</p>
-        </details>
-      )}
-      <p className="hint map-source">
-        {map.source === 'designed' ? 'Drawn by hand.' : 'Generated placeholder.'}{' '}
-        <button className="link" onClick={() => downloadTemplate(world, body)}>
-          Download design template
-        </button>
-        {map.warnings.length > 0 && <span className="warn"> {map.warnings.length} design notes — see the console.</span>}
-      </p>
-    </>
-  );
-}
-
-function SettlementEntry({
-  world,
-  body,
-  settlement: st,
-  onSelect,
-  onFocus,
-}: Props & { body: Body; settlement: Settlement }) {
-  const map = continentMap(world, body);
+function RouteEntry({ world, route: r, shipping, onFocus }: Props & { route: ShippingRoute | null }) {
   const u = world.units.abbr;
-  const name = (id: string | null) => map.settlements.find((x) => x.id === id);
-  const links = map.roads
-    .filter((r) => r.from === st.id || r.to === st.id)
-    .map((r) => ({ r, other: name(r.from === st.id ? r.to : r.from) }))
-    .filter((l) => l.other)
-    .sort((a, b) => a.r.length - b.r.length);
-  const near = map.settlements
-    .filter((x) => x.id !== st.id)
-    .map((x) => ({ x, d: Math.hypot(x.x - st.x, x.y - st.y) }))
-    .sort((a, b) => a.d - b.d)
-    .slice(0, 5);
-  const features = [
-    st.port && 'a harbour',
-    st.riverPort && 'a river port',
-    st.river && !st.riverPort && 'on a river',
-  ].filter(Boolean);
-
+  if (!r) {
+    return (
+      <article className="gz-entry">
+        <Head title="Route not running" kind="Imperial shipping" />
+        <p className="hint">This route isn't among the busiest on the current date. Pick another from the Sea index.</p>
+      </article>
+    );
+  }
+  const ranked = [...(shipping?.routes ?? [])].sort((a, b) => b.traffic - a.traffic);
+  const rank = ranked.findIndex((x) => x.id === r.id) + 1;
   return (
-    <article className="entry">
-      <button className="entry-back" onClick={() => onSelect(body.id)}>
-        ‹ {body.name}
-      </button>
-      <h2>{st.name}</h2>
-      <p className="entry-kind">
-        {KIND_NAME[st.kind][0][0].toUpperCase() + KIND_NAME[st.kind][0].slice(1)} on {body.name}
-        {features.length ? `, with ${features.join(' and ')}` : ''}
-      </p>
-      <div className="entry-actions">
-        <button onClick={() => onFocus(st.id)}>Centre on chart</button>
-      </div>
-      <dl className="entry-facts">
-        <div>
-          <dt>Elevation</dt>
-          <dd>{fmt.format(st.elevation)} m</dd>
-        </div>
-        <div>
-          <dt>Position</dt>
-          <dd>
-            {fmt.format(Math.round(Math.hypot(st.x, st.y)))} {u} {compassPoint(bearingBetween({ x: 0, y: 0 }, st))} of {body.name}'s centre
-          </dd>
-        </div>
-      </dl>
-      {links.length > 0 && (
-        <>
-          <h3>By road</h3>
-          <table className="distances">
-            <tbody>
-              {links.map(({ r, other }) => (
-                <tr key={`${r.from}-${r.to}`} onClick={() => onFocus(other!.id)}>
-                  <th>{other!.name}</th>
-                  <td>
-                    {fmt.format(Math.round(r.length))} {u}
-                  </td>
-                  <td className="brg">{r.rank}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-      <h3>Nearest settlements</h3>
-      <table className="distances">
-        <tbody>
-          {near.map(({ x, d }) => (
-            <tr key={x.id} onClick={() => onFocus(x.id)}>
-              <th>{x.name}</th>
-              <td>
-                {fmt.format(Math.round(d))} {u}
-              </td>
-              <td className="brg">{x.kind}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <article className="gz-entry">
+      <Head title={`${r.from.body.name} ⇄ ${r.to.body.name}`} kind="Imperial cargo route, as planned for this date" />
+      <Actions id={r.id} followable={false} followId={null} onFocus={onFocus} onFollow={() => undefined} />
+      <Facts
+        rows={[
+          [
+            'Between',
+            <>
+              <button className="link" onClick={() => onFocus(r.from.id)}>
+                {r.from.settlement.name}
+              </button>{' '}
+              and{' '}
+              <button className="link" onClick={() => onFocus(r.to.id)}>
+                {r.to.settlement.name}
+              </button>
+            </>,
+          ],
+          ['Distance', `${fmt.format(Math.round(r.length))} ${u} under sail`],
+          ['Longest leg', `${fmt.format(Math.round(r.longestLeg))} ${u} (limit ${fmt.format(world.params.shipping.resupply_range)})`],
+          ['Traffic', `${rank ? `${ordinal(rank)} busiest of ${ranked.length}` : ''} · ${Math.round(r.traffic * 100)}% of the busiest`],
+        ]}
+      />
+      <Section title="Calls at" count={r.stops.length}>
+        {r.stops.length ? (
+          <ol className="gz-stops">
+            {r.stops.map((id) => (
+              <li key={id}>
+                <button className="link" onClick={() => onFocus(id)}>
+                  {id}
+                </button>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="hint">Sails direct, within one resupply range.</p>
+        )}
+      </Section>
     </article>
   );
 }

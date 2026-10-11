@@ -1,7 +1,8 @@
 import { rng } from '../random';
 import { cellX, cellY, distanceTo, NEIGHBOURS, sample, type Grid } from './grid';
 import type { Hydrology } from './hydrology';
-import { nameMaker } from './names';
+import type { SettlementParams } from '../../parameters/schema';
+import { nameMaker, type NameParts } from './names';
 
 export type SettlementKind = 'city' | 'town' | 'village';
 
@@ -24,11 +25,9 @@ export interface Settlement {
 export interface SettlementRules {
   /** Settlements per 10,000 IL² of land. */
   density: number;
-  mix: Record<SettlementKind, number>;
+  /** The least this body may have: at least one place of this size. */
+  minimum: SettlementKind;
 }
-
-/** Minimum spacing between settlements, by the larger of the two kinds, in IL. */
-export const SPACING: Record<SettlementKind, number> = { city: 30, town: 14, village: 6 };
 
 /**
  * Settlements go where people would put them: low, gentle ground near
@@ -43,6 +42,8 @@ export function placeSettlements(
   water: Hydrology,
   maxElevation: number,
   rules: SettlementRules,
+  p: SettlementParams,
+  names: NameParts,
 ): Omit<Settlement, 'id'>[] {
   const { n } = g;
   const N = n * n;
@@ -50,13 +51,14 @@ export function placeSettlements(
   const landArea = land.reduce((s, v) => s + v, 0) * g.cell * g.cell;
   const total = Math.max(1, Math.round((landArea / 10_000) * rules.density));
   const wanted: Record<SettlementKind, number> = {
-    city: Math.round(total * rules.mix.city),
-    town: Math.round(total * rules.mix.town),
+    city: Math.round(total * p.mix.city),
+    town: Math.round(total * p.mix.town),
     village: 0,
   };
-  // Every continent has at least a town; populous ones at least a city.
-  if (total >= 6) wanted.city = Math.max(1, wanted.city);
-  if (wanted.city + wanted.town === 0) wanted.town = 1;
+  // Populous bodies have at least a city; every body has at least its minimum.
+  if (total >= p.minimum.city_from) wanted.city = Math.max(1, wanted.city);
+  if (rules.minimum === 'city') wanted.city = Math.max(1, wanted.city);
+  if (rules.minimum === 'town' && wanted.city + wanted.town === 0) wanted.town = 1;
   wanted.village = Math.max(0, total - wanted.city - wanted.town);
 
   const sea = new Uint8Array(N);
@@ -97,7 +99,8 @@ export function placeSettlements(
     }
     regionSize.push(size);
   }
-  const minRegion = 40;
+  const minRegion = p.siting.min_region_cells;
+  const st = p.siting;
 
   // Suitability per cell.
   const score = new Float32Array(N);
@@ -113,19 +116,19 @@ export function placeSettlements(
   for (let k = 0; k < N; k++) {
     if (!dry(k) || water.riverMask[k] || regionSize[region[k]] < minRegion) continue;
     const low = 1 - Math.min(1, elevation[k] / (maxElevation * 0.7));
-    const flat = Math.exp(-slopeAt(k) / 0.04);
+    const flat = Math.exp(-slopeAt(k) / st.gentle_slope);
     const fresh = Math.exp(-toWater[k] / (g.cell * 3));
     const coast = Math.exp(-(toSea[k] - g.cell) / (g.cell * 2));
     // Fresh water and good farmland matter most; the coast helps, but only some
     // places sit right on the shore (those become the harbours).
-    const shore = toSea[k] <= g.cell * 1.6 ? 0.8 : 1;
-    score[k] = low * flat * shore * (0.3 + 0.5 * fresh + 0.3 * coast) * (0.5 + 0.5 * rand());
+    const shore = toSea[k] <= g.cell * 1.6 ? st.shore : 1;
+    score[k] = low * flat * shore * (st.base + st.fresh_water * fresh + st.coast * coast) * (0.5 + 0.5 * rand());
   }
 
   const placed: (Omit<Settlement, 'id'> & { k: number })[] = [];
   const fits = (x: number, y: number, kind: SettlementKind) =>
-    placed.every((p) => Math.hypot(p.x - x, p.y - y) >= Math.max(SPACING[kind], SPACING[p.kind]));
-  const makeName = nameMaker(seed);
+    placed.every((q) => Math.hypot(q.x - x, q.y - y) >= Math.max(p.spacing[kind], p.spacing[q.kind]));
+  const makeName = nameMaker(seed, names);
   const candidates = Array.from({ length: N }, (_, k) => k).filter((k) => score[k] > 0);
 
   for (const kind of ['city', 'town', 'village'] as SettlementKind[]) {
@@ -157,7 +160,7 @@ export function placeSettlements(
         x,
         y,
         elevation: Math.round(elevation[k]),
-        port: coastal && (kind !== 'village' || rand() < 0.35),
+        port: coastal && (kind !== 'village' || rand() < p.village_harbour_chance),
         river,
         riverPort,
       });

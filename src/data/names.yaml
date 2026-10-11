@@ -1,0 +1,25 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  PLACE NAMES — the sounds placeholder settlement names are built from
+#
+#  Each body picks a subset of these (its "accent"), so names on one body
+#  sound related. A name is: onset + vowel [+ middle [+ vowel]] + ending.
+#  Endings hint at the site: coast, river or high ground; otherwise plain.
+# ─────────────────────────────────────────────────────────────────────────────
+
+onsets: [b, br, c, cr, d, dr, f, g, gl, h, k, l, m, n, p, r, s, st, t, th, tr, v, w, wr, y, z, ash, el, or, um]
+vowels: [a, e, i, o, u, ae, ea, ia, ou, y]
+middles: [l, n, r, rr, s, th, v, nd, rn, st, lm, sk]
+endings:
+  plain: [wick, ton, by, stead, ham, field, holm, mere, thorpe, ley, worth, ingas, dun, gard]
+  coast: [haven, mouth, hythe, port, sands, wharf]
+  river: [ford, bridge, brook, weir, mill]
+  high: [fell, crag, tor, peak, cairn, scar]
+
+# How names are put together.
+shape:
+  accent_share: 0.5          # share of each list a body uses (its accent)
+  middle_chance: 0.55        # chance of a middle consonant
+  second_vowel_chance: 0.4   # chance of a vowel after the middle
+  # Chance a site-specific ending is used where it applies.
+  site_ending_chance: { coast: 0.6, river: 0.5, high: 0.5 }
+  length: { min: 4, max: 13 }
