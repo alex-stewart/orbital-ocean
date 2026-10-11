@@ -3,7 +3,7 @@ import calendarSource from '../../data/calendar.yaml?raw';
 import worldSource from '../../data/world.yaml?raw';
 import { parseCalendar } from '../calendar';
 import { bearingAt, bearingBetween, bodyPosition, polar, positionsAt } from '../orbits';
-import { parseWorld } from '../world';
+import { bandAt, parseWorld } from '../world';
 
 const cal = parseCalendar(calendarSource);
 const world = parseWorld(worldSource, cal);
@@ -54,5 +54,36 @@ describe('orbits', () => {
     const outer = Math.max(...world.bodies.map((b) => (b.kind === 'isle' ? b.orbitRadius : 0)));
     expect(outer).toBeGreaterThan(9_000);
     expect(outer).toBeLessThan(11_000);
+  });
+
+  it('matches the lore: 13 continents and 2 belts around the Land of the Large', () => {
+    expect(world.central.name).toBe('Land of the Large');
+    expect(world.bodies.filter((b) => b.kind === 'isle')).toHaveLength(13);
+    expect(world.belts.map((b) => b.name)).toEqual(['War Belt', 'Far Belt']);
+    const positions = [
+      world.central.position,
+      ...world.bodies.filter((b) => b.kind === 'isle').map((b) => b.position),
+      ...world.belts.map((b) => b.position),
+    ].sort((a, b) => a! - b!);
+    expect(positions).toEqual(Array.from({ length: 16 }, (_, i) => i + 1));
+  });
+
+  it('keeps every orbit inside the ocean', () => {
+    for (const b of world.bodies) expect(b.orbitRadius + b.radius).toBeLessThan(world.oceanRadius);
+    for (const b of world.belts) expect(b.outerRadius).toBeLessThan(world.oceanRadius);
+  });
+
+  it('divides the ocean into bands bounded by the belts', () => {
+    const [war, far] = world.belts;
+    expect(world.bands.map((b) => [b.innerRadius, b.outerRadius])).toEqual([
+      [0, war.innerRadius],
+      [war.outerRadius, far.innerRadius],
+      [far.outerRadius, world.oceanRadius],
+    ]);
+    const bandOf = (id: string) => bandAt(world, world.bodies.find((b) => b.id === id)!.orbitRadius)?.id;
+    expect(bandOf('holy-purple-homeland')).toBe('home');
+    expect(bandOf('magmarnus')).toBe('second');
+    expect(bandOf('windstones')).toBe('frontier');
+    expect(bandOf('brock')).toBe('frontier');
   });
 });

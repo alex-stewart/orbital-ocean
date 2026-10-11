@@ -1,15 +1,21 @@
 # The Orbital Ocean
 
-A reference library for a worldbuilding project: a flat ocean where lesser isles
-wheel clockwise about a great Central Isle.
+A reference library for a worldbuilding project. The Orbital Ocean is a perfect
+circle surrounded by the Endless Gunk. At its centre sits the Land of the
+Large, the largest known landmass. Thirteen medium continents and two belts of
+tiny islands orbit it clockwise.
 
-The site opens on **the Library**, a shelf of books. Only **the Atlas** is
-written so far; *the Chronicle* and *the Bestiary* are listed as forthcoming.
+The site opens on **the Imperial Reference Shelf**, the library as kept by the
+Holy Purple Bureaucratic Empire. Only **the Atlas** is approved for reading so
+far; *the Chronicle* and *the Bestiary* are pending approval.
 
 ## The Atlas
 
 Plate I is a chart of the whole ocean on a polar projection centred on the
-Central Isle, with north at the top.
+Land of the Large, with north at the top. The Empire's three administrative
+bands are shaded and named on the chart: the Home Band inside the War Belt, the
+Second Band between the belts, and the Frontier Band from the Far Belt to the
+Endless Gunk.
 
 - **Pan:** drag the map. Flicks carry on with inertia.
 - **Zoom:** scroll, pinch, double-click (shift + double-click zooms out), or use the + / − buttons. Press `0` or ◎ to see the whole ocean again.
@@ -30,11 +36,14 @@ Both data files are commented YAML:
 | File | Contents |
 | --- | --- |
 | `src/data/calendar.yaml` | Era name, months and their lengths, intercalary/festival days, weekdays, the date the atlas opens on, and the range of the timeline. |
-| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the Central Isle, orbiting isles and their moons (orbit radius, starting bearing, period, size, coastline seed), and belts of islets. |
+| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description), the belts, and the Empire's bands. |
 
-Everything in them is a placeholder. The current scale: the Central Isle is
-420 IL across (about 138,000 IL², between Iceland and Great Britain), and the
-outermost isle orbits at 10,000 IL, about a quarter of Earth's circumference.
+The roster and the bands follow the lore. Sizes, distances, bearings and
+periods are placeholders, and positions without a name in the lore are called
+"Continent N". The Land of the Large is 420 IL across (about 138,000 IL²,
+between Iceland and Great Britain). Brock, the outermost continent, orbits at
+10,000 IL, about a quarter of Earth's circumference. The ocean ends at
+10,800 IL.
 
 ## Development
 
@@ -60,6 +69,6 @@ src/
   data/            calendar.yaml, world.yaml (edit these)
   lib/             calendar, orbits, world parsing, coastline generator, camera
   books/atlas/     the Atlas: map canvas, renderer, timeline, gazetteer, instruments
-  Library.tsx      the bookshelf home page
+  Library.tsx      the Imperial Reference Shelf (home page)
   books.ts         the list of books on the shelf
 ```

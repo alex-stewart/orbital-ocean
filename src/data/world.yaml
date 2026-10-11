@@ -3,12 +3,16 @@
 #
 #  Distances and radii are in Imperial Leagues (1 IL ≈ 1 km).
 #  Every orbit is circular and runs CLOCKWISE as seen on the map.
+#  `position` is the body's place in the order outward from the centre (1–16).
 #  `bearing` is the compass bearing (0 = north, 90 = east) from the parent
 #  body at day 0 of the calendar epoch.
 #  Periods may be given as `period_years` (calendar years) or `period_days`.
 #  `seed` picks the generated placeholder coastline; change it to reroll.
+#  `description` (optional) is shown in the gazetteer.
+#  Bodies may also carry `moons:` (same fields as an orbital) — none do yet.
 #
-#  Names are placeholders.
+#  Sizes, distances, bearings and periods are placeholders. Positions without
+#  a name in the lore are called "Continent N" until they are named.
 # ─────────────────────────────────────────────────────────────────────────────
 
 units:
@@ -16,116 +20,177 @@ units:
   plural: Imperial Leagues
   abbreviation: IL
 
+# The ocean is a perfect circle; beyond its edge lies the Gunk.
+ocean:
+  radius: 10800
+  edge:
+    name: The Endless Gunk
+
 central:
-  id: central
-  name: The Central Isle
+  id: land-of-the-large
+  name: Land of the Large
+  position: 1
   radius: 210          # ≈ 140,000 IL², between Iceland and Great Britain
   seed: 11
+  description: The largest known landmass, at the centre of the Orbital Ocean.
 
 orbitals:
-  - id: isle-i
-    name: Isle I
-    orbit_radius: 900
+  - id: continent-2
+    name: Continent 2
+    position: 2
+    orbit_radius: 800
     bearing: 40
-    period_years: 0.62
-    radius: 34
-    seed: 101
+    period_years: 0.5
+    radius: 45
+    seed: 102
 
-  - id: isle-ii
-    name: Isle II
-    orbit_radius: 1650
+  - id: holy-purple-homeland
+    name: Holy Purple Homeland
+    position: 3
+    orbit_radius: 1250
     bearing: 200
-    period_years: 1.5
-    radius: 58
-    seed: 202
-    moons:
-      - id: isle-ii-a
-        name: Isle II-a
-        orbit_radius: 150
-        bearing: 0
-        period_days: 21
-        radius: 7
-        seed: 203
+    period_years: 0.98
+    radius: 95
+    seed: 103
+    description: Homeland of the Holy Purple Bureaucratic Empire.
 
-  - id: isle-iii
-    name: Isle III
-    orbit_radius: 2550
+  - id: continent-4
+    name: Continent 4
+    position: 4
+    orbit_radius: 1750
     bearing: 310
-    period_years: 2.9
-    radius: 41
-    seed: 303
+    period_years: 1.62
+    radius: 55
+    seed: 104
 
-  - id: isle-iv
-    name: Isle IV
-    orbit_radius: 3700
+  - id: magmarnus
+    name: Magmarnus
+    position: 6
+    orbit_radius: 2900
     bearing: 115
-    period_years: 5.1
-    radius: 92
-    seed: 404
-    moons:
-      - id: isle-iv-a
-        name: Isle IV-a
-        orbit_radius: 210
-        bearing: 90
-        period_days: 34
-        radius: 11
-        seed: 405
-      - id: isle-iv-b
-        name: Isle IV-b
-        orbit_radius: 330
-        bearing: 250
-        period_days: 66
-        radius: 6
-        seed: 406
+    period_years: 3.45
+    radius: 85
+    seed: 106
 
-  - id: isle-v
-    name: Isle V
-    orbit_radius: 4900
+  - id: continent-7
+    name: Continent 7
+    position: 7
+    orbit_radius: 3450
+    bearing: 255
+    period_years: 4.48
+    radius: 40
+    seed: 107
+
+  - id: mort
+    name: Mort
+    position: 8
+    orbit_radius: 4050
     bearing: 20
-    period_years: 7.8
-    radius: 27
-    seed: 505
-
-  - id: isle-vi
-    name: Isle VI
-    orbit_radius: 6200
-    bearing: 245
-    period_years: 11.1
+    period_years: 5.69
     radius: 70
-    seed: 606
-    moons:
-      - id: isle-vi-a
-        name: Isle VI-a
-        orbit_radius: 190
-        bearing: 160
-        period_days: 40
-        radius: 9
-        seed: 607
+    seed: 108
 
-  - id: isle-vii
-    name: Isle VII
-    orbit_radius: 8700
+  - id: continent-9
+    name: Continent 9
+    position: 9
+    orbit_radius: 4700
     bearing: 160
-    period_years: 18.4
-    radius: 52
-    seed: 707
+    period_years: 7.12
+    radius: 50
+    seed: 109
 
-  - id: isle-viii
-    name: Isle VIII
-    orbit_radius: 10000
+  - id: continent-10
+    name: Continent 10
+    position: 10
+    orbit_radius: 5400
     bearing: 285
-    period_years: 22.7
-    radius: 24
-    seed: 808
+    period_years: 8.77
+    radius: 60
+    seed: 110
 
-# Bands of tiny islets. Each islet's period scales from the inner edge as
+  - id: windstones
+    name: Windstones
+    position: 12
+    orbit_radius: 6900
+    bearing: 70
+    period_years: 12.66
+    radius: 65
+    seed: 112
+
+  - id: continent-13
+    name: Continent 13
+    position: 13
+    orbit_radius: 7600
+    bearing: 225
+    period_years: 14.65
+    radius: 45
+    seed: 113
+
+  - id: continent-14
+    name: Continent 14
+    position: 14
+    orbit_radius: 8350
+    bearing: 335
+    period_years: 16.86
+    radius: 75
+    seed: 114
+
+  - id: continent-15
+    name: Continent 15
+    position: 15
+    orbit_radius: 9150
+    bearing: 135
+    period_years: 19.34
+    radius: 50
+    seed: 115
+
+  - id: brock
+    name: Brock
+    position: 16
+    orbit_radius: 10000
+    bearing: 250
+    period_years: 22.1
+    radius: 80
+    seed: 116
+
+# Bands of tiny islands. Each islet's period scales from the inner edge as
 # (r / inner_radius)^1.5, so the inner edge of a belt overtakes the outer.
 belts:
-  - id: shoals
-    name: The Scattered Shoals
+  - id: war-belt
+    name: War Belt
+    position: 5
     seed: 42
-    count: 420
-    inner_radius: 7250
-    outer_radius: 7850
-    period_years_at_inner: 13.5
+    count: 380
+    inner_radius: 2250
+    outer_radius: 2550
+    period_years_at_inner: 2.36
     islet_radius: [0.6, 4]
+
+  - id: far-belt
+    name: Far Belt
+    position: 11
+    seed: 43
+    count: 460
+    inner_radius: 6000
+    outer_radius: 6400
+    period_years_at_inner: 10.27
+    islet_radius: [0.6, 4]
+
+# The Holy Purple Bureaucratic Empire's division of the ocean.
+# `inner` / `outer` may be a number (IL), a belt id, `centre` or `edge`.
+bands:
+  - id: home
+    name: The Home Band
+    inner: centre
+    outer: war-belt
+    description: The ocean inside of the War Belt.
+  - id: second
+    name: The Second Band
+    inner: war-belt
+    outer: far-belt
+    description: The region between the War Belt and the Far Belt.
+  - id: frontier
+    name: The Frontier Band
+    inner: far-belt
+    outer: edge
+    description: The region between the Far Belt and the Endless Gunk.

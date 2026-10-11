@@ -86,6 +86,14 @@
   padding-top: 4px;
 }
 
+.cartouche-authority {
+  margin: 4px 0 0;
+  font-family: var(--caps);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--imperial);
+}
+
 .cartouche-back {
   display: block;
   text-align: left;
@@ -687,7 +695,8 @@ button.link {
   .cartouche h1 {
     font-size: 1.05rem;
   }
-  .cartouche-sub {
+  .cartouche-sub,
+  .cartouche-authority {
     display: none;
   }
   .compass {
@@ -735,4 +744,48 @@ button.link {
   .timeline-controls .today {
     display: none;
   }
+}
+
+/* ── Lore additions: positions, bands ─────────────────────────────────── */
+
+.index .pos {
+  min-width: 1.4em;
+  font-variant-numeric: tabular-nums oldstyle-nums;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: normal;
+}
+
+.bands {
+  margin: 0;
+}
+
+.bands div {
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--ink-faint);
+}
+
+.bands dt {
+  font-family: var(--caps);
+  letter-spacing: 0.06em;
+  color: var(--imperial);
+}
+
+.bands dd {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.bands .num {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-variant-numeric: oldstyle-nums;
+}
+
+.edge-note {
+  margin-top: 12px;
+}
+
+.entry-desc {
+  margin: -4px 0 12px;
 }

@@ -108,11 +108,14 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
 
           <header className="cartouche">
             <a className="cartouche-back" href="#/">
-              ← The Library
+              ← The Reference Shelf
             </a>
             <p className="cartouche-plate">Plate I</p>
             <h1>General Chart of the Orbital Ocean</h1>
-            <p className="cartouche-sub">Polar projection, centred upon the Central Isle · North uppermost</p>
+            <p className="cartouche-sub">
+              Polar projection, centred upon the {world.central.name} · North uppermost
+            </p>
+            <p className="cartouche-authority">By authority of the Holy Purple Bureaucratic Empire</p>
           </header>
 
           <Compass />

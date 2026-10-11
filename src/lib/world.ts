@@ -18,6 +18,9 @@ export interface Body {
   /** Orbital period in days (Infinity for the central isle). */
   periodDays: number;
   moons: Body[];
+  /** Place in the order outward from the centre, if given. */
+  position: number | null;
+  description: string | null;
 }
 
 export interface Islet {
@@ -30,18 +33,32 @@ export interface Islet {
 export interface Belt {
   id: string;
   name: string;
+  position: number | null;
   innerRadius: number;
   outerRadius: number;
   islets: Islet[];
 }
 
+/** An administrative ring of the ocean, between two radii. */
+export interface Band {
+  id: string;
+  name: string;
+  innerRadius: number;
+  outerRadius: number;
+  description: string | null;
+}
+
 export interface World {
   units: { name: string; plural: string; abbr: string };
+  /** Radius of the ocean's circular edge, IL. */
+  oceanRadius: number;
+  edgeName: string;
   central: Body;
   /** Every body in drawing order: central, isles, moons. */
   bodies: Body[];
   belts: Belt[];
-  /** Radius of the outermost orbit or belt, IL. */
+  bands: Band[];
+  /** Radius of the whole chart (the ocean's edge), IL. */
   extent: number;
 }
 
@@ -54,16 +71,22 @@ interface RawBody {
   bearing?: number;
   period_years?: number;
   period_days?: number;
+  position?: number;
+  description?: string;
   moons?: RawBody[];
 }
 
+type BandLimit = number | 'centre' | 'edge' | string;
+
 interface RawWorld {
   units?: { name?: string; plural?: string; abbreviation?: string };
+  ocean?: { radius?: number; edge?: { name?: string } };
   central: RawBody;
   orbitals?: RawBody[];
   belts?: {
     id: string;
     name?: string;
+    position?: number;
     seed?: number;
     count: number;
     inner_radius: number;
@@ -71,6 +94,7 @@ interface RawWorld {
     period_years_at_inner: number;
     islet_radius?: [number, number];
   }[];
+  bands?: { id: string; name?: string; inner: BandLimit; outer: BandLimit; description?: string }[];
 }
 
 function hash(s: string): number {
@@ -100,6 +124,8 @@ export function parseWorld(source: string, cal: Calendar): World {
       bearing: r.bearing ?? 0,
       periodDays,
       moons: [],
+      position: r.position ?? null,
+      description: r.description ?? null,
     };
     body.moons = (r.moons ?? []).map((m) => toBody(m, 'moon', body));
     return body;
@@ -123,14 +149,40 @@ export function parseWorld(source: string, cal: Calendar): World {
         radius: rMin + Math.pow(rand(), 3) * (rMax - rMin),
       };
     });
-    return { id: b.id, name: b.name ?? b.id, innerRadius: b.inner_radius, outerRadius: b.outer_radius, islets };
+    return {
+      id: b.id,
+      name: b.name ?? b.id,
+      position: b.position ?? null,
+      innerRadius: b.inner_radius,
+      outerRadius: b.outer_radius,
+      islets,
+    };
   });
 
-  const extent = Math.max(
+  const outermost = Math.max(
     central.radius,
     ...isles.map((i) => i.orbitRadius + i.radius + Math.max(0, ...i.moons.map((m) => m.orbitRadius))),
     ...belts.map((b) => b.outerRadius),
   );
+  const oceanRadius = raw.ocean?.radius ?? outermost * 1.08;
+  if (oceanRadius < outermost) throw new Error('world.yaml: ocean.radius is smaller than the outermost orbit');
+
+  // A band limit names a belt (its near edge is used), the centre, the edge, or a radius.
+  const limit = (v: BandLimit, side: 'inner' | 'outer', bandId: string): number => {
+    if (typeof v === 'number') return v;
+    if (v === 'centre') return 0;
+    if (v === 'edge') return oceanRadius;
+    const belt = belts.find((b) => b.id === v);
+    if (!belt) throw new Error(`world.yaml: band ${bandId} refers to unknown belt "${v}"`);
+    return side === 'inner' ? belt.outerRadius : belt.innerRadius;
+  };
+  const bands: Band[] = (raw.bands ?? []).map((b) => ({
+    id: b.id,
+    name: b.name ?? b.id,
+    innerRadius: limit(b.inner, 'inner', b.id),
+    outerRadius: limit(b.outer, 'outer', b.id),
+    description: b.description ?? null,
+  }));
 
   return {
     units: {
@@ -138,9 +190,22 @@ export function parseWorld(source: string, cal: Calendar): World {
       plural: raw.units?.plural ?? raw.units?.name ?? 'Leagues',
       abbr: raw.units?.abbreviation ?? 'L',
     },
+    oceanRadius,
+    edgeName: raw.ocean?.edge?.name ?? 'The Edge',
     central,
     bodies,
     belts,
-    extent,
+    bands,
+    extent: oceanRadius,
   };
+}
+
+/** The band containing a distance from the centre, if any. */
+export function bandAt(world: World, r: number): Band | null {
+  return world.bands.find((b) => r >= b.innerRadius && r < b.outerRadius) ?? null;
+}
+
+/** Distance of a body's orbit from the centre (a moon uses its parent's). */
+export function orbitalDistance(b: Body): number {
+  return b.parent?.parent ? b.parent.orbitRadius : b.orbitRadius;
 }
