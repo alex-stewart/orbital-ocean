@@ -1006,3 +1006,20 @@ button.link {
   font-size: inherit;
   color: inherit;
 }
+
+/* ── Continents: land section ───────────────────────────────────────────── */
+
+.villages summary {
+  cursor: pointer;
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+.map-source {
+  margin-top: 10px;
+}
+
+.map-source .warn {
+  color: var(--accent);
+}

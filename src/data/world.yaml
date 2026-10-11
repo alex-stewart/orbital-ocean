@@ -9,6 +9,9 @@
 #  Periods may be given as `period_years` (calendar years) or `period_days`.
 #  `seed` picks the generated placeholder coastline; change it to reroll.
 #  `description` (optional) is shown in the gazetteer.
+#  `max_elevation` (optional) sets the height of a generated continent's
+#  highest ground in metres; `settlement_density` overrides its band's density.
+#  To hand-draw a continent, see docs/designing-continents.md.
 #  `moons:` orbit their continent (same fields as an orbital). Keep each
 #  continent's moons within reach so they clear the neighbouring orbits —
 #  the tests check this.
@@ -382,3 +385,22 @@ platforms:
     - { id: imperial,    name: Holy Purple Bureaucratic Empire, share: 0.88, code: P, imperial: true }
     - { id: independent, name: Independent,                     share: 0.08, code: X }
     - { id: derelict,    name: Derelict,                        share: 0.04, code: X }
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  SETTLEMENTS
+#
+#  Continents without a hand-drawn design get generated settlements. How many
+#  depends on the land area and the band: the inner ocean is more densely
+#  settled than the frontier. A design's own settlements always win.
+# ─────────────────────────────────────────────────────────────────────────────
+
+settlements:
+  seed: 1
+  # Settlements per 10,000 IL² of land, by band id.
+  density:
+    home: 9
+    second: 3.5
+    frontier: 1.4
+  # Share of each size. Every continent gets at least a town, and any with
+  # six or more settlements at least one city.
+  mix: { city: 0.06, town: 0.26, village: 0.68 }

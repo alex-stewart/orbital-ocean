@@ -3,6 +3,8 @@ import type { Platform } from '../../lib/platforms';
 import { formatDuration, ordinal, type Calendar } from '../../lib/calendar';
 import { bearingAt, bearingBetween, compassPoint, distance, platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import { bandAt, orbitalDistance, type Body, type World } from '../../lib/world';
+import { continentMap, findSettlement, type Settlement, type SettlementKind } from '../../lib/terrain';
+import { designTemplate } from '../../lib/terrain/template';
 
 interface Props {
   open: boolean;
@@ -36,6 +38,7 @@ export function Gazetteer(p: Props) {
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
   const body = p.selectedId ? world.bodies.find((b) => b.id === p.selectedId) : undefined;
   const platform = p.selectedId ? world.platforms[world.platformIndex.get(p.selectedId) ?? -1] : undefined;
+  const settled = p.selectedId ? findSettlement(world, p.selectedId) : null;
 
   // Continents and belts together, in order outward from the centre.
   const index = useMemo(
@@ -58,6 +61,8 @@ export function Gazetteer(p: Props) {
         <div className="gazetteer-body">
           {body ? (
             <Entry {...p} body={body} positions={positions} cal={cal} />
+          ) : settled ? (
+            <SettlementEntry {...p} body={settled.body} settlement={settled.settlement} />
           ) : platform ? (
             <PlatformEntry {...p} platform={platform} positions={positions} cal={cal} />
           ) : (
@@ -215,6 +220,8 @@ function Entry({
           .
         </p>
       )}
+
+      {body.kind !== 'moon' && <LandSection world={world} body={body} onFocus={onFocus} />}
 
       <h3>Distances on this date</h3>
       <p className="hint">Hover another place on the chart to measure to it.</p>
@@ -410,6 +417,187 @@ function PlatformEntry({
                 {fmt.format(Math.round(d))} {u}
               </td>
               <td className="brg">{deg(bearing)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </article>
+  );
+}
+
+const KIND_NAME: Record<SettlementKind, [string, string]> = {
+  city: ['city', 'cities'],
+  town: ['town', 'towns'],
+  village: ['village', 'villages'],
+};
+
+function plural(n: number, kind: SettlementKind) {
+  return `${n} ${KIND_NAME[kind][n === 1 ? 0 : 1]}`;
+}
+
+/** Offer the continent's current map as an SVG to draw over. */
+function downloadTemplate(world: World, body: Body) {
+  const svg = designTemplate(body, continentMap(world, body));
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${body.id}.svg`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Terrain, water, roads and settlements of a continent. */
+function LandSection({ world, body, onFocus }: { world: World; body: Body; onFocus(id: string): void }) {
+  const map = continentMap(world, body);
+  const by = (k: SettlementKind) => map.settlements.filter((st) => st.kind === k);
+  const roadLength = (rank: string) => map.roads.filter((r) => r.rank === rank).reduce((sum, r) => sum + r.length, 0);
+  const navigable = map.rivers.filter((r) => r.navigableFrom >= 0).length;
+  const ports = map.settlements.filter((st) => st.port).length;
+  const list = (items: Settlement[]) =>
+    items.map((st, i) => (
+      <span key={st.id}>
+        {i > 0 && ', '}
+        <button className="link" onClick={() => onFocus(st.id)}>
+          {st.name}
+        </button>
+      </span>
+    ));
+
+  return (
+    <>
+      <h3>The land</h3>
+      <dl className="entry-facts">
+        <div>
+          <dt>Highest point</dt>
+          <dd>{fmt.format(map.maxElevation)} m</dd>
+        </div>
+        <div>
+          <dt>Waters</dt>
+          <dd>
+            {map.rivers.length} rivers{navigable ? ` (${navigable} navigable)` : ''}, {map.lakes.length} {map.lakes.length === 1 ? 'lake' : 'lakes'}
+          </dd>
+        </div>
+        <div>
+          <dt>Settlements</dt>
+          <dd>
+            {(['city', 'town', 'village'] as SettlementKind[])
+              .map((k) => plural(by(k).length, k))
+              .join(', ')}
+            {ports ? `; ${ports} with harbours` : ''}
+          </dd>
+        </div>
+        <div>
+          <dt>Roads</dt>
+          <dd>
+            {[
+              ['highway', 'of highway'],
+              ['road', 'of road'],
+              ['track', 'of track'],
+            ]
+              .filter(([r]) => roadLength(r) > 0)
+              .map(([r, label]) => `${fmt.format(Math.round(roadLength(r)))} ${world.units.abbr} ${label}`)
+              .join(', ') || 'None'}
+          </dd>
+        </div>
+      </dl>
+      {by('city').length > 0 && <p className="entry-moons">Cities: {list(by('city'))}.</p>}
+      {by('town').length > 0 && <p className="entry-moons">Towns: {list(by('town'))}.</p>}
+      {by('village').length > 0 && (
+        <details className="villages">
+          <summary>{plural(by('village').length, 'village')}</summary>
+          <p className="entry-moons">{list(by('village'))}.</p>
+        </details>
+      )}
+      <p className="hint map-source">
+        {map.source === 'designed' ? 'Drawn by hand.' : 'Generated placeholder.'}{' '}
+        <button className="link" onClick={() => downloadTemplate(world, body)}>
+          Download design template
+        </button>
+        {map.warnings.length > 0 && <span className="warn"> {map.warnings.length} design notes — see the console.</span>}
+      </p>
+    </>
+  );
+}
+
+function SettlementEntry({
+  world,
+  body,
+  settlement: st,
+  onSelect,
+  onFocus,
+}: Props & { body: Body; settlement: Settlement }) {
+  const map = continentMap(world, body);
+  const u = world.units.abbr;
+  const name = (id: string | null) => map.settlements.find((x) => x.id === id);
+  const links = map.roads
+    .filter((r) => r.from === st.id || r.to === st.id)
+    .map((r) => ({ r, other: name(r.from === st.id ? r.to : r.from) }))
+    .filter((l) => l.other)
+    .sort((a, b) => a.r.length - b.r.length);
+  const near = map.settlements
+    .filter((x) => x.id !== st.id)
+    .map((x) => ({ x, d: Math.hypot(x.x - st.x, x.y - st.y) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 5);
+  const features = [
+    st.port && 'a harbour',
+    st.riverPort && 'a river port',
+    st.river && !st.riverPort && 'on a river',
+  ].filter(Boolean);
+
+  return (
+    <article className="entry">
+      <button className="entry-back" onClick={() => onSelect(body.id)}>
+        ‹ {body.name}
+      </button>
+      <h2>{st.name}</h2>
+      <p className="entry-kind">
+        {KIND_NAME[st.kind][0][0].toUpperCase() + KIND_NAME[st.kind][0].slice(1)} on {body.name}
+        {features.length ? `, with ${features.join(' and ')}` : ''}
+      </p>
+      <div className="entry-actions">
+        <button onClick={() => onFocus(st.id)}>Centre on chart</button>
+      </div>
+      <dl className="entry-facts">
+        <div>
+          <dt>Elevation</dt>
+          <dd>{fmt.format(st.elevation)} m</dd>
+        </div>
+        <div>
+          <dt>Position</dt>
+          <dd>
+            {fmt.format(Math.round(Math.hypot(st.x, st.y)))} {u} {compassPoint(bearingBetween({ x: 0, y: 0 }, st))} of {body.name}'s centre
+          </dd>
+        </div>
+      </dl>
+      {links.length > 0 && (
+        <>
+          <h3>By road</h3>
+          <table className="distances">
+            <tbody>
+              {links.map(({ r, other }) => (
+                <tr key={`${r.from}-${r.to}`} onClick={() => onFocus(other!.id)}>
+                  <th>{other!.name}</th>
+                  <td>
+                    {fmt.format(Math.round(r.length))} {u}
+                  </td>
+                  <td className="brg">{r.rank}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      <h3>Nearest settlements</h3>
+      <table className="distances">
+        <tbody>
+          {near.map(({ x, d }) => (
+            <tr key={x.id} onClick={() => onFocus(x.id)}>
+              <th>{x.name}</th>
+              <td>
+                {fmt.format(Math.round(d))} {u}
+              </td>
+              <td className="brg">{x.kind}</td>
             </tr>
           ))}
         </tbody>

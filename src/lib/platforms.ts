@@ -76,8 +76,8 @@ export interface RawPlatformConfig {
 /** Furthest any satellite of a body reaches from it, including the body itself. */
 export function reach(b: Body, rings: { radius: number }[] = []): number {
   return Math.max(
-    b.radius,
-    ...b.moons.map((m) => m.orbitRadius + m.radius),
+    b.outerRadius,
+    ...b.moons.map((m) => m.orbitRadius + m.outerRadius),
     ...rings.map((r) => r.radius),
   );
 }
@@ -165,12 +165,12 @@ export function generatePlatforms(
   const rings = new Map<string, { radius: number; periodDays: number }[]>();
   for (const c of continents) {
     const blocked: [number, number][] = c.moons.map((m) => [
-      m.orbitRadius - m.radius - clearance,
-      m.orbitRadius + m.radius + clearance,
+      m.orbitRadius - m.outerRadius - clearance,
+      m.orbitRadius + m.outerRadius + clearance,
     ]);
-    const lo = c.radius + clearance;
-    // A moonless continent keeps its platforms close, within ~1.6× its radius.
-    const hi = c.moons.length ? reach(c) - clearance : c.radius * 1.6 + clearance;
+    const lo = c.outerRadius + clearance;
+    // A moonless continent keeps its platforms close, within ~1.3× its coast.
+    const hi = c.moons.length ? reach(c) - clearance : c.outerRadius * 1.3 + clearance;
     const out: { radius: number; periodDays: number }[] = [];
     for (const [a, b] of freeIntervals(blocked, lo, hi)) {
       if (b - a < 4) continue;

@@ -1,7 +1,10 @@
 import yaml from 'js-yaml';
 import type { Calendar } from './calendar';
 import { generatePlatforms, type Platform, type PlatformRules, type RawPlatformConfig } from './platforms';
+import { coastlinePoints, coastOptions } from './coastline';
 import { rng } from './random';
+import { parseDesign, type ContinentDesign } from './terrain/design';
+import type { SettlementConfig } from './terrain';
 
 export type BodyKind = 'central' | 'isle' | 'moon';
 
@@ -22,6 +25,14 @@ export interface Body {
   /** Place in the order outward from the centre, if given. */
   position: number | null;
   description: string | null;
+  /** Coastline rings, IL from the body's centre (designed or generated). */
+  coast: number[][];
+  /** Furthest any coast reaches from the centre, IL (≥ the nominal radius's shape). */
+  outerRadius: number;
+  /** Height of the highest ground for generated terrain, metres (null: by size). */
+  maxElevation: number | null;
+  /** Settlements per 10,000 IL² of land, overriding the band's density. */
+  settlementDensity: number | null;
 }
 
 export interface Islet {
@@ -66,6 +77,9 @@ export interface World {
   platformRules: PlatformRules | null;
   /** Radius of the whole chart (the ocean's edge), IL. */
   extent: number;
+  /** Hand-drawn continent designs, by body id. */
+  designs: Map<string, ContinentDesign>;
+  settlementConfig: SettlementConfig | null;
 }
 
 interface RawBody {
@@ -79,6 +93,8 @@ interface RawBody {
   period_days?: number;
   position?: number;
   description?: string;
+  max_elevation?: number;
+  settlement_density?: number;
   moons?: RawBody[];
 }
 
@@ -102,6 +118,11 @@ interface RawWorld {
   }[];
   bands?: { id: string; name?: string; inner: BandLimit; outer: BandLimit; description?: string }[];
   platforms?: RawPlatformConfig;
+  settlements?: {
+    seed?: number;
+    density?: Record<string, number>;
+    mix?: { city?: number; town?: number; village?: number };
+  };
 }
 
 function hash(s: string): number {
@@ -110,9 +131,13 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
-export function parseWorld(source: string, cal: Calendar): World {
+/**
+ * @param designSources hand-drawn continent SVGs by body id (src/data/continents/<id>.svg)
+ */
+export function parseWorld(source: string, cal: Calendar, designSources: Record<string, string> = {}): World {
   const raw = yaml.load(source) as RawWorld;
   if (!raw?.central) throw new Error('world.yaml: `central` is required');
+  const designs = new Map(Object.entries(designSources).map(([id, svg]) => [id, parseDesign(svg, `continents/${id}.svg`)]));
 
   const toBody = (r: RawBody, kind: BodyKind, parent: Body | null): Body => {
     let periodDays = Infinity;
@@ -133,7 +158,26 @@ export function parseWorld(source: string, cal: Calendar): World {
       moons: [],
       position: r.position ?? null,
       description: r.description ?? null,
+      coast: [],
+      outerRadius: r.radius,
+      maxElevation: r.max_elevation ?? null,
+      settlementDensity: r.settlement_density ?? null,
     };
+    // Coastline: the hand-drawn one if there is a design, else generated from the seed.
+    const design = designs.get(r.id);
+    if (design) {
+      body.coast = design.coast;
+    } else {
+      const unit = coastlinePoints(body.seed, coastOptions(kind));
+      body.coast = [Array.from(unit, (v) => v * r.radius)];
+    }
+    body.outerRadius = Math.max(...body.coast.flatMap((ring) => ring.filter((_, i) => i % 2 === 0).map((x, i) => Math.hypot(x, ring[i * 2 + 1]))));
+    if (design && body.outerRadius > r.radius * 1.6) {
+      throw new Error(
+        `continents/${r.id}.svg: the coast reaches ${Math.round(body.outerRadius)} IL from the centre, but ${r.id} has radius ${r.radius}. ` +
+          `Keep the drawing within the guide circle, or raise its radius in world.yaml.`,
+      );
+    }
     body.moons = (r.moons ?? []).map((m) => toBody(m, 'moon', body));
     return body;
   };
@@ -141,6 +185,11 @@ export function parseWorld(source: string, cal: Calendar): World {
   const central = toBody(raw.central, 'central', null);
   const isles = (raw.orbitals ?? []).map((o) => toBody(o, 'isle', central));
   const bodies = [central, ...isles, ...central.moons, ...isles.flatMap((i) => i.moons)];
+  for (const id of designs.keys()) {
+    if (!bodies.some((b) => b.id === id && b.kind !== 'moon')) {
+      throw new Error(`continents/${id}.svg: no continent with id "${id}" in world.yaml`);
+    }
+  }
 
   const belts: Belt[] = (raw.belts ?? []).map((b) => {
     const rand = rng(b.seed ?? hash(b.id));
@@ -215,6 +264,14 @@ export function parseWorld(source: string, cal: Calendar): World {
     platformIndex: new Map(platforms.map((p, i) => [p.id, i])),
     platformRules,
     extent: oceanRadius,
+    designs,
+    settlementConfig: raw.settlements
+      ? {
+          seed: raw.settlements.seed ?? 1,
+          density: raw.settlements.density ?? {},
+          mix: { city: 0.06, town: 0.26, village: 0.68, ...raw.settlements.mix },
+        }
+      : null,
   };
 }
 

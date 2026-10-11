@@ -1,10 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { screenToWorld, zoomAbout, type View } from '../../lib/camera';
-import { generateIsland, type IslandShape } from '../../lib/coastline';
+import { coastOptions, generateIsland, shapeFromPolygons, type IslandShape } from '../../lib/coastline';
+import { continentMap, findSettlement, mappedBodies } from '../../lib/terrain';
 import { platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { World } from '../../lib/world';
 import type { Layers } from './layers';
 import { render, type HitTarget } from './render';
+import { REVEAL } from './terrainLayer';
 
 export interface AtlasMapHandle {
   zoomBy(factor: number): void;
@@ -38,8 +40,13 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   const shapes = useMemo(() => {
     const m = new Map<string, IslandShape>();
     for (const b of world.bodies) {
-      const central = b.kind === 'central';
-      m.set(b.id, generateIsland(b.seed, { roughness: central ? 0.22 : 0.42, resolution: central ? 2048 : 720 }));
+      // Moons keep their decorative relief; continents draw real terrain inside their coast.
+      m.set(
+        b.id,
+        b.kind === 'moon'
+          ? generateIsland(b.seed, coastOptions('moon'))
+          : shapeFromPolygons(b.coast.map((ring) => ring.map((v) => v / b.radius))),
+      );
     }
     return m;
   }, [world]);
@@ -48,6 +55,11 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   const placeAt = (id: string, positions: Map<string, Point>, platformXY: Float64Array): Point | null => {
     const body = positions.get(id);
     if (body) return body;
+    const settled = findSettlement(world, id);
+    if (settled) {
+      const c = positions.get(settled.body.id)!;
+      return { x: c.x + settled.settlement.x, y: c.y + settled.settlement.y };
+    }
     const i = world.platformIndex.get(id);
     return i === undefined ? null : { x: platformXY[i * 2], y: platformXY[i * 2 + 1] };
   };
@@ -187,6 +199,14 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     if (!p) return;
     s.anchor = null;
     s.velocity = { x: 0, y: 0 };
+    const settled = findSettlement(world, id);
+    if (settled) {
+      // Close enough that places of this size are showing, and about 80 IL across at least.
+      const reveal = REVEAL[settled.settlement.kind] * 1.15;
+      s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.max(Math.min(s.w, s.h) / 80, reveal / settled.body.radius)) };
+      requestFrame();
+      return;
+    }
     const platform = world.platforms[world.platformIndex.get(id) ?? -1];
     if (platform) {
       // Show the platform among its neighbours: about 40 IL across.
@@ -221,6 +241,24 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     },
     flyTo,
   }));
+
+  // Build continent maps in idle moments, largest first, so zooming in never waits.
+  useEffect(() => {
+    const queue = [...mappedBodies(world)].sort((a, b) => b.radius - a.radius);
+    // Safari lacks requestIdleCallback; a short timeout is close enough.
+    const idle = (cb: () => void) =>
+      typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(cb, { timeout: 2000 }) : setTimeout(cb, 50);
+    let cancelled = false;
+    const next = () => {
+      if (cancelled || !queue.length) return;
+      continentMap(world, queue.shift()!);
+      idle(next);
+    };
+    idle(next);
+    return () => {
+      cancelled = true;
+    };
+  }, [world]);
 
   // Canvas sizing.
   useEffect(() => {
@@ -269,15 +307,13 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       const r = canvas.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
+    // The smallest target under the pointer wins, so a town beats the continent it stands on.
     const hitAt = (x: number, y: number) => {
       let best: HitTarget | null = null;
-      let bestD = Infinity;
       for (const h of st.current.hits) {
         const d = Math.hypot(h.x - x, h.y - y);
-        if (d <= Math.max(h.r, 8) + 6 && d - h.r < bestD) {
-          best = h;
-          bestD = d - h.r;
-        }
+        if (d > Math.max(h.r, 8) + 6) continue;
+        if (!best || h.r < best.r || (h.r === best.r && d < Math.hypot(best.x - x, best.y - y))) best = h;
       }
       return best;
     };
