@@ -4,7 +4,9 @@ A reference library for a worldbuilding project. The Orbital Ocean is a perfect
 circle surrounded by the Endless Gunk. At its centre sits the Land of the
 Large, the largest known landmass. Thirteen medium continents and two belts of
 tiny islands orbit it clockwise, most continents attended by up to three moons,
-and thousands of ocean platforms dot the water between them.
+and thousands of ocean platforms dot the water between them. Each continent
+has terrain, rivers and lakes, cities, towns and villages, and roads that
+follow the lie of the land.
 
 The site opens on **the Imperial Reference Shelf**, the library as kept by the
 Holy Purple Bureaucratic Empire. Only **the Atlas** is approved for reading so
@@ -31,6 +33,23 @@ Distances are drawn to true scale. Zoomed out, each island is a fixed-size
 atlas symbol with a label, like a town on a world map. As you zoom in, the
 symbol fades into the island's coastline, which is generated as a placeholder
 from a seed.
+
+## Continents
+
+Zoom into a continent to see its shaded relief and contours, then its rivers
+and lakes, cities and highways, towns and roads, and finally villages and
+tracks. Harbours are marked with an anchor. Navigable rivers carry a dashed
+route line. Each continent's gazetteer entry lists its settlements, waters
+and roads; each settlement's entry lists its road links and their lengths.
+
+Every continent starts as a **generated placeholder**. Inner continents are
+settled more densely than outer ones, and roads are routed over the terrain:
+they avoid steep ground, never cross sea or lakes, bridge rivers sparingly
+and merge onto existing roads. To replace a placeholder with your own drawing,
+see **[docs/designing-continents.md](docs/designing-continents.md)**. In short:
+download the continent's template from its gazetteer entry, draw in Inkscape
+using the named layers (coast, contours, peaks, lakes, rivers, settlements,
+roads), and save it as `src/data/continents/<id>.svg`.
 
 ## Ocean platforms
 
@@ -60,12 +79,13 @@ numbers appear only when zoomed well in.
 
 ## Editing the world
 
-Both data files are commented YAML:
+The world is defined by these files in `src/data`:
 
 | File | Contents |
 | --- | --- |
 | `src/data/calendar.yaml` | Era name, months and their lengths, intercalary/festival days, weekdays, the date the atlas opens on, and the range of the timeline. |
-| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description) and their moons, the belts, the Empire's bands, and the rules for generating platforms. |
+| `src/data/continents/<id>.svg` | Optional hand-drawn continents; see [docs/designing-continents.md](docs/designing-continents.md). |
+| `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description) and their moons, the belts, the Empire's bands, and the rules for generating platforms and settlements. |
 
 The roster and the bands follow the lore. Sizes, distances, bearings and
 periods are placeholders, and positions without a name in the lore are called
@@ -96,7 +116,9 @@ Built with React, TypeScript and Vite. The chart is drawn on a 2D canvas
 ```
 src/
   data/            calendar.yaml, world.yaml (edit these)
+  data/continents/ hand-drawn continent designs (SVG)
   lib/             calendar, orbits, world parsing, platform generator, coastlines, camera
+  lib/terrain/     elevation, water, settlements, roads, design reader and template
   books/atlas/     the Atlas: map canvas, renderer, timeline, gazetteer, instruments
   Library.tsx      the Imperial Reference Shelf (home page)
   books.ts         the list of books on the shelf

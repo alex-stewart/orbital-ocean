@@ -70,7 +70,7 @@ describe('platforms', () => {
         const r = platforms[i].size.radius;
         for (const b of world.bodies) {
           const p = bodies.get(b.id)!;
-          if (Math.hypot(p.x - x, p.y - y) - b.radius - r <= clearance * 0.99)
+          if (Math.hypot(p.x - x, p.y - y) - b.outerRadius - r <= clearance * 0.99)
             problems.push(`${platforms[i].id} vs ${b.id} on day ${t}`);
         }
         const fromCentre = Math.hypot(x, y);

@@ -5,6 +5,8 @@ import { orbitalDistance, type Body, type World } from '../../lib/world';
 import { rng } from '../../lib/random';
 import type { Layers } from './layers';
 import { drawPlatformLabels, drawPlatforms } from './platformLayer';
+import { drawSettlementLabels, drawSettlements, drawTerrain } from './terrainLayer';
+import { findSettlement } from '../../lib/terrain';
 import { bandWash, fonts, theme, washedOcean } from './theme';
 
 export interface RenderInput {
@@ -82,6 +84,11 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   const placeAt = (id: string): Point | null => {
     const body = s.positions.get(id);
     if (body) return body;
+    const settled = findSettlement(world, id);
+    if (settled) {
+      const c = s.positions.get(settled.body.id)!;
+      return { x: c.x + settled.settlement.x, y: c.y + settled.settlement.y };
+    }
     const i = world.platformIndex.get(id);
     return i === undefined ? null : { x: s.platformXY[i * 2], y: s.platformXY[i * 2 + 1] };
   };
@@ -204,7 +211,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     withShape(b, p, sr, (shape) => {
       ctx.fillStyle = theme.land;
       ctx.fill(shape.coast);
-      if (sr > 14) {
+      if (sr > 14 && b.kind !== 'moon') {
+        drawTerrain(ctx, s, b, p, sr, shape);
+      } else if (sr > 14) {
         shape.contours.forEach((c, i) => {
           ctx.fillStyle = theme.relief[i];
           ctx.fill(c);
@@ -215,9 +224,10 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
           }
         });
       }
+      // A selected continent gets a heavier coast (not red: roads are red).
       const selected = b.id === s.selectedId && sr > 40;
-      ctx.strokeStyle = selected ? theme.accent : theme.ink;
-      ctx.lineWidth = (selected ? 2 : Math.min(1.4, 0.6 + sr / 40)) / sr;
+      ctx.strokeStyle = selected && b.kind === 'moon' ? theme.accent : theme.ink;
+      ctx.lineWidth = (selected ? 2.2 : Math.min(1.4, 0.6 + sr / 40)) / sr;
       ctx.stroke(shape.coast);
     });
   }
@@ -248,8 +258,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   }
 
   const bodyHits: HitTarget[] = drawn.map(({ b, p, sr }) => ({ id: b.id, x: p.x, y: p.y, r: Math.max(sr, symbolRadius(b)) }));
+  const settled = drawSettlements(ctx, s, onScreen);
   const platformHits = drawPlatforms(ctx, s, toScreen);
-  const hits = [...bodyHits, ...platformHits];
+  const hits = [...bodyHits, ...settled.hits, ...platformHits];
   const hitById = new Map(hits.map((t) => [t.id, t]));
 
   // ── Selection, hover and measurement ─────────────────────────────────────
@@ -292,6 +303,7 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   }
 
   const placed = drawLabels(ctx, s, drawn, new Map(bodyHits.map((t) => [t.id, t])));
+  drawSettlementLabels(ctx, s, settled.labels, placed);
   drawPlatformLabels(ctx, s, platformHits, placed);
   return hits;
 }

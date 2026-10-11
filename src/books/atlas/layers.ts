@@ -1,5 +1,9 @@
 /** Which kinds of thing the chart draws. Toggled from the Layers panel. */
 export interface Layers {
+  terrain: boolean;
+  water: boolean;
+  settlements: boolean;
+  roads: boolean;
   moons: boolean;
   belts: boolean;
   anchored: boolean;
@@ -11,6 +15,10 @@ export interface Layers {
 }
 
 export const defaultLayers: Layers = {
+  terrain: true,
+  water: true,
+  settlements: true,
+  roads: true,
   moons: true,
   belts: true,
   anchored: true,
@@ -22,6 +30,15 @@ export const defaultLayers: Layers = {
 };
 
 export const layerGroups: { title: string; items: { key: keyof Layers; label: string }[] }[] = [
+  {
+    title: 'Continents',
+    items: [
+      { key: 'terrain', label: 'Relief and contours' },
+      { key: 'water', label: 'Rivers and lakes' },
+      { key: 'settlements', label: 'Settlements' },
+      { key: 'roads', label: 'Roads and navigable rivers' },
+    ],
+  },
   {
     title: 'Places',
     items: [

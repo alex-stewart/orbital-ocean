@@ -9,6 +9,11 @@ export interface IslandShape {
   points: Float32Array;
 }
 
+/** Coastline settings by kind of body: the central isle is rounder and more detailed. */
+export function coastOptions(kind: 'central' | 'isle' | 'moon'): Options {
+  return kind === 'central' ? { roughness: 0.22, resolution: 2048 } : { roughness: 0.42, resolution: 720 };
+}
+
 interface Options {
   /** 0 = perfect circle, ~0.35 = very ragged. */
   roughness: number;
@@ -16,12 +21,8 @@ interface Options {
   resolution: number;
 }
 
-/**
- * Procedural placeholder coastline: a radial profile built from a sum of
- * harmonics with a 1/k^1.4 falloff (fractal-ish coast), plus a few
- * localised bays and headlands. Deterministic per seed.
- */
-export function generateIsland(seed: number, { roughness, resolution }: Options): IslandShape {
+/** Deterministic radial coast profile; shared by the geometry and the drawing. */
+function buildCoast(seed: number, { roughness, resolution }: Options) {
   const rand = rng(seed);
   const harmonics: { k: number; amp: number; phase: number }[] = [];
   for (let k = 2; k <= 96; k++) {
@@ -58,27 +59,49 @@ export function generateIsland(seed: number, { roughness, resolution }: Options)
   const norm = 1 / Math.sqrt(sum / n);
 
   const points = new Float32Array(n * 2);
-  const coast = new Path2D();
   for (let i = 0; i < n; i++) {
     const th = (i / n) * Math.PI * 2;
     const r = raw[i] * norm;
-    const x = r * Math.sin(th);
-    const y = -r * Math.cos(th);
-    points[i * 2] = x;
-    points[i * 2 + 1] = y;
-    if (i === 0) coast.moveTo(x, y);
-    else coast.lineTo(x, y);
+    points[i * 2] = r * Math.sin(th);
+    points[i * 2 + 1] = -r * Math.cos(th);
   }
-  coast.closePath();
+  return { points, profile, norm, rand, n };
+}
+
+/** The generated coastline as unit-scale points [x0, y0, x1, y1, …], without drawing. */
+export function coastlinePoints(seed: number, opts: Options): Float32Array {
+  return buildCoast(seed, opts).points;
+}
+
+function pathFrom(polygons: ArrayLike<number>[]): Path2D {
+  const p = new Path2D();
+  for (const pts of polygons) {
+    for (let i = 0; i < pts.length; i += 2) {
+      if (i === 0) p.moveTo(pts[i], pts[i + 1]);
+      else p.lineTo(pts[i], pts[i + 1]);
+    }
+    p.closePath();
+  }
+  return p;
+}
+
+/**
+ * Procedural placeholder coastline: a radial profile built from a sum of
+ * harmonics with a 1/k^1.4 falloff (fractal-ish coast), plus a few
+ * localised bays and headlands. Deterministic per seed.
+ */
+export function generateIsland(seed: number, opts: Options): IslandShape {
+  const { points, profile, norm, rand, n } = buildCoast(seed, opts);
 
   // Relief: smoother, shrunken copies offset towards a random "highland" centre.
+  // (Continents draw real terrain instead; these remain for moons.)
   const cx = (rand() - 0.5) * 0.3;
   const cy = (rand() - 0.5) * 0.3;
   const contours = [0.62, 0.36, 0.16].map((level) => {
     const p = new Path2D();
     for (let i = 0; i < n; i += 2) {
       const th = (i / n) * Math.PI * 2;
-      const r = Math.max(0.2, 1 + roughness * 0.8 * profile(th, 10)) * norm * level;
+      const r = Math.max(0.2, 1 + opts.roughness * 0.8 * profile(th, 10)) * norm * level;
       const x = cx * (1 - level) + r * Math.sin(th);
       const y = cy * (1 - level) - r * Math.cos(th);
       if (i === 0) p.moveTo(x, y);
@@ -88,5 +111,10 @@ export function generateIsland(seed: number, { roughness, resolution }: Options)
     return p;
   });
 
-  return { coast, contours, points };
+  return { coast: pathFrom([points]), contours, points };
+}
+
+/** A shape from given unit-scale coast polygons (e.g. a hand-drawn design). */
+export function shapeFromPolygons(polygons: ArrayLike<number>[]): IslandShape {
+  return { coast: pathFrom(polygons), contours: [], points: Float32Array.from(polygons[0] ?? []) };
 }

@@ -308,3 +308,25 @@ a.book:focus-visible {
   letter-spacing: 0.15em;
   color: var(--ink-soft);
 }
+
+.load-error {
+  max-width: 640px;
+  margin: 15vh auto 0;
+  padding: 24px 16px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.load-error h1 {
+  font-family: var(--caps);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px;
+}
+
+.load-error-message {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+  color: var(--accent);
+  white-space: pre-wrap;
+}

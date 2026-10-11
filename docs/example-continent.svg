@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A small worked example of a hand-drawn continent, showing every layer.
+  It is not loaded by the atlas (it lives in docs/); the tests read it to make
+  sure this example keeps working. To try it on the chart, copy it to
+  src/data/continents/continent-7.svg (continent 7 has radius 40).
+  See docs/designing-continents.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="560" height="560" viewBox="-70 -70 140 140">
+
+  <!-- Ignored by the atlas: guides only. -->
+  <g inkscape:groupmode="layer" inkscape:label="guide">
+    <circle cx="0" cy="0" r="40" fill="none" stroke="#3b2f24" stroke-opacity="0.3" stroke-width="0.2" />
+    <circle cx="0" cy="0" r="64" fill="none" stroke="#9b3a26" stroke-width="0.3" stroke-dasharray="1.5 1" />
+  </g>
+
+  <!-- The land. Two shapes: the main island and a small islet. -->
+  <g inkscape:groupmode="layer" inkscape:label="coast" style="fill:#efe0b6;stroke:#3b2f24;stroke-width:0.3">
+    <path d="M -38,-10 C -40,-30 -20,-42 0,-40 C 22,-38 40,-24 38,-2 C 36,18 24,36 2,38 C -18,40 -36,26 -38,-10 Z" />
+    <circle cx="34" cy="-38" r="4" />
+  </g>
+
+  <!-- Closed lines of equal height, labelled in metres. Nest them like rings in a tree. -->
+  <g inkscape:groupmode="layer" inkscape:label="contours" style="fill:none;stroke:#8a6a3a;stroke-width:0.2">
+    <path inkscape:label="200" d="M -32,-8 C -33,-26 -16,-35 0,-33 C 18,-31 30,-20 28,-4 C 26,8 12,14 0,12 C -16,10 -31,6 -32,-8 Z" />
+    <path inkscape:label="500" d="M -24,-12 C -24,-24 -12,-28 -2,-27 C 10,-26 18,-20 16,-11 C 14,-3 4,0 -6,-1 C -16,-2 -24,-4 -24,-12 Z" />
+    <path inkscape:label="800" d="M -14,-15 C -14,-21 -8,-23 -3,-22 C 3,-21 7,-18 6,-14 C 5,-10 0,-9 -5,-9 C -10,-9 -14,-11 -14,-15 Z" />
+  </g>
+
+  <!-- Summits: a dot labelled with its height (and, optionally, a name). -->
+  <g inkscape:groupmode="layer" inkscape:label="peaks" style="fill:#3b2f24">
+    <circle inkscape:label="Mount Example 1050" cx="-5" cy="-16" r="0.8" />
+  </g>
+
+  <!-- Lakes: closed outlines. -->
+  <g inkscape:groupmode="layer" inkscape:label="lakes" style="fill:#c9dbe0;stroke:#4f7a96;stroke-width:0.2">
+    <ellipse inkscape:label="Lake Still" cx="14" cy="16" rx="5" ry="3" />
+  </g>
+
+  <!-- Rivers: lines from source to mouth (direction is fixed automatically if drawn backwards). -->
+  <g inkscape:groupmode="layer" inkscape:label="rivers" style="fill:none;stroke:#4f7a96;stroke-width:0.4">
+    <path inkscape:label="Stillbrook" d="M 6,-12 C 10,-4 12,6 13,13" />
+    <path inkscape:label="River Ost navigable" d="M 15,19 C 14,26 9,32 4,38" />
+    <path d="M -24,-4 C -28,4 -32,10 -36,14" />
+  </g>
+
+  <!-- Settlements: circles labelled "<city|town|village> <Name>", plus "port" for a harbour. -->
+  <g inkscape:groupmode="layer" inkscape:label="settlements" style="fill:#5b3a7a">
+    <circle inkscape:label="city Ostmouth port" cx="6" cy="34" r="1.2" />
+    <circle inkscape:label="town Stillwater" cx="20" cy="14" r="0.9" />
+    <circle inkscape:label="village High Hale" cx="-18" cy="-4" r="0.6" />
+    <circle inkscape:label="village Westby port" cx="-33" cy="12" r="0.6" />
+  </g>
+
+  <!-- Empty: roads are routed automatically over the terrain. Draw lines here to fix them by hand. -->
+  <g inkscape:groupmode="layer" inkscape:label="roads" style="fill:none;stroke:#9b3a26;stroke-width:0.4" />
+</svg>
