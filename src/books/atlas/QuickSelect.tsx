@@ -20,7 +20,7 @@ type Mode = (typeof MODES)[number];
  * one click to fly to any of them.
  */
 export function QuickSelect({ world, activeBodyId, onPick }: Props) {
-  const majors = world.bodies.filter((b) => b.kind !== 'moon');
+  const majors = world.bodies.filter((b) => b.kind === 'central' || b.kind === 'isle');
   const bandOf = (r: number) => world.bands.find((b) => r >= b.innerRadius && r < b.outerRadius);
   const groups = world.bands.map((band) => ({
     band,

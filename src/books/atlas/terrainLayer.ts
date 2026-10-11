@@ -266,7 +266,10 @@ export function drawSettlements(
   if (!s.layers.settlements) return { hits, labels };
   const scale = s.view.scale;
   const REVEAL = s.world.params.display.reveal.settlements;
-  for (const { b, p, sr } of bodies) {
+  for (const { b, p, sr: bodySr } of bodies) {
+    // A belt island's places show as its archipelago grows on screen, so a
+    // cluster appears together rather than island by island.
+    const sr = b.archipelago ? b.archipelago.extent * scale : bodySr;
     if (sr < Math.min(REVEAL.city, REVEAL.town, REVEAL.village) * 0.7) continue;
     const map = continentMap(s.world, b);
     // Smaller places first, so cities draw on top.

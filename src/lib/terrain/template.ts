@@ -23,8 +23,9 @@ function layer(name: string, body: string, extra = ''): string {
   return `  <g inkscape:groupmode="layer" inkscape:label="${name}" id="layer-${name.split(' ')[0]}"${extra}>\n${body}  </g>\n`;
 }
 
-export function designTemplate(body: Body, map: ContinentMap): string {
-  const half = Math.ceil(Math.max(body.radius * 1.6, body.outerRadius * 1.15));
+/** `limit`: how far the coast may reach, × radius (the guide's outer circle). */
+export function designTemplate(body: Body, map: ContinentMap, limit = 1.6): string {
+  const half = Math.ceil(Math.max(body.radius * limit, body.outerRadius * 1.15));
   const tol = map.grid.cell * 0.4;
   const thin = (pts: number[], closed: boolean) => {
     const s = simplify(pts, tol);
@@ -99,7 +100,7 @@ export function designTemplate(body: Body, map: ContinentMap): string {
   <sodipodi:namedview pagecolor="#dde6e1" inkscape:document-units="px" />
 ${layer(
   'guide',
-  `    <circle id="guide-limit" cx="0" cy="0" r="${f(body.radius * 1.6)}" fill="none" stroke="#9b3a26" stroke-width="${sw(0.006)}" stroke-dasharray="${sw(0.03)} ${sw(0.02)}" />
+  `    <circle id="guide-limit" cx="0" cy="0" r="${f(body.radius * limit)}" fill="none" stroke="#9b3a26" stroke-width="${sw(0.006)}" stroke-dasharray="${sw(0.03)} ${sw(0.02)}" />
     <circle id="guide-radius" cx="0" cy="0" r="${f(body.radius)}" fill="none" stroke="#3b2f24" stroke-opacity="0.3" stroke-width="${sw(0.004)}" />
     <g id="guide-roads" fill="none" stroke="#9b3a26" stroke-opacity="0.35" stroke-width="${sw(0.005)}">
 ${guideRoads}    </g>

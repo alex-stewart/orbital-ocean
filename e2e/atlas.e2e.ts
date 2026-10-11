@@ -53,6 +53,22 @@ test('the sea index lists shipping routes, which open', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('the belt index opens an archipelago, its islands and their ferries', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('#/atlas');
+  await page.locator('summary', { hasText: 'The War Belt' }).click();
+  // The most populous archipelago is listed first.
+  const first = page.locator('details:has(summary:has-text("The War Belt")) .gz-list button').first();
+  await expect(first).toContainText('places', { timeout: 20_000 });
+  await first.click();
+  await expect(page.locator('.gz-kind')).toContainText('Archipelago of the War Belt');
+  await expect(page.locator('.gz-section', { hasText: 'Ferries' })).toBeVisible();
+  await page.locator('.gz-section', { hasText: 'Islands' }).locator('.gz-list button').first().click();
+  await expect(page.locator('.gz-kind')).toContainText('Island of the');
+  await expect(page.locator('.gz-crumbs')).toContainText(/The .+/);
+  expect(errors).toEqual([]);
+});
+
 test('search finds a platform by its number', async ({ page }) => {
   await page.goto('#/atlas');
   await page.getByRole('searchbox', { name: /find a place/i }).fill('1423');

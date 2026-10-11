@@ -28,3 +28,11 @@ shape:
   max_syllables: 3
   no_repeated_vowel_sound: true
   no_doubled_vowel: true
+
+# How archipelagos are named; {name} is a generated name.
+archipelago_patterns:
+  - "The {name} Isles"
+  - "The {name} Reach"
+  - "The {name} Skerries"
+  - "The {name} Cays"
+  - "{name} Archipelago"

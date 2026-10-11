@@ -26,6 +26,8 @@ A design replaces exactly what you draw and nothing else. The Atlas works out th
 
 To go back to the generated placeholder, delete the file.
 
+Belt islands can be drawn the same way (select one, then download its template). Their ids come from their generated names, so a design is tied to the current `belts.yaml` and `names.yaml`: change those and the island may be renamed. A belt island's coast must also stay within 1.45 × its radius (`coast_reach` in `belts.yaml`, shown by the guide's outer circle), so it can't touch its neighbours.
+
 ---
 
 ## Space and scale
@@ -141,6 +143,8 @@ Settlement counts follow the **band** the continent orbits in (a moon counts as 
 | Home Band | 9 |
 | Second Band | 3.5 |
 | Frontier Band | 1.4 |
+
+Belt islands are settled per archipelago instead: a belt has as many places as a continent of its land would (`belt_density`), shared among its settled archipelagos by land area.
 
 The mix is about **65% villages, 25% towns and 10% cities**. Every continent gets at least one town, every moon at least a village, and any body with six or more settlements at least one city. A single body can override its band with `settlement_density:` in `world.yaml`.
 

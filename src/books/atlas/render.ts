@@ -7,7 +7,8 @@ import type { Layers } from './layers';
 import { drawPlatformLabels, drawPlatforms } from './platformLayer';
 import { drawSettlementLabels, drawSettlements, drawTerrain } from './terrainLayer';
 import { drawShipping, type RouteLine } from './shippingLayer';
-import type { ShippingNetwork } from '../../lib/shipping';
+import { archipelagoCentre, type ShippingNetwork } from '../../lib/shipping';
+import { drawArchipelagoNames, drawFerries, revealedArchipelago } from './archipelagoLayer';
 import { findSettlement } from '../../lib/terrain';
 import { bandWash, fonts, theme, washedOcean } from './theme';
 
@@ -47,6 +48,7 @@ export interface HitTarget {
 
 function symbolRadius(b: Body): number {
   if (b.kind === 'moon') return 2.6;
+  if (b.kind === 'islet') return 0;
   if (b.kind === 'central') return 7;
   return b.radius < 40 ? 4 : b.radius < 70 ? 5 : 6;
 }
@@ -89,10 +91,12 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   const { layers } = s;
   // Below `symbol_below` px a body is a fixed-size symbol; below `coast_from` its coast isn't drawn.
   const { symbol_below: SYMBOL_BELOW, coast_from: COAST_FROM, reveal } = world.params.display;
-  /** Map position of a body or platform by id. */
+  /** Map position of a body, place, platform or archipelago by id. */
   const placeAt = (id: string): Point | null => {
     const body = s.positions.get(id);
     if (body) return body;
+    const arch = world.archipelagos.find((a) => a.id === id);
+    if (arch) return archipelagoCentre(arch, s.t);
     const settled = findSettlement(world, id);
     if (settled) {
       const c = s.positions.get(settled.body.id)!;
@@ -107,15 +111,18 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   drawGraticule(ctx, s, origin, ringVisible);
 
   // ── Orbits ────────────────────────────────────────────────────────────────
+  // Moons once they part from their continent; belt islands with the belts.
   const visibleMoon = (b: Body) =>
-    b.kind !== 'moon' || (layers.moons && b.orbitRadius * view.scale > symbolRadius(b.parent!) + 9);
+    b.kind === 'islet' ? layers.belts : b.kind !== 'moon' || (layers.moons && b.orbitRadius * view.scale > symbolRadius(b.parent!) + 9);
   ctx.lineWidth = 0.9;
   for (const b of world.bodies) {
     if (!b.parent || !visibleMoon(b)) continue;
+    // Belt islands' orbits would fill the belt with rings: only a selected one's.
+    if (b.kind === 'islet' && b.id !== s.selectedId) continue;
     if (!layers.orbits && b.id !== s.selectedId) continue;
     const centre = toScreen(s.positions.get(b.parent.id)!);
     const r = b.orbitRadius * view.scale;
-    if (b.kind === 'isle' && !ringVisible(b.orbitRadius)) continue;
+    if ((b.kind === 'isle' || b.kind === 'islet') && !ringVisible(b.orbitRadius)) continue;
     const selected = b.id === s.selectedId;
     ctx.strokeStyle = selected ? theme.accentSoft : theme.inkSoft;
     ctx.setLineDash(selected ? [] : b.kind === 'moon' ? [2, 3] : [5, 4]);
@@ -218,6 +225,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
     });
   }
 
+  // Ferries cross the narrow straits, so they go over the water-lines.
+  drawFerries(ctx, s, toScreen);
+
   for (const { b, p, sr } of onScreen) {
     if (sr < COAST_FROM) continue;
     withShape(b, p, sr, (shape) => {
@@ -233,9 +243,23 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   }
 
   // Fixed-size symbols, fading out as the true coastline becomes legible.
+  // Belt islands are too many for symbols: they're drawn at their true size,
+  // as specks like the loose rocks until their coasts show.
+  for (const { b, p, sr } of onScreen) {
+    if (b.kind !== 'islet' || sr >= COAST_FROM) continue;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.7, sr), 0, Math.PI * 2);
+    ctx.fillStyle = sr < 1.4 ? theme.inkSoft : theme.land;
+    ctx.fill();
+    if (sr >= 1.4) {
+      ctx.strokeStyle = theme.ink;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+  }
   for (const { b, p, sr } of onScreen) {
     const alpha = 1 - smoothstep(SYMBOL_BELOW * 0.55, SYMBOL_BELOW, sr);
-    if (alpha <= 0 || b.kind === 'central') continue;
+    if (alpha <= 0 || b.kind === 'central' || b.kind === 'islet') continue;
     const r = symbolRadius(b);
     ctx.globalAlpha = alpha;
     ctx.beginPath();
@@ -257,10 +281,23 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
     ctx.globalAlpha = 1;
   }
 
-  const bodyHits: HitTarget[] = drawn.map(({ b, p, sr }) => ({ id: b.id, x: p.x, y: p.y, r: Math.max(sr, symbolRadius(b)) }));
+  // Belt islands can be picked once their archipelago is shown in detail;
+  // before that, the archipelago as a whole.
+  const bodyHits: HitTarget[] = drawn
+    .filter(({ b }) => b.kind !== 'islet' || revealedArchipelago(s, b.archipelago!))
+    .map(({ b, p, sr }) => ({ id: b.id, x: p.x, y: p.y, r: Math.max(sr, symbolRadius(b), b.kind === 'islet' ? 3 : 0) }));
+  const archHits: HitTarget[] = !layers.belts
+    ? []
+    : world.archipelagos
+        .filter((a) => !revealedArchipelago(s, a))
+        .map((a) => {
+          const p = toScreen(archipelagoCentre(a, s.t));
+          return { id: a.id, x: p.x, y: p.y, r: Math.max(4, a.extent * view.scale) };
+        })
+        .filter((t) => t.x > -20 && t.y > -20 && t.x < w + 20 && t.y < h + 20);
   const settled = drawSettlements(ctx, s, onScreen);
   const platformHits = drawPlatforms(ctx, s, toScreen);
-  const hits = [...bodyHits, ...settled.hits, ...platformHits];
+  const hits = [...bodyHits, ...archHits, ...settled.hits, ...platformHits];
   const hitById = new Map(hits.map((t) => [t.id, t]));
 
   // ── Selection, hover and measurement ─────────────────────────────────────
@@ -306,6 +343,7 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   }
 
   const placed = drawLabels(ctx, s, drawn, new Map(bodyHits.map((t) => [t.id, t])));
+  drawArchipelagoNames(ctx, s, toScreen, placed);
   drawSettlementLabels(ctx, s, settled.labels, placed);
   drawPlatformLabels(ctx, s, platformHits, placed);
   return { hits, routes };
@@ -509,7 +547,7 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
     placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y);
 
   const priority = (d: Drawn) =>
-    (d.b.id === s.selectedId ? -10 : 0) + (d.b.kind === 'central' ? 0 : d.b.kind === 'isle' ? 1 : 2);
+    (d.b.id === s.selectedId ? -10 : 0) + (d.b.kind === 'central' ? 0 : d.b.kind === 'isle' ? 1 : d.b.kind === 'moon' ? 2 : 3);
   const order = [...drawn].sort((a, b) => priority(a) - priority(b));
 
   const symbolBelow = s.world.params.display.symbol_below;
@@ -517,12 +555,15 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
     if (!s.layers.labels && d.b.id !== s.selectedId) continue;
     // Moons are named a little after their dots appear, so names don't flicker at the threshold.
     if (d.b.kind === 'moon' && d.b.orbitRadius * s.view.scale < symbolRadius(d.b.parent!) + 22 && d.b.id !== s.selectedId) continue;
-    const t = hitById.get(d.b.id)!;
+    // Belt islands are named once their coasts show (their archipelago is named before).
+    if (d.b.kind === 'islet' && d.sr < s.world.params.display.coast_from * 2 && d.b.id !== s.selectedId) continue;
+    const t = hitById.get(d.b.id);
+    if (!t) continue;
     if (t.x < -200 || t.y < -50 || t.x > s.width + 200 || t.y > s.height + 50) continue;
     const central = d.b.kind === 'central';
-    const size = central ? 19 : d.b.kind === 'isle' ? 15 : 13;
-    ctx.font = d.b.kind === 'moon' ? `italic ${size}px ${fonts.serif}` : `${central ? 600 : 500} ${size}px ${fonts.caps}`;
-    ctx.letterSpacing = d.b.kind === 'moon' ? '0px' : central ? '3px' : '1.5px';
+    const size = central ? 19 : d.b.kind === 'isle' ? 15 : d.b.kind === 'islet' ? 12 : 13;
+    ctx.font = d.b.kind === 'moon' || d.b.kind === 'islet' ? `italic ${size}px ${fonts.serif}` : `${central ? 600 : 500} ${size}px ${fonts.caps}`;
+    ctx.letterSpacing = d.b.kind === 'moon' || d.b.kind === 'islet' ? '0px' : central ? '3px' : '1.5px';
     // Zoomed out (drawn as a symbol), use the short name.
     const text = d.sr < symbolBelow ? d.b.shortName : d.b.name;
     const tw = textWidth(ctx, text);

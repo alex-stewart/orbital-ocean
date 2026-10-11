@@ -14,6 +14,8 @@ export interface NameParts {
   vowels: string[];
   middles: string[];
   endings: { plain: string[]; coast: string[]; river: string[]; high: string[] };
+  /** Archipelago name patterns, with {name} for a generated name. */
+  archipelagoPatterns: string[];
   shape: {
     accent_share: number;
     middle_chance: number;
@@ -42,6 +44,7 @@ export function parseNames(source: string): NameParts {
       river: list(raw.endings?.river, 'endings.river'),
       high: list(raw.endings?.high, 'endings.high'),
     },
+    archipelagoPatterns: list((raw as { archipelago_patterns?: unknown }).archipelago_patterns, 'archipelago_patterns'),
     shape: (() => {
       const sh = raw.shape;
       const num = (v: unknown, key: string) => {

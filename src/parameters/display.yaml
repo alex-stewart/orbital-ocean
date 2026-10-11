@@ -17,6 +17,10 @@ reveal:
   rivers: 30
   contours: 50
   settlements: { city: 30, town: 90, village: 220 }
+  # Archipelago names appear when the group is this many px across (radius);
+  # ferries when it is this large.
+  archipelagos: 22
+  ferries: 70
   roads:       { highway: 30, road: 90, track: 220 }
 
 # Platform register numbers appear at this × the class's reveal zoom.

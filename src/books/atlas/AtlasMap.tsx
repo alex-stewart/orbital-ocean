@@ -7,7 +7,7 @@ import type { World } from '../../lib/world';
 import type { Layers } from './layers';
 import { render, type HitTarget } from './render';
 import { distanceToLine, type RouteLine } from './shippingLayer';
-import { planShipping, routeGeometry, type ShippingNetwork } from '../../lib/shipping';
+import { archipelagoCentre, planShipping, routeGeometry, type ShippingNetwork } from '../../lib/shipping';
 
 export interface AtlasMapHandle {
   zoomBy(factor: number): void;
@@ -57,10 +57,12 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     return m;
   }, [world]);
 
-  /** Map position of a body or platform by id. */
-  const placeAt = (id: string, positions: Map<string, Point>, platformXY: Float64Array): Point | null => {
+  /** Map position of a body, place, platform or archipelago by id. */
+  const placeAt = (id: string, positions: Map<string, Point>, platformXY: Float64Array, t: number): Point | null => {
     const body = positions.get(id);
     if (body) return body;
+    const arch = world.archipelagos.find((a) => a.id === id);
+    if (arch) return archipelagoCentre(arch, t);
     const settled = findSettlement(world, id);
     if (settled) {
       const c = positions.get(settled.body.id)!;
@@ -130,7 +132,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     }
     const positions = s.positions;
     if (p.followId) {
-      const fp = placeAt(p.followId, positions, s.platformXY);
+      const fp = placeAt(p.followId, positions, s.platformXY, p.t);
       if (fp) {
         s.target.cx = fp.x;
         s.target.cy = fp.y;
@@ -241,7 +243,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     if (route) {
       const t = latest.current.t;
       const positions = positionsAt(world.bodies, t);
-      const pts = routeGeometry(world, route, positions, platformPositions(world.platforms, t, positions));
+      const pts = routeGeometry(world, route, positions, platformPositions(world.platforms, t, positions), t);
       const xs = pts.map((q) => q.x);
       const ys = pts.map((q) => q.y);
       const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
@@ -256,7 +258,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     }
     const t = latest.current.t;
     const positions = positionsAt(world.bodies, t);
-    const p = placeAt(id, positions, platformPositions(world.platforms, t, positions));
+    const p = placeAt(id, positions, platformPositions(world.platforms, t, positions), t);
     if (!p) return;
     s.anchor = null;
     s.velocity = { x: 0, y: 0 };
@@ -264,7 +266,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     if (settled) {
       // Close enough that places of this size are showing, and about 80 IL across at least.
       const reveal = world.params.display.reveal.settlements[settled.settlement.kind] * 1.15;
-      s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.max(Math.min(s.w, s.h) / 80, reveal / settled.body.radius)) };
+      // (A belt island's places show by the size of its archipelago.)
+      const size = settled.body.archipelago?.extent ?? settled.body.radius;
+      s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.max(Math.min(s.w, s.h) / 80, reveal / size)) };
       requestFrame();
       return;
     }
@@ -272,6 +276,13 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     if (platform) {
       // Show the platform among its neighbours: about 40 IL across.
       s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.min(s.w, s.h) / 40) };
+      requestFrame();
+      return;
+    }
+    const arch = world.archipelagos.find((a) => a.id === id);
+    if (arch) {
+      // The whole group, large enough that its places show.
+      s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.min(s.w, s.h) / 2 / (arch.extent * 1.4)) };
       requestFrame();
       return;
     }

@@ -1,11 +1,12 @@
 import { bearingBetween, compassPoint, platformPositions, positionsAt, type Point } from './orbits';
-import { routeGeometry, type ShippingNetwork } from './shipping';
-import { findSettlement } from './terrain';
+import { archipelagoCentre, portName, routeGeometry, type ShippingNetwork } from './shipping';
+import { continentMap, findSettlement, hasContinentMap } from './terrain';
 import type { World } from './world';
 
 /**
  * Anything with an id on the chart: a body, a settlement (`body/slug`), a
- * platform (register number) or a shipping route (`route:a|b`).
+ * platform (register number), an archipelago (`arch:belt:slug`) or a shipping
+ * route (`route:a|b`).
  */
 
 /** Map position of a place at day `t` (a route's midpoint for routes). */
@@ -13,6 +14,8 @@ export function placePosition(world: World, id: string, t: number, shipping?: Sh
   const bodies = positionsAt(world.bodies, t);
   const body = bodies.get(id);
   if (body) return body;
+  const arch = world.archipelagos.find((a) => a.id === id);
+  if (arch) return archipelagoCentre(arch, t);
   const st = findSettlement(world, id);
   if (st) {
     const c = bodies.get(st.body.id)!;
@@ -25,7 +28,7 @@ export function placePosition(world: World, id: string, t: number, shipping?: Sh
   }
   const route = shipping?.routes.find((r) => r.id === id);
   if (route) {
-    const pts = routeGeometry(world, route, bodies, platformPositions(world.platforms, t, bodies));
+    const pts = routeGeometry(world, route, bodies, platformPositions(world.platforms, t, bodies), t);
     return pts[Math.floor(pts.length / 2)];
   }
   return null;
@@ -47,8 +50,20 @@ export function placeSummary(world: World, id: string, shipping?: ShippingNetwor
       const r = body.kind === 'moon' ? (body.parent!.parent ? body.parent!.orbitRadius : 0) : body.orbitRadius;
       return r >= b.innerRadius && r < b.outerRadius;
     });
+    if (body.archipelago) {
+      const places = hasContinentMap(world, body) ? continentMap(world, body).settlements.length : null;
+      const people = places === null ? null : places ? `${places} ${places === 1 ? 'place' : 'places'}` : 'uninhabited';
+      return { title: body.name, detail: [`Island of ${body.archipelago.name.replace(/^The /, 'the ')}`, body.archipelago.belt.name, people].filter(Boolean).join(' · ') };
+    }
     const kind = body.kind === 'central' ? 'Central landmass' : body.kind === 'moon' ? `Moon of ${body.parent!.name}` : `Continent ${body.position ?? ''}`.trim();
     return { title: body.name, detail: [kind, band?.name.replace(/^The /, '')].filter(Boolean).join(' · ') };
+  }
+  const arch = world.archipelagos.find((a) => a.id === id);
+  if (arch) {
+    return {
+      title: arch.name,
+      detail: `Archipelago of the ${arch.belt.name} · ${arch.islands.length} islands · ${arch.populated ? 'inhabited' : 'uninhabited'}`,
+    };
   }
   const st = findSettlement(world, id);
   if (st) {
@@ -67,7 +82,7 @@ export function placeSummary(world: World, id: string, shipping?: ShippingNetwor
   const route = shipping?.routes.find((r) => r.id === id);
   if (route) {
     return {
-      title: `${route.from.body.name} ⇄ ${route.to.body.name}`,
+      title: `${portName(route.from)} ⇄ ${portName(route.to)}`,
       detail: `Cargo route · ${fmt.format(Math.round(route.length))} ${u} · ${route.stops.length} stops`,
     };
   }

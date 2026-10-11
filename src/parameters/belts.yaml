@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  BELTS — the archipelagos of the War and Far Belts
+#
+#  Each belt is made of archipelagos: groups of islands that orbit together,
+#  so neighbouring islands stay neighbours. Archipelagos sit in lanes across
+#  the belt; each lane turns at its own speed, and lanes are spaced so that
+#  archipelagos in different lanes can pass without ever touching. Loose rocks
+#  (the belt's `count` in world.yaml) still drift on their own orbits.
+# ─────────────────────────────────────────────────────────────────────────────
+
+seed: 1
+
+# All of a belt's islands together have the land area of a continent of this
+# radius (IL): about a medium continent.
+mass_radius: 70
+
+# How many archipelagos each belt holds (by belt id).
+archipelagos:
+  war-belt: 10
+  far-belt: 14
+
+islands_per_archipelago: { min: 3, max: 9 }
+
+# Island sizes follow a power law: higher values give a few large islands and
+# many small ones. The largest island of a belt is capped at `largest_island` IL.
+size_spread: 1.8
+largest_island: 26
+smallest_island: 1.5
+
+# Space between islands' coasts within an archipelago, and kept inside the
+# belt's edges, in IL.
+island_gap: 2.5
+edge_margin: 4
+
+# How far an island's coast can reach, as a multiple of its radius (its bays
+# and headlands; see terrain.yaml → coast.islet). Islands are spaced by this.
+coast_reach: 1.45
+
+# Share of archipelagos with people (the first of each belt always has); the
+# rest are wild. Small settled ones may hold just a village, like a moon.
+populated_share: 0.55

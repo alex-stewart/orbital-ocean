@@ -39,8 +39,12 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const id = params.get('place') ?? params.get('isle');
     if (!id) return null;
-    // Places in the URL: bodies, settlements (body/slug) and platforms. Routes are re-planned, so not kept.
-    const known = world.bodies.some((b) => b.id === id) || world.platformIndex.has(id) || (id.includes('/') && !!findSettlement(world, id));
+    // Places in the URL: bodies, archipelagos, settlements (body/slug) and platforms. Routes are re-planned, so not kept.
+    const known =
+      world.bodies.some((b) => b.id === id) ||
+      world.archipelagos.some((a) => a.id === id) ||
+      world.platformIndex.has(id) ||
+      (id.includes('/') && !!findSettlement(world, id));
     return known ? id : null;
   });
   const [layers, setLayersState] = useState<Layers>(loadLayers);
@@ -193,7 +197,8 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
     if (!selectedId) return null;
     const id = selectedId.includes('/') ? selectedId.slice(0, selectedId.indexOf('/')) : selectedId;
     const body = world.bodies.find((b) => b.id === id);
-    return body ? (body.kind === 'moon' ? body.parent!.id : body.id) : null;
+    if (!body || body.kind === 'islet') return null;
+    return body.kind === 'moon' ? body.parent!.id : body.id;
   })();
 
   return (

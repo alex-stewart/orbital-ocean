@@ -8,8 +8,8 @@ import yaml from 'js-yaml';
 type Kind3<T> = { city: T; town: T; village: T };
 
 export interface TerrainParams {
-  grid: { cells_per_il_of_radius: number; min_cells: number; max_cells: number };
-  coast: Record<'central' | 'continent' | 'moon', { roughness: number; resolution: number }>;
+  grid: { cells_per_il_of_radius: number; min_cells: number; max_cells: number; islet_min_cells: number };
+  coast: Record<'central' | 'continent' | 'moon' | 'islet', { roughness: number; resolution: number }>;
   elevation: { base: number; per_il_of_radius: number; mountain_ranges: { min: number; max: number } };
   water: {
     lake_min_depth: number;
@@ -24,6 +24,7 @@ export interface TerrainParams {
 export interface SettlementParams {
   seed: number;
   density: Record<string, number>;
+  belt_density: Record<string, number>;
   mix: Kind3<number>;
   minimum: { continent: 'city' | 'town' | 'village'; moon: 'city' | 'town' | 'village'; city_from: number };
   spacing: Kind3<number>;
@@ -53,6 +54,20 @@ export interface PlatformParams {
   owners: Record<string, number>;
 }
 
+export interface BeltParams {
+  seed: number;
+  mass_radius: number;
+  archipelagos: Record<string, number>;
+  islands_per_archipelago: { min: number; max: number };
+  size_spread: number;
+  largest_island: number;
+  smallest_island: number;
+  island_gap: number;
+  coast_reach: number;
+  edge_margin: number;
+  populated_share: number;
+}
+
 export interface ShippingParams {
   resupply_range: number;
   resupply_classes: string[];
@@ -76,6 +91,8 @@ export interface DisplayParams {
     rivers: number;
     contours: number;
     settlements: Kind3<number>;
+    archipelagos: number;
+    ferries: number;
     roads: { highway: number; road: number; track: number };
   };
   platform_label_factor: number;
@@ -87,6 +104,7 @@ export interface Parameters {
   settlements: SettlementParams;
   roads: RoadParams;
   platforms: PlatformParams;
+  belts: BeltParams;
   shipping: ShippingParams;
   display: DisplayParams;
 }
@@ -100,11 +118,12 @@ const k3: Spec = { city: 'n', town: 'n', village: 'n' };
 
 const SPECS: Record<keyof Parameters, Spec> = {
   terrain: {
-    grid: { cells_per_il_of_radius: 'n', min_cells: 'n', max_cells: 'n' },
+    grid: { cells_per_il_of_radius: 'n', min_cells: 'n', max_cells: 'n', islet_min_cells: 'n' },
     coast: {
       central: { roughness: 'n', resolution: 'n' },
       continent: { roughness: 'n', resolution: 'n' },
       moon: { roughness: 'n', resolution: 'n' },
+      islet: { roughness: 'n', resolution: 'n' },
     },
     elevation: { base: 'n', per_il_of_radius: 'n', mountain_ranges: { min: 'n', max: 'n' } },
     water: { lake_min_depth: 'n', lake_min_depth_share_of_relief: 'n', lake_min_cells: 'n', river_share: 'n', navigable_share: 'n' },
@@ -113,6 +132,7 @@ const SPECS: Record<keyof Parameters, Spec> = {
   settlements: {
     seed: 'n',
     density: 'n{}',
+    belt_density: 'n{}',
     mix: k3,
     minimum: { continent: 's', moon: 's', city_from: 'n' },
     spacing: k3,
@@ -130,6 +150,19 @@ const SPECS: Record<keyof Parameters, Spec> = {
     moonless_ring_reach: 'n',
     sizes: { each: { radius: 'n', share: 'n', reveal: 'n' } },
     owners: 'n{}',
+  },
+  belts: {
+    seed: 'n',
+    mass_radius: 'n',
+    archipelagos: 'n{}',
+    islands_per_archipelago: { min: 'n', max: 'n' },
+    size_spread: 'n',
+    largest_island: 'n',
+    smallest_island: 'n',
+    island_gap: 'n',
+    coast_reach: 'n',
+    edge_margin: 'n',
+    populated_share: 'n',
   },
   shipping: {
     resupply_range: 'n',
@@ -153,6 +186,8 @@ const SPECS: Record<keyof Parameters, Spec> = {
       rivers: 'n',
       contours: 'n',
       settlements: k3,
+      archipelagos: 'n',
+      ferries: 'n',
       roads: { highway: 'n', road: 'n', track: 'n' },
     },
     platform_label_factor: 'n',

@@ -34,7 +34,7 @@ export function drawShipping(
       : busiest;
   const ordered = [...shown].reverse();
   for (const r of ordered) {
-    const pts = routeGeometry(s.world, r, s.positions, s.platformXY).map(toScreen);
+    const pts = routeGeometry(s.world, r, s.positions, s.platformXY, s.t).map(toScreen);
     const selected = r.id === s.selectedId || r.id === s.hoveredId;
     const flat: number[] = [];
     ctx.beginPath();

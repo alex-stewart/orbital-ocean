@@ -1,13 +1,15 @@
 import type { ShippingParams } from '../parameters/schema';
 import { MinHeap } from './terrain/geometry';
 import { continentMap, hasContinentMap, type Settlement } from './terrain';
-import type { Point } from './orbits';
-import type { Body, World } from './world';
+import { bearingAt, polar, type Point } from './orbits';
+import type { Archipelago, Body, World } from './world';
 
 /**
  * Imperial cargo routes, planned for one date.
  *
- * Each body trades through its chief port: its largest harbour. Ships leave
+ * Each body trades through its chief port: its largest harbour. An
+ * archipelago trades as one, through the largest harbour on any of its
+ * islands; ferries carry the rest of its islands' goods there. Ships leave
  * from a roadstead just offshore and hop between roadsteads and resupply
  * platforms (larger Imperial ones), never sailing a leg longer than the
  * resupply range and never crossing land. Among valid routes the cheapest
@@ -23,8 +25,10 @@ export interface Port {
   id: string;
   body: Body;
   settlement: Settlement;
-  /** Trade weight of the body it serves (its settlements, by size). */
+  /** Trade weight of the body (or archipelago) it serves: its settlements, by size. */
   weight: number;
+  /** For an archipelago's chief port: the archipelago it serves. */
+  archipelago: Archipelago | null;
 }
 
 export interface ShippingRoute {
@@ -58,26 +62,59 @@ export interface ShippingNetwork {
 
 const RANK = { city: 0, town: 1, village: 2 } as const;
 
-/** Each body's chief port (largest harbour), if its map is built and it has one. */
+/**
+ * Each body's chief port (largest harbour), and one per archipelago, for those
+ * whose maps are built (all its islands', for an archipelago) and that have one.
+ */
 export function chiefPorts(world: World, p: ShippingParams): Port[] {
   const ports: Port[] = [];
+  const best = (bodies: Body[]) => {
+    let pick: { body: Body; settlement: Settlement } | null = null;
+    let weight = 0;
+    for (const body of bodies) {
+      const map = continentMap(world, body);
+      weight += map.settlements.reduce((sum, s) => sum + p.weights[s.kind], 0);
+      for (const s of map.settlements)
+        if (s.port && (!pick || RANK[s.kind] < RANK[pick.settlement.kind])) pick = { body, settlement: s };
+    }
+    return pick && { ...pick, weight };
+  };
   for (const body of world.bodies) {
-    if (!hasContinentMap(world, body)) continue;
-    const map = continentMap(world, body);
-    const harbours = map.settlements.filter((s) => s.port).sort((a, b) => RANK[a.kind] - RANK[b.kind]);
-    if (!harbours.length) continue;
-    const weight = map.settlements.reduce((sum, s) => sum + p.weights[s.kind], 0);
-    ports.push({ id: harbours[0].id, body, settlement: harbours[0], weight });
+    if (body.archipelago || !hasContinentMap(world, body)) continue;
+    const b = best([body]);
+    if (b) ports.push({ id: b.settlement.id, body, settlement: b.settlement, weight: b.weight, archipelago: null });
+  }
+  for (const arch of world.archipelagos) {
+    if (!arch.populated || !arch.islands.every((i) => hasContinentMap(world, i))) continue;
+    const b = best(arch.islands);
+    if (b) ports.push({ id: b.settlement.id, body: b.body, settlement: b.settlement, weight: b.weight, archipelago: arch });
   }
   return ports;
 }
 
-/** Where a port's roadstead lies: straight out from its body's centre, clear of the coast. */
-function roadstead(port: Port, centre: Point, margin: number): Point {
-  const s = port.settlement;
-  const d = Math.hypot(s.x, s.y) || 1;
-  const out = port.body.outerRadius + margin;
-  return { x: centre.x + (s.x / d) * out, y: centre.y + (s.y / d) * out };
+/** What a port serves, by name: its archipelago, or its body. */
+export function portName(port: Port): string {
+  return port.archipelago?.name ?? port.body.name;
+}
+
+/** An archipelago's centre at day `t`. */
+export function archipelagoCentre(arch: Archipelago, t: number): Point {
+  return polar(arch.orbitRadius, bearingAt(arch, t));
+}
+
+/**
+ * Where a port's roadstead lies: straight out from its body's centre, clear of
+ * the coast; for an archipelago, straight out from the group, clear of all of it.
+ */
+function roadstead(port: Port, centre: Point, margin: number, t: number): Point {
+  const quay = { x: centre.x + port.settlement.x, y: centre.y + port.settlement.y };
+  const arch = port.archipelago;
+  const from = arch ? archipelagoCentre(arch, t) : centre;
+  const reach = arch ? arch.extent : port.body.outerRadius;
+  const dx = quay.x - from.x;
+  const dy = quay.y - from.y;
+  const d = Math.hypot(dx, dy) || 1;
+  return { x: from.x + (dx / d) * (reach + margin), y: from.y + (dy / d) * (reach + margin) };
 }
 
 /**
@@ -85,11 +122,11 @@ function roadstead(port: Port, centre: Point, margin: number): Point {
  * every so often while time plays; this keeps their lines on the moving ports
  * and platforms in between.
  */
-export function routeGeometry(world: World, r: ShippingRoute, bodyPositions: Map<string, Point>, platformXY: Float64Array): Point[] {
+export function routeGeometry(world: World, r: ShippingRoute, bodyPositions: Map<string, Point>, platformXY: Float64Array, t: number): Point[] {
   const margin = world.params.shipping.coast_margin;
   const ends = [r.from, r.to].map((port) => {
     const c = bodyPositions.get(port.body.id)!;
-    return { quay: { x: c.x + port.settlement.x, y: c.y + port.settlement.y }, road: roadstead(port, c, margin) };
+    return { quay: { x: c.x + port.settlement.x, y: c.y + port.settlement.y }, road: roadstead(port, c, margin, t) };
   });
   return [
     ends[0].quay,
@@ -125,7 +162,7 @@ export function planShipping(
 
   // Nodes: a roadstead off each port, then every resupply platform.
   const nodes: Node[] = ports.map((port, i) => ({
-    ...roadstead(port, bodyPositions.get(port.body.id)!, p.coast_margin),
+    ...roadstead(port, bodyPositions.get(port.body.id)!, p.coast_margin, t),
     port: i,
     platform: null,
     index: -1,
@@ -137,11 +174,17 @@ export function planShipping(
     }
   });
 
-  // Bodies as obstacles: circles of their coast's reach plus a margin.
-  const obstacles = world.bodies.map((b) => {
-    const c = bodyPositions.get(b.id)!;
-    return { x: c.x, y: c.y, r: b.outerRadius + p.coast_margin * 0.5 };
-  });
+  // Bodies as obstacles: circles of their coast's reach plus a margin; an
+  // archipelago as one circle round the whole group.
+  const obstacles = [
+    ...world.bodies
+      .filter((b) => !b.archipelago)
+      .map((b) => {
+        const c = bodyPositions.get(b.id)!;
+        return { x: c.x, y: c.y, r: b.outerRadius + p.coast_margin * 0.5 };
+      }),
+    ...world.archipelagos.map((a) => ({ ...archipelagoCentre(a, t), r: a.extent + p.coast_margin * 0.5 })),
+  ];
   const clear = (a: Node, b: Node) => {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
@@ -245,6 +288,10 @@ export function planShipping(
     if (best) {
       chosen.push(best);
       served.add(best.a).add(best.b);
+    } else {
+      const wanted = pairs.find((pr) => pr.a === i || pr.b === i);
+      if (wanted && !unreachable.some(([a, b]) => a === ports[wanted.a].id && b === ports[wanted.b].id))
+        unreachable.push([ports[wanted.a].id, ports[wanted.b].id]);
     }
   }
 
