@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import calendarSource from '../../data/calendar.yaml?raw';
-import worldSource from '../../data/world.yaml?raw';
-import { parseCalendar } from '../calendar';
+import { loadWorld } from './world';
 import { bearingAt, bearingBetween, bodyPosition, polar, positionsAt } from '../orbits';
-import { bandAt, parseWorld } from '../world';
+import { bandAt } from '../world';
 
-const cal = parseCalendar(calendarSource);
-const world = parseWorld(worldSource, cal);
+const world = loadWorld();
 
 describe('orbits', () => {
   it('uses compass bearings: 0 is north (up), 90 is east (right)', () => {

@@ -7,7 +7,6 @@ export const theme = {
   inkFaint: 'rgba(59, 47, 36, 0.16)',
   inkSoft: 'rgba(59, 47, 36, 0.42)',
   land: '#efe0b6',
-  relief: ['#e7d39f', '#dcc386', '#cfb06f'],
   accent: '#9b3a26',
   accentSoft: 'rgba(155, 58, 38, 0.55)',
   /** Imperial purple, for the Empire's administrative bands. */

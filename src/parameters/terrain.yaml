@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  TERRAIN — height, water, coastlines
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Each continent's height grid has `cells_per_il_of_radius` × radius cells per
+# side, clamped to [min_cells, max_cells]. Finer grids are slower to build.
+grid:
+  cells_per_il_of_radius: 0.9
+  min_cells: 96
+  max_cells: 200
+
+# Generated coastlines: `roughness` 0 is a circle, ~0.4 is ragged;
+# `resolution` is the number of points around the coast.
+coast:
+  central:   { roughness: 0.22, resolution: 2048 }
+  continent: { roughness: 0.42, resolution: 720 }
+  moon:      { roughness: 0.42, resolution: 720 }
+
+# Height of a generated body's highest ground, in metres:
+# base + per_il_of_radius × radius (unless world.yaml sets max_elevation).
+elevation:
+  base: 500
+  per_il_of_radius: 12
+  mountain_ranges: { min: 1, max: 3 }
+
+# Water. Shares are fractions of a body's land cells.
+water:
+  # A basin becomes a lake if deeper than both of these (metres / share of relief).
+  lake_min_depth: 8
+  lake_min_depth_share_of_relief: 0.012
+  lake_min_cells: 4
+  # Upstream area at which a stream is drawn as a river, and at which it
+  # becomes navigable.
+  river_share: 0.012
+  navigable_share: 0.09
+
+# Hand-drawn designs.
+design:
+  # A design's coast may reach at most this many times the body's radius.
+  max_coast_reach: 1.6
+  # Hand-drawn road ends snap to settlements within this share of the radius.
+  road_snap_share_of_radius: 0.04

@@ -1,6 +1,7 @@
 import { chaikin, MinHeap, polylineLength, simplify } from './geometry';
 import { cellAt, cellX, cellY, NEIGHBOURS, type Grid } from './grid';
 import type { Hydrology } from './hydrology';
+import type { RoadParams } from '../../parameters/schema';
 import type { Settlement, SettlementKind } from './settlements';
 
 export type RoadRank = 'highway' | 'road' | 'track';
@@ -32,7 +33,7 @@ function rankOf(a: SettlementKind, b: SettlementKind): RoadRank {
  * places, the way trunk roads form loops. Candidate links come from each
  * settlement's nearest neighbours.
  */
-export function plannedLinks(settlements: Settlement[]): [number, number][] {
+export function plannedLinks(settlements: Settlement[], p: RoadParams): [number, number][] {
   const n = settlements.length;
   const d = (a: number, b: number) => Math.hypot(settlements[a].x - settlements[b].x, settlements[a].y - settlements[b].y);
   const cand = new Map<string, [number, number, number]>();
@@ -40,7 +41,7 @@ export function plannedLinks(settlements: Settlement[]): [number, number][] {
     const near = Array.from({ length: n }, (_, b) => b)
       .filter((b) => b !== a)
       .sort((p, q) => d(a, p) - d(a, q))
-      .slice(0, 4);
+      .slice(0, p.neighbours);
     for (const b of near) {
       const key = a < b ? `${a},${b}` : `${b},${a}`;
       // Larger places attract: weight links by importance, not just distance.
@@ -63,7 +64,7 @@ export function plannedLinks(settlements: Settlement[]): [number, number][] {
       extras.push([a, b]);
     }
   }
-  return [...links, ...extras.slice(0, Math.ceil(n / 6))];
+  return [...links, ...extras.slice(0, Math.ceil(n / p.extra_link_every))];
 }
 
 export interface RouteTerrain {
@@ -80,18 +81,17 @@ export interface RouteTerrain {
  * bridge. Earlier, more important roads lower the cost of the cells they use,
  * so later roads join them rather than running alongside.
  */
-export function routeRoads(settlements: Settlement[], t: RouteTerrain): Road[] {
+export function routeRoads(settlements: Settlement[], t: RouteTerrain, p: RoadParams): Road[] {
   const { grid: g, elevation, land, water } = t;
   const { n } = g;
   const N = n * n;
   const used = new Float32Array(N).fill(1);
-  const links = plannedLinks(settlements).sort(
+  const links = plannedLinks(settlements, p).sort(
     (p, q) =>
       Math.max(RANK[settlements[p[0]].kind], RANK[settlements[p[1]].kind]) -
       Math.max(RANK[settlements[q[0]].kind], RANK[settlements[q[1]].kind]),
   );
   const passable = (k: number) => land[k] === 1 && water.lake[k] < 0;
-  const BRIDGE = 8; // in cells of flat road
   const roads: Road[] = [];
 
   /** A* between two settlements; adds the road and returns true if one exists. */
@@ -125,14 +125,14 @@ export function routeRoads(settlements: Settlement[], t: RouteTerrain): Road[] {
         const m = jj * n + ii;
         if (!passable(m)) continue;
         const grade = Math.abs(elevation[m] - elevation[k]) / (len * g.cell * 1000);
-        let step = len * (1 + Math.pow(grade / 0.05, 2) * 3 + elevation[m] / 3000) * used[m];
-        if (water.riverMask[m] && !water.riverMask[k]) step += BRIDGE;
+        let step = len * (1 + Math.pow(grade / p.grade_scale, 2) * p.slope_weight + elevation[m] / p.height_scale) * used[m];
+        if (water.riverMask[m] && !water.riverMask[k]) step += p.bridge;
         const c = cost[k] + step;
         if (c < cost[m]) {
           cost[m] = c;
           from[m] = k;
-          // Heuristic: straight-line distance, admissible since every step costs ≥ its length × 0.45.
-          heap.push(c + Math.hypot(ii - gx, jj - gy) * 0.45, m);
+          // Heuristic: straight-line distance, admissible since every step costs ≥ its length × reuse.
+          heap.push(c + Math.hypot(ii - gx, jj - gy) * p.reuse, m);
         }
       }
     }
@@ -147,7 +147,7 @@ export function routeRoads(settlements: Settlement[], t: RouteTerrain): Road[] {
       const k = cells[c];
       if (water.riverMask[k] && !water.riverMask[cells[c - 1]]) bridges++;
       pts.push(cellX(g, k % n), cellY(g, (k / n) | 0));
-      used[k] = Math.min(used[k], 0.45);
+      used[k] = Math.min(used[k], p.reuse);
     }
     pts.push(B.x, B.y);
     const smooth = chaikin(simplify(pts, g.cell * 0.35), 3);

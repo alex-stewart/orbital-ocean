@@ -1,6 +1,9 @@
+import { parameters } from '../parameters';
 import { parseCalendar } from '../lib/calendar';
+import { parseNames } from '../lib/terrain/names';
 import { parseWorld } from '../lib/world';
 import calendarSource from './calendar.yaml?raw';
+import namesSource from './names.yaml?raw';
 import worldSource from './world.yaml?raw';
 
 // Hand-drawn continents: src/data/continents/<continent id>.svg
@@ -10,7 +13,7 @@ const designs = Object.fromEntries(
 );
 
 export const calendar = parseCalendar(calendarSource);
-export const world = parseWorld(worldSource, calendar, designs);
+export const world = parseWorld(worldSource, calendar, { params: parameters, names: parseNames(namesSource), designs });
 
 // Shapes a design skipped, and why — worth reading after editing a continent.
 for (const [id, design] of world.designs) {

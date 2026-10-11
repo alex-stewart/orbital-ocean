@@ -10,9 +10,12 @@ interface Props {
   /** Days advanced per second of playback. */
   speed: number;
   onSpeedChange(s: number): void;
+  /** One slim row (the default) or the full controls with year ticks. */
+  compact: boolean;
+  onCompactChange(compact: boolean): void;
 }
 
-export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange, speed, onSpeedChange }: Props) {
+export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange, speed, onSpeedChange, compact, onCompactChange }: Props) {
   const date = daysToDate(cal, t);
   const month = cal.months[date.monthIndex];
   const weekday = weekdayOf(cal, t);
@@ -56,6 +59,70 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
     onChange(dateToDays(cal, y, mi, Math.min(date.day, cal.months[mi].days)));
   };
 
+  const slider = (
+    <input
+      type="range"
+      min={cal.startDay}
+      max={cal.endDay}
+      step={1}
+      value={Math.floor(t)}
+      onChange={(e) => onChange(Number(e.target.value))}
+      onPointerDown={() => onPlayingChange(false)}
+      aria-label="Date"
+      aria-valuetext={`${ordinal(date.day)} of ${month.name}, year ${formatYear(cal, date.year)}`}
+    />
+  );
+  const speedSelect = (
+    <select value={speed} onChange={(e) => onSpeedChange(Number(e.target.value))} aria-label="Playback speed">
+      {speeds.map((s) => (
+        <option key={s.label} value={s.value}>
+          {s.label}
+        </option>
+      ))}
+    </select>
+  );
+  const playButton = (
+    <button
+      className="play"
+      onClick={() => onPlayingChange(!playing)}
+      aria-label={playing ? 'Pause' : 'Play'}
+      title={playing ? 'Pause (space)' : 'Play (space)'}
+    >
+      {playing ? '❚❚' : '▶'}
+    </button>
+  );
+  const goTo = editing && (
+    <GoToDate
+      calendar={cal}
+      initial={date}
+      onGo={(d) => {
+        onPlayingChange(false);
+        onChange(d);
+        setEditing(false);
+      }}
+      onClose={() => setEditing(false)}
+    />
+  );
+
+  if (compact) {
+    return (
+      <footer className="timeline compact">
+        {playButton}
+        <div className="timeline-date">
+          <button className="date-compact" onClick={() => setEditing((e) => !e)} title="Go to a date">
+            {ordinal(date.day)} of {month.name}, <strong>{formatYear(cal, date.year)}</strong>
+          </button>
+          {goTo}
+        </div>
+        <div className="timeline-track compact">{slider}</div>
+        {speedSelect}
+        <button className="timeline-expand" onClick={() => onCompactChange(false)} title="More time controls" aria-label="Expand the timeline">
+          ⌃
+        </button>
+      </footer>
+    );
+  }
+
   return (
     <footer className="timeline">
       <div className="timeline-row">
@@ -67,18 +134,7 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
             </span>
             <span className="date-year">Year {formatYear(cal, date.year)}</span>
           </button>
-          {editing && (
-            <GoToDate
-              calendar={cal}
-              initial={date}
-              onGo={(d) => {
-                onPlayingChange(false);
-                onChange(d);
-                setEditing(false);
-              }}
-              onClose={() => setEditing(false)}
-            />
-          )}
+          {goTo}
         </div>
 
         <div className="timeline-controls" role="group" aria-label="Step through time">
@@ -91,14 +147,7 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
           <button onClick={() => stepBy('day', -1)} title="Back one day">
             ‹D
           </button>
-          <button
-            className="play"
-            onClick={() => onPlayingChange(!playing)}
-            aria-label={playing ? 'Pause' : 'Play'}
-            title={playing ? 'Pause (space)' : 'Play (space)'}
-          >
-            {playing ? '❚❚' : '▶'}
-          </button>
+          {playButton}
           <button onClick={() => stepBy('day', 1)} title="Forward one day">
             D›
           </button>
@@ -108,17 +157,7 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
           <button onClick={() => stepBy('year', 1)} title="Forward one year">
             Y»
           </button>
-          <select
-            value={speed}
-            onChange={(e) => onSpeedChange(Number(e.target.value))}
-            aria-label="Playback speed"
-          >
-            {speeds.map((s) => (
-              <option key={s.label} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          {speedSelect}
           <button
             className="today"
             onClick={() => {
@@ -129,21 +168,14 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
           >
             Reset date
           </button>
+          <button className="timeline-expand" onClick={() => onCompactChange(true)} title="Fewer time controls" aria-label="Collapse the timeline">
+            ⌄
+          </button>
         </div>
       </div>
 
       <div className="timeline-track">
-        <input
-          type="range"
-          min={cal.startDay}
-          max={cal.endDay}
-          step={1}
-          value={Math.floor(t)}
-          onChange={(e) => onChange(Number(e.target.value))}
-          onPointerDown={() => onPlayingChange(false)}
-          aria-label="Date"
-          aria-valuetext={`${ordinal(date.day)} of ${month.name}, year ${formatYear(cal, date.year)}`}
-        />
+        {slider}
         <div className="timeline-ticks" aria-hidden>
           {ticks.map((k) => (
             <span key={k.year} className={k.major ? 'major' : 'minor'} style={{ left: `${k.pct}%` }}>

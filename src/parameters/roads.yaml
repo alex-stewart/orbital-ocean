@@ -1,0 +1,17 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  ROADS — routing over land
+#  Cost of each step = length × (1 + slope_weight × (grade / grade_scale)²
+#                                 + height / height_scale) × reuse,
+#  plus `bridge` when stepping onto a river.
+# ─────────────────────────────────────────────────────────────────────────────
+
+grade_scale: 0.05      # a 5% grade costs (1 + slope_weight) × flat ground
+slope_weight: 3
+height_scale: 3000     # each 3,000 m of altitude adds one flat-step's cost
+bridge: 8              # one bridge costs as much as 8 cells of flat road
+reuse: 0.45            # cost multiplier on cells an earlier road already uses
+
+# Network: each place considers links to its nearest `neighbours`; besides the
+# spanning network, one extra loop link is kept per `extra_link_every` places.
+neighbours: 4
+extra_link_every: 6

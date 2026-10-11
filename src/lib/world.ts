@@ -1,10 +1,11 @@
 import yaml from 'js-yaml';
 import type { Calendar } from './calendar';
-import { generatePlatforms, type Platform, type PlatformRules, type RawPlatformConfig } from './platforms';
-import { coastlinePoints, coastOptions } from './coastline';
+import type { Parameters } from '../parameters/schema';
+import { generatePlatforms, type Platform, type PlatformContent, type PlatformRules } from './platforms';
+import { coastlinePoints } from './coastline';
 import { rng } from './random';
 import { parseDesign, type ContinentDesign } from './terrain/design';
-import type { SettlementConfig } from './terrain';
+import type { NameParts } from './terrain/names';
 
 export type BodyKind = 'central' | 'isle' | 'moon';
 
@@ -79,7 +80,10 @@ export interface World {
   extent: number;
   /** Hand-drawn continent designs, by body id. */
   designs: Map<string, ContinentDesign>;
-  settlementConfig: SettlementConfig | null;
+  /** Sounds that placeholder names are built from (src/data/names.yaml). */
+  names: NameParts;
+  /** Every tuning parameter (src/parameters/). */
+  params: Parameters;
 }
 
 interface RawBody {
@@ -117,12 +121,18 @@ interface RawWorld {
     islet_radius?: [number, number];
   }[];
   bands?: { id: string; name?: string; inner: BandLimit; outer: BandLimit; description?: string }[];
-  platforms?: RawPlatformConfig;
-  settlements?: {
-    seed?: number;
-    density?: Record<string, number>;
-    mix?: { city?: number; town?: number; village?: number };
-  };
+  platform_register?: string;
+  platform_classes?: { id: string; name?: string; like?: string }[];
+  platform_owners?: { id: string; name?: string; code?: string; imperial?: boolean }[];
+}
+
+export interface WorldSources {
+  /** Tuning parameters (src/parameters/). */
+  params: Parameters;
+  /** Name-building sounds (src/data/names.yaml), already parsed. */
+  names: NameParts;
+  /** Hand-drawn continent SVGs by body id (src/data/continents/<id>.svg). */
+  designs?: Record<string, string>;
 }
 
 function hash(s: string): number {
@@ -131,10 +141,9 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
-/**
- * @param designSources hand-drawn continent SVGs by body id (src/data/continents/<id>.svg)
- */
-export function parseWorld(source: string, cal: Calendar, designSources: Record<string, string> = {}): World {
+/** Build the world from world.yaml text, the calendar, parameters and any designs. */
+export function parseWorld(source: string, cal: Calendar, sources: WorldSources): World {
+  const { params, names, designs: designSources = {} } = sources;
   const raw = yaml.load(source) as RawWorld;
   if (!raw?.central) throw new Error('world.yaml: `central` is required');
   const designs = new Map(Object.entries(designSources).map(([id, svg]) => [id, parseDesign(svg, `continents/${id}.svg`)]));
@@ -168,11 +177,11 @@ export function parseWorld(source: string, cal: Calendar, designSources: Record<
     if (design) {
       body.coast = design.coast;
     } else {
-      const unit = coastlinePoints(body.seed, coastOptions(kind));
+      const unit = coastlinePoints(body.seed, params.terrain.coast[kind === 'isle' ? 'continent' : kind]);
       body.coast = [Array.from(unit, (v) => v * r.radius)];
     }
     body.outerRadius = Math.max(...body.coast.flatMap((ring) => ring.filter((_, i) => i % 2 === 0).map((x, i) => Math.hypot(x, ring[i * 2 + 1]))));
-    if (design && body.outerRadius > r.radius * 1.6) {
+    if (design && body.outerRadius > r.radius * params.terrain.design.max_coast_reach) {
       throw new Error(
         `continents/${r.id}.svg: the coast reaches ${Math.round(body.outerRadius)} IL from the centre, but ${r.id} has radius ${r.radius}. ` +
           `Keep the drawing within the guide circle, or raise its radius in world.yaml.`,
@@ -186,8 +195,8 @@ export function parseWorld(source: string, cal: Calendar, designSources: Record<
   const isles = (raw.orbitals ?? []).map((o) => toBody(o, 'isle', central));
   const bodies = [central, ...isles, ...central.moons, ...isles.flatMap((i) => i.moons)];
   for (const id of designs.keys()) {
-    if (!bodies.some((b) => b.id === id && b.kind !== 'moon')) {
-      throw new Error(`continents/${id}.svg: no continent with id "${id}" in world.yaml`);
+    if (!bodies.some((b) => b.id === id)) {
+      throw new Error(`continents/${id}.svg: no continent or moon with id "${id}" in world.yaml`);
     }
   }
 
@@ -240,7 +249,14 @@ export function parseWorld(source: string, cal: Calendar, designSources: Record<
     description: b.description ?? null,
   }));
 
-  const { platforms, rules: platformRules } = generatePlatforms(raw.platforms, {
+  const platformContent: PlatformContent | null = raw.platform_classes?.length
+    ? {
+        register: raw.platform_register ?? 'REG',
+        classes: raw.platform_classes.map((c) => ({ id: c.id, name: c.name ?? c.id, like: c.like ?? null })),
+        owners: (raw.platform_owners ?? []).map((o) => ({ id: o.id, name: o.name ?? o.id, code: o.code ?? 'X', imperial: !!o.imperial })),
+      }
+    : null;
+  const { platforms, rules: platformRules } = generatePlatforms(platformContent, params.platforms, {
     central,
     continents: isles,
     belts,
@@ -265,13 +281,8 @@ export function parseWorld(source: string, cal: Calendar, designSources: Record<
     platformRules,
     extent: oceanRadius,
     designs,
-    settlementConfig: raw.settlements
-      ? {
-          seed: raw.settlements.seed ?? 1,
-          density: raw.settlements.density ?? {},
-          mix: { city: 0.06, town: 0.26, village: 0.68, ...raw.settlements.mix },
-        }
-      : null,
+    names,
+    params,
   };
 }
 

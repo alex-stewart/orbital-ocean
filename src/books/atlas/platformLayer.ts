@@ -54,12 +54,13 @@ export function drawPlatforms(ctx: CanvasRenderingContext2D, s: RenderInput, toS
         ctx.stroke();
       }
     }
+    const ringAt = world.params.display.platform_rings;
     for (const [id, rings] of rules.rings) {
       const c = toScreen(s.positions.get(id)!);
       for (const ring of rings) {
         const r = ring.radius * scale;
-        if (r < 30 || c.x + r < 0 || c.y + r < 0 || c.x - r > w || c.y - r > h) continue;
-        ctx.globalAlpha = smoothstep(30, 60, r);
+        if (r < ringAt || c.x + r < 0 || c.y + r < 0 || c.x - r > w || c.y - r > h) continue;
+        ctx.globalAlpha = smoothstep(ringAt, ringAt * 2, r);
         ctx.beginPath();
         circlePath(ctx, c.x, c.y, r, w, h);
         ctx.stroke();
@@ -157,7 +158,7 @@ export function drawPlatformLabels(ctx: CanvasRenderingContext2D, s: RenderInput
   // Larger classes claim space first.
   const ordered = hits
     .map((h) => ({ h, p: world.platforms[world.platformIndex.get(h.id)!] }))
-    .filter(({ p }) => p.id === s.selectedId || (s.layers.labels && view.scale >= p.size.reveal * 6))
+    .filter(({ p }) => p.id === s.selectedId || (s.layers.labels && view.scale >= p.size.reveal * world.params.display.platform_label_factor))
     .sort((a, b) => Number(b.p.id === s.selectedId) - Number(a.p.id === s.selectedId) || b.p.size.radius - a.p.size.radius);
   for (const { h, p } of ordered) {
     const tw = ctx.measureText(p.id).width;

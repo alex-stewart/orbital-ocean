@@ -1,6 +1,6 @@
 # Designing a continent by hand
 
-Every continent in the Atlas starts as a **generated placeholder**: a coastline, terrain, rivers, lakes, settlements and roads, all made up from its seed. You can replace any continent with your own **hand-drawn design**: an SVG drawing with named layers, made in Inkscape, Figma or any vector editor.
+Every continent and moon in the Atlas starts as a **generated placeholder**: a coastline, terrain, rivers, lakes, settlements and roads, all made up from its seed. You can replace any continent with your own **hand-drawn design**: an SVG drawing with named layers, made in Inkscape, Figma or any vector editor.
 
 A design replaces exactly what you draw and nothing else. The Atlas works out the rest:
 
@@ -20,7 +20,7 @@ A design replaces exactly what you draw and nothing else. The Atlas works out th
 1. Open the Atlas, select the continent, and in the gazetteer click **Download design template**. You get `<continent id>.svg`, pre-filled with the continent's current map in every layer.
 2. Open it in **Inkscape** (free; recommended). Show the layers with **Layer → Layers and Objects…**.
 3. Edit, redraw or delete whatever you like (see [the layers](#the-layers)).
-4. Save it as **`src/data/continents/<continent id>.svg`**, for example `src/data/continents/mort.svg`. The filename must match the continent's `id` in `src/data/world.yaml`.
+4. Save it as **`src/data/continents/<id>.svg`**, for example `src/data/continents/mort.svg` (moons work the same way: `mort-i.svg`). The filename must match the `id` in `src/data/world.yaml`.
 5. Run `npm run dev` and open the Atlas. The continent now uses your design, and its gazetteer entry says *Drawn by hand*.
 6. Run `npm test` to check the design, then commit it.
 
@@ -134,7 +134,7 @@ This section helps you draw designs that sit naturally beside the generated cont
 
 ### Population
 
-Settlement counts follow the **band** the continent orbits in. The inner ocean is busy and the frontier is sparse. From `world.yaml` → `settlements`:
+Settlement counts follow the **band** the continent orbits in (a moon counts as its parent's band). The inner ocean is busy and the frontier is sparse. From `src/parameters/settlements.yaml`:
 
 | Band | Settlements per 10,000 IL² of land |
 | --- | --- |
@@ -142,9 +142,9 @@ Settlement counts follow the **band** the continent orbits in. The inner ocean i
 | Second Band | 3.5 |
 | Frontier Band | 1.4 |
 
-The mix is about **6% cities, 26% towns and 68% villages**. Every continent gets at least one town, and any with six or more settlements gets at least one city. A single continent can override its band with `settlement_density:` in `world.yaml`.
+The mix is about **65% villages, 25% towns and 10% cities**. Every continent gets at least one town, every moon at least a village, and any body with six or more settlements at least one city. A single body can override its band with `settlement_density:` in `world.yaml`.
 
-Generated settlements keep at least **30 IL** from a city, **14 IL** from a town and **6 IL** from a village. They prefer low, gentle ground near fresh water, with about a fifth on the coast as harbours.
+Generated settlements keep at least **30 IL** from a city, **14 IL** from a town and **6 IL** from a village (`spacing` in the same file). They prefer low, gentle ground near fresh water, with about a fifth on the coast as harbours.
 
 ### Roads
 
@@ -152,11 +152,16 @@ Generated settlements keep at least **30 IL** from a city, **14 IL** from a town
 - Each link is routed over the terrain. Steep ground costs more and more, so roads wind up hillsides and keep to valleys. High ground costs a little extra. The sea and lakes can't be crossed, and **crossing a river costs a bridge**, so roads cross rivers rarely and deliberately.
 - Important roads are routed first, and later roads are drawn onto them, so they merge rather than run side by side.
 - **Ranks:** city to city is a **highway**, links involving a town are **roads**, and links involving a village are **tracks**.
+- The costs (slope, height, bridges, reuse) are in `src/parameters/roads.yaml`.
 - Settlements on separate landmasses aren't joined by road; that's for sea routes.
 
 ### Rivers and lakes
 
-Generated water flows downhill from every point to the sea. Basins deep enough fill up as lakes. Where enough water gathers, a stream becomes a river, and the largest rivers become navigable from the point where they're big enough.
+Generated water flows downhill from every point to the sea. Basins deep enough fill up as lakes. Where enough water gathers, a stream becomes a river, and the largest rivers become navigable from the point where they're big enough. The thresholds are in `src/parameters/terrain.yaml`.
+
+### Sea trade
+
+Each body's largest harbour is its **chief port**, the one that appears on the Imperial shipping routes. Mark a city or town on the coast with `port` to make it eligible.
 
 ---
 
@@ -165,7 +170,7 @@ Generated water flows downhill from every point to the sea. Basins deep enough f
 - **Errors** stop the Atlas loading and name the file and the problem:
   - no `coast` layer, or no closed outline in it;
   - a coast reaching beyond 1.6 × the continent's radius;
-  - a file named after a continent that doesn't exist.
+  - a file named after a continent or moon that doesn't exist.
 - **Notes** (warnings) don't stop anything. They list shapes that were skipped and why: a contour without a height, a settlement without a kind, and so on. They appear in the browser console and as a count in the continent's gazetteer entry.
 - `npm test` loads every design and checks it.
 

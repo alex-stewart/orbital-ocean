@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import calendarSource from '../../data/calendar.yaml?raw';
-import worldSource from '../../data/world.yaml?raw';
-import { parseCalendar } from '../calendar';
+import { cal, loadWorld } from './world';
 import { isletPosition, platformPositions, positionsAt } from '../orbits';
 import { reach } from '../platforms';
-import { parseWorld } from '../world';
 
-const cal = parseCalendar(calendarSource);
-const world = parseWorld(worldSource, cal);
+const world = loadWorld();
 const { platforms } = world;
 const continents = world.bodies.filter((b) => b.kind === 'isle');
 
@@ -33,7 +29,7 @@ describe('platforms', () => {
     expect(platforms.length).toBeGreaterThan(2000);
     expect(new Set(platforms.map((p) => p.id)).size).toBe(platforms.length);
     expect(platforms.every((p) => /^HPBE-[PX]-\d{5}$/.test(p.id))).toBe(true);
-    const again = parseWorld(worldSource, cal).platforms;
+    const again = loadWorld().platforms;
     expect(again.map((p) => p.id + p.bearing)).toEqual(platforms.map((p) => p.id + p.bearing));
   });
 

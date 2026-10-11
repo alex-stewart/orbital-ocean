@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  DISPLAY — when things appear as you zoom
+#  Body reveals are in on-screen pixels of the body's radius.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Most zoomed-in scale, pixels per IL.
+max_zoom: 400
+
+# Below this on-screen radius a body is a fixed-size symbol; the coastline is
+# drawn from `coast_from`.
+symbol_below: 7
+coast_from: 2.5
+
+# Detail on a body, by its on-screen radius in px.
+reveal:
+  relief: 14
+  rivers: 30
+  contours: 50
+  settlements: { city: 30, town: 90, village: 220 }
+  roads:       { highway: 30, road: 90, track: 220 }
+
+# Platform register numbers appear at this × the class's reveal zoom.
+platform_label_factor: 6
+
+# Platform rings around a body appear when the ring is this many px across (radius).
+platform_rings: 30

@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  SETTLEMENTS — how many, how large, where
+#  (Hand-drawn designs bring their own settlements; these rules fill the rest.)
+# ─────────────────────────────────────────────────────────────────────────────
+
+seed: 1
+
+# Settlements per 10,000 IL² of land, by band id. Moons use their parent's band.
+density:
+  home: 9
+  second: 3.5
+  frontier: 1.4
+
+# Share of each size: mostly villages, then towns, and a smaller but real
+# number of cities.
+mix:
+  city: 0.10
+  town: 0.25
+  village: 0.65
+
+# Minimums per body. A continent with at least `city_from` settlements has a city.
+minimum:
+  continent: town
+  moon: village
+  city_from: 6
+
+# Closest any two places may be, by the larger of the two, in IL.
+spacing:
+  city: 30
+  town: 14
+  village: 6
+
+# Where people settle. Score = lowness × flatness × shore ×
+#   (base + fresh_water × nearness to rivers/lakes + coast × nearness to sea).
+siting:
+  base: 0.3
+  fresh_water: 0.5
+  coast: 0.3
+  # Multiplier for sites right on the shore (so only some become harbours).
+  shore: 0.8
+  # Slope (rise over run) at which flatness has fallen to ~37%.
+  gentle_slope: 0.04
+  # Land regions smaller than this many cells (e.g. islands in lakes) aren't settled.
+  min_region_cells: 40
+
+# Coastal cities and towns are always harbours; coastal villages sometimes.
+village_harbour_chance: 0.35
