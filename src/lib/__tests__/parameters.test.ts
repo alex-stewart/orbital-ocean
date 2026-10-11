@@ -11,15 +11,15 @@ const sources = Object.fromEntries(Object.entries(files).map(([p, t]) => [p.repl
 
 describe('parameters', () => {
   it('loads and checks every file', () => {
-    expect(Object.keys(parameters).sort()).toEqual(['belts', 'display', 'platforms', 'roads', 'settlements', 'shipping', 'terrain']);
+    expect(Object.keys(parameters).sort()).toEqual(['belts', 'display', 'platforms', 'roads', 'settlements', 'terrain']);
   });
 
   it('names the file and key when something is missing or mistyped', () => {
     expect(() => parseParameters({ ...sources, terrain: terrainSource.replace(/river_share: [\d.]+/, 'river_share: lots') })).toThrow(
       'parameters/terrain.yaml.water.river_share should be a number',
     );
-    const { shipping: _omit, ...rest } = sources;
-    expect(() => parseParameters(rest)).toThrow('parameters/shipping.yaml is missing');
+    const { roads: _omit, ...rest } = sources;
+    expect(() => parseParameters(rest)).toThrow('parameters/roads.yaml is missing');
   });
 
   it('really drives seeding: changing a parameter changes what is seeded', () => {

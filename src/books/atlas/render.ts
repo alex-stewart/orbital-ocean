@@ -1,13 +1,11 @@
 import { niceCeil, worldToScreen, type View } from '../../lib/camera';
 import type { IslandShape } from '../../lib/coastline';
-import { bearingAt, bearingBetween, distance, isletPosition, polar, type Point } from '../../lib/orbits';
+import { archipelagoCentre, bearingAt, bearingBetween, distance, isletPosition, polar, type Point } from '../../lib/orbits';
 import { orbitalDistance, type Body, type World } from '../../lib/world';
 import { rng } from '../../lib/random';
 import type { Layers } from './layers';
 import { drawPlatformLabels, drawPlatforms } from './platformLayer';
 import { drawSettlementLabels, drawSettlements, drawTerrain } from './terrainLayer';
-import { drawShipping, type RouteLine } from './shippingLayer';
-import { archipelagoCentre, type ShippingNetwork } from '../../lib/shipping';
 import { drawArchipelagoNames, drawFerries, revealedArchipelago } from './archipelagoLayer';
 import { findSettlement } from '../../lib/terrain';
 import { bandWash, fonts, theme, washedOcean } from './theme';
@@ -26,8 +24,6 @@ export interface RenderInput {
   layers: Layers;
   /** Platform positions at `t`, [x0, y0, x1, y1, …]. */
   platformXY: Float64Array;
-  /** Shipping planned for (about) this date, or null if not planned yet. */
-  shipping: ShippingNetwork | null;
   /** Explicit measuring (from the gazetteer's Measure button), if active. */
   measure: { from: string; to: string | null } | null;
   /** Something being moved in the editor, and where it is being dropped. */
@@ -36,7 +32,6 @@ export interface RenderInput {
 
 export interface RenderResult {
   hits: HitTarget[];
-  routes: RouteLine[];
 }
 
 /** On-screen footprint of a body or platform, used for hit testing. */
@@ -184,8 +179,6 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
     }
   }
 
-  // ── Shipping (over the sea, under the land) ─────────────────────────────────
-  const routes = drawShipping(ctx, s, s.shipping, toScreen);
 
   // ── Bodies ────────────────────────────────────────────────────────────────
   const drawn = world.bodies.filter(visibleMoon).map((b) => {
@@ -320,8 +313,8 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   // Measure from the selection (or an explicit origin) to the hovered (or pinned) place.
   const fromId = s.measure?.from ?? s.selectedId;
   const toId = s.measure?.to ?? s.hoveredId;
-  const measureA = fromId && !fromId.startsWith('route:') && placeAt(fromId);
-  const measureB = toId && !toId.startsWith('route:') && placeAt(toId);
+  const measureA = fromId && placeAt(fromId);
+  const measureB = toId && placeAt(toId);
   if (measureA && measureB && fromId !== toId) {
     const a = measureA;
     const b = measureB;
@@ -374,7 +367,7 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   drawArchipelagoNames(ctx, s, toScreen, placed);
   drawSettlementLabels(ctx, s, settled.labels, placed);
   drawPlatformLabels(ctx, s, platformHits, placed);
-  return { hits, routes };
+  return { hits };
 }
 
 function haloText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string) {

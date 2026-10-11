@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { platformPositions, positionsAt } from '../orbits';
-import { planShipping } from '../shipping';
+import { positionsAt } from '../orbits';
+import { traders } from '../seed/trade';
 import { continentMap, mappedBodies } from '../terrain';
 import { archipelagoFerries } from '../terrain/archipelago';
 import { cal, seededWorld } from './world';
@@ -98,14 +98,10 @@ describe('archipelagos', () => {
     }
   });
 
-  it('trades through one chief port per populated archipelago', () => {
-    const t = cal.defaultDay;
-    const bodies = positionsAt(world.bodies, t);
-    const net = planShipping(world, t, bodies, platformPositions(world.platforms, t, bodies));
-    const archPorts = net.ports.filter((p) => p.archipelago);
-    expect(new Set(archPorts.map((p) => p.archipelago!.id)).size).toBe(archPorts.length);
-    expect(archPorts.length).toBe(world.archipelagos.filter((a) => a.populated).length);
-    for (const p of archPorts) expect(p.archipelago!.islands).toContain(p.body);
-    expect(net.ports.filter((p) => p.body.kind === 'islet' && !p.archipelago)).toHaveLength(0);
+  it('trades through one harbour per settled archipelago (when siting platforms)', () => {
+    const list = traders(world, world.params.platforms.trade.weights);
+    const arch = list.filter((p) => p.body.archipelago);
+    expect(new Set(arch.map((p) => p.body.archipelago!.id)).size).toBe(arch.length);
+    expect(arch.length).toBe(world.archipelagos.filter((a) => a.islands.some((i) => continentMap(world, i).settlements.some((s) => s.port))).length);
   });
 });

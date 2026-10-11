@@ -15,7 +15,6 @@ import { LayersPanel } from './LayersPanel';
 import { QuickSelect } from './QuickSelect';
 import { Timeline } from './Timeline';
 import { findSettlement } from '../../lib/terrain';
-import type { ShippingNetwork } from '../../lib/shipping';
 import '../../styles/atlas.css';
 
 // The editor exists only under `npm run dev` (it writes to the data files);
@@ -44,7 +43,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const id = params.get('place') ?? params.get('isle');
     if (!id) return null;
-    // Places in the URL: bodies, archipelagos, settlements (body/slug) and platforms. Routes are re-planned, so not kept.
+    // Places in the URL: bodies, archipelagos, settlements (body/slug) and platforms.
     const known =
       world.bodies.some((b) => b.id === id) ||
       world.archipelagos.some((a) => a.id === id) ||
@@ -59,7 +58,6 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
     saveLayers(l);
   }, []);
   const [followId, setFollowId] = useState<string | null>(null);
-  const [shipping, setShipping] = useState<ShippingNetwork | null>(null);
   // The timeline starts as one slim row; the choice is remembered in this browser.
   const [compactTime, setCompactTime] = useState(() => {
     try {
@@ -139,7 +137,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
       restoring.current = false;
       return;
     }
-    const place = selectedId?.startsWith('route:') ? null : selectedId;
+    const place = selectedId;
     if ((currentParams().get('place') ?? null) !== place) pushParams({ place });
   }, [selectedId]);
   useEffect(() => {
@@ -224,22 +222,21 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             onFollowEnd={() => setFollowId(null)}
             onViewChange={setView}
             onCursor={setCursor}
-            onShipping={setShipping}
             initialView={initialView}
             measure={measure}
             onHover={setHover}
             onMeasureTarget={(id) => setMeasure((m) => (m ? { ...m, to: id } : m))}
             editor={editing ? mapEditor : null}
           />
-          <MapTooltip world={world} t={t} shipping={shipping} hover={hover} from={measure ? (measure.to ? null : measure.from) : selectedId} />
+          <MapTooltip world={world} t={t} hover={hover} from={measure ? (measure.to ? null : measure.from) : selectedId} />
           {measure && (
             <div className="measure-banner" role="status">
               <span>
-                Measuring from <strong>{placeSummary(world, measure.from, shipping)?.title}</strong>
+                Measuring from <strong>{placeSummary(world, measure.from)?.title}</strong>
                 {measure.to ? (
                   <>
                     {' '}
-                    to <strong>{placeSummary(world, measure.to, shipping)?.title}</strong>: {measureBetween(world, measure.from, measure.to, t, shipping)}
+                    to <strong>{placeSummary(world, measure.to)?.title}</strong>: {measureBetween(world, measure.from, measure.to, t)}
                   </>
                 ) : (
                   ' — click a place to measure to it'
@@ -320,7 +317,6 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             t={t}
             selectedId={selectedId}
             followId={followId}
-            shipping={layers.shipping ? shipping : null}
             onSelect={select}
             onFocus={focus}
             onMeasure={(id) => setMeasure({ from: id, to: null })}
@@ -329,7 +325,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
               if (id) mapRef.current?.flyTo(id);
             }}
             editSlot={
-              EditPanel && editing && selectedId && !selectedId.startsWith('route:') ? (
+              EditPanel && editing && selectedId ? (
                 <Suspense fallback={null}>
                   <EditPanel world={world} calendar={calendar} t={t} selectedId={selectedId} onSelect={select} />
                 </Suspense>

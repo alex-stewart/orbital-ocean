@@ -8,7 +8,7 @@
 export type PathSegment = string | number | Record<string, string>;
 
 export interface Edit {
-  /** Relative to src/: data/world.yaml, data/places/<id>.yaml, parameters/shipping.yaml… */
+  /** Relative to src/: data/world.yaml, data/places/<id>.yaml, parameters/roads.yaml… */
   file: string;
   op: 'set' | 'delete' | 'add';
   path: PathSegment[];

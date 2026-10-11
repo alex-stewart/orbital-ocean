@@ -1,16 +1,14 @@
-import { bearingBetween, compassPoint, platformPositions, positionsAt, type Point } from './orbits';
-import { archipelagoCentre, portName, routeGeometry, type ShippingNetwork } from './shipping';
+import { archipelagoCentre, bearingBetween, compassPoint, platformPositions, positionsAt, type Point } from './orbits';
 import { continentMap, findSettlement, hasContinentMap } from './terrain';
 import type { World } from './world';
 
 /**
  * Anything with an id on the chart: a body, a settlement (`body/slug`), a
- * platform (register number), an archipelago (`arch:belt:slug`) or a shipping
- * route (`route:a|b`).
+ * platform (register number) or an archipelago (`arch:belt:slug`).
  */
 
-/** Map position of a place at day `t` (a route's midpoint for routes). */
-export function placePosition(world: World, id: string, t: number, shipping?: ShippingNetwork | null): Point | null {
+/** Map position of a place at day `t`. */
+export function placePosition(world: World, id: string, t: number): Point | null {
   const bodies = positionsAt(world.bodies, t);
   const body = bodies.get(id);
   if (body) return body;
@@ -26,11 +24,6 @@ export function placePosition(world: World, id: string, t: number, shipping?: Sh
     const xy = platformPositions([world.platforms[i]], t, bodies);
     return { x: xy[0], y: xy[1] };
   }
-  const route = shipping?.routes.find((r) => r.id === id);
-  if (route) {
-    const pts = routeGeometry(world, route, bodies, platformPositions(world.platforms, t, bodies), t);
-    return pts[Math.floor(pts.length / 2)];
-  }
   return null;
 }
 
@@ -42,8 +35,7 @@ export interface PlaceSummary {
 const fmt = new Intl.NumberFormat('en-GB');
 
 /** A one-line description, for tooltips and banners. */
-export function placeSummary(world: World, id: string, shipping?: ShippingNetwork | null): PlaceSummary | null {
-  const u = world.units.abbr;
+export function placeSummary(world: World, id: string): PlaceSummary | null {
   const body = world.bodies.find((b) => b.id === id);
   if (body) {
     const band = world.bands.find((b) => {
@@ -79,20 +71,13 @@ export function placeSummary(world: World, id: string, shipping?: ShippingNetwor
     const p = world.platforms[i];
     return { title: p.id, detail: `${p.size.name} · ${p.motion} · ${p.owner.name}` };
   }
-  const route = shipping?.routes.find((r) => r.id === id);
-  if (route) {
-    return {
-      title: `${portName(route.from)} ⇄ ${portName(route.to)}`,
-      detail: `Cargo route · ${fmt.format(Math.round(route.length))} ${u} · ${route.stops.length} stops`,
-    };
-  }
   return null;
 }
 
 /** "2,345 IL, bearing 047° NE" between two places on day `t`. */
-export function measureBetween(world: World, a: string, b: string, t: number, shipping?: ShippingNetwork | null): string | null {
-  const p = placePosition(world, a, t, shipping);
-  const q = placePosition(world, b, t, shipping);
+export function measureBetween(world: World, a: string, b: string, t: number): string | null {
+  const p = placePosition(world, a, t);
+  const q = placePosition(world, b, t);
   if (!p || !q) return null;
   const d = Math.hypot(q.x - p.x, q.y - p.y);
   const brg = bearingBetween(p, q);

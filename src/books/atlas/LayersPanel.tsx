@@ -102,10 +102,9 @@ export function LayersPanel({ layers, onChange, onClose }: Props) {
           </li>
           <li>
             <svg viewBox="0 0 24 12" aria-hidden>
-              <line x1="1" y1="6" x2="23" y2="6" stroke="rgba(91,58,122,0.8)" strokeWidth="2" strokeDasharray="6 3" />
-              <circle cx="12" cy="6" r="3" fill="#f4ecd6" stroke="#5b3a7a" strokeWidth="1.2" />
+              <line x1="1" y1="6" x2="23" y2="6" stroke="#4f7a96" strokeWidth="1.4" strokeDasharray="5 3" />
             </svg>
-            Shipping, with a hub
+            Ferry between islands
           </li>
         </ul>
       </fieldset>

@@ -1,5 +1,4 @@
-import type { Point } from '../../lib/orbits';
-import { archipelagoCentre } from '../../lib/shipping';
+import { archipelagoCentre, type Point } from '../../lib/orbits';
 import { continentMap, findSettlement, hasContinentMap } from '../../lib/terrain';
 import { archipelagoFerries, type Ferry } from '../../lib/terrain/archipelago';
 import type { Archipelago } from '../../lib/world';
@@ -20,9 +19,9 @@ export function revealedArchipelago(s: RenderInput, a: Archipelago): boolean {
 
 const fade = (from: number, x: number) => Math.min(1, Math.max(0, (x - from * 0.7) / (from * 0.3)));
 
-/** Ferry lines between island places (of an archipelago, or of a body made of islands): over the sea, under the land. */
+/** Ferry lines between island places (shown with the roads) (of an archipelago, or of a body made of islands): over the sea, under the land. */
 export function drawFerries(ctx: CanvasRenderingContext2D, s: RenderInput, toScreen: (p: Point) => Point) {
-  if (!s.layers.shipping) return;
+  if (!s.layers.roads) return;
   const reveal = s.world.params.display.reveal.ferries;
   ctx.save();
   ctx.lineCap = 'round';

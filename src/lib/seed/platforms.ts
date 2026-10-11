@@ -11,16 +11,15 @@ import {
   type PlatformRow,
 } from '../platforms';
 import { rng } from '../random';
-import { chiefPorts, planShipping } from '../shipping';
-import { continentMap, primeContinentMap } from '../terrain';
 import type { Body, World } from '../world';
+import { busiestPairs, harbours, hopGroups, traders } from './trade';
 
 /**
  * Siting platforms where they earn their keep (`npm run seed -- platforms`).
  *
  * Trade between every pair of chief ports is sampled on many dates over the
- * years (by the shipping model's gravity rule), and the value of each voyage
- * is spread along its line. Then:
+ * years (by a gravity rule, see trade.ts), and the value of each voyage is
+ * spread along its line. Then:
  *  - anchored platforms go where the most valuable traffic passes most often,
  *    in the water no continent sweeps, a fair distance apart;
  *  - lanes open about the centre at the radii most traffic crosses, and lane
@@ -28,8 +27,9 @@ import type { Body, World } from '../world';
  *  - convoys ride ahead of and behind the continents that trade most, and
  *    rings orbit them;
  *  - the busiest spots get the grand platforms, the rest are keeps;
- *  - finally, routes still beyond resupply range on some dates get extra
- *    keeps along their way.
+ *  - finally, busy pairs of ports that can't reach each other on some dates,
+ *    hopping between platforms no further than a ship's range, get extra keeps
+ *    along their way.
  * Everything sited follows the collision rules in platforms.ts.
  */
 
@@ -65,7 +65,8 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   const content = world.platformContent;
   if (!content) return { rows: [], report: ['world.yaml lists no platform classes'] };
   const P = world.params.platforms;
-  const S = world.params.shipping;
+  const T = P.trade;
+  const range = P.siting.range;
   const rand = rng(P.seed * 7717 + 3);
   const { clearance } = P;
   const report: string[] = [];
@@ -76,8 +77,7 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   // ── Demand: valuable voyages over the years ─────────────────────────────────
-  for (const b of world.bodies) continentMap(world, b);
-  const ports = chiefPorts(world, S);
+  const ports = traders(world, T.weights);
   const portOf = new Map<string, number>(); // continent id → its trade value
   const cell = P.siting.cell;
   const anchoredCells = new Map<string, { v: number; x: number; y: number }>();
@@ -88,24 +88,13 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   for (let k = 0; k < samples; k++) {
     const t = (span * (k + 0.5)) / samples;
     const pos = positionsAt(world.bodies, t);
-    const at = ports.map((p) => {
-      const c = pos.get(p.body.id)!;
-      return { x: c.x + p.settlement.x, y: c.y + p.settlement.y };
-    });
-    const pairs: { a: number; b: number; trade: number }[] = [];
-    for (let a = 0; a < ports.length; a++)
-      for (let b = a + 1; b < ports.length; b++) {
-        const d = Math.hypot(at[a].x - at[b].x, at[a].y - at[b].y);
-        pairs.push({ a, b, trade: (ports[a].weight * ports[b].weight) / Math.max(1, d) ** S.distance_decay });
-      }
-    pairs.sort((x, y) => y.trade - x.trade);
-    const chosen = pairs.slice(0, S.max_routes);
-    for (let i = 0; i < ports.length; i++) if (!chosen.some((c) => c.a === i || c.b === i)) chosen.push(pairs.find((c) => c.a === i || c.b === i)!);
+    const at = harbours(ports, pos);
+    const chosen = busiestPairs(ports, at, T.distance_decay, T.pairs);
     const top = chosen[0]?.trade || 1;
     for (const { a, b, trade } of chosen) {
       const v = trade / top / samples;
       for (const i of [a, b]) {
-        const c = ports[i].body.kind === 'isle' ? ports[i].body : ports[i].body.parent?.kind === 'isle' ? ports[i].body.parent : null;
+        const c = ports[i].continent;
         if (c) portOf.set(c.id, (portOf.get(c.id) ?? 0) + v);
       }
       // Spread the voyage's value along its line, per IL sailed.
@@ -239,7 +228,7 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   // First a backbone: rings of anchored keeps round the open water between
   // orbits, close enough together for ships to work their way round and
   // across. Rings go to the water that trade crosses most, while the budget lasts.
-  const step = S.resupply_range * 0.8;
+  const step = range * 0.8;
   const backboneBudget = Math.round(nAnchored * P.siting.backbone);
   const rings_: { r: number; v: number; n: number }[] = anchoredWater
     .filter(([a, b]) => b - a >= 2)
@@ -350,27 +339,26 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
   // ── Close gaps: extra keeps where wanted routes are out of range ────────────
   const evaluate = (rows: PlatformRow[]) => {
     const parsed = parsePlatforms(rows, content, P, layout);
-    const w: World = { ...world, platforms: parsed.platforms, platformIndex: new Map(parsed.platforms.map((p, i) => [p.id, i])), platformRules: parsed.rules };
-    // Maps are cached per world: share the ones already built.
-    for (const b of world.bodies) primeContinentMap(w, b.id, continentMap(world, b));
+    // Ships resupply at Imperial platforms (and the harbours themselves).
+    const resupply = parsed.platforms.filter((p) => p.owner.imperial);
     const dates = Array.from({ length: 16 }, (_, k) => (span * (k + 0.37)) / 16);
     let wanted = 0;
     let failed = 0;
     const misses: { a: Point; b: Point }[] = [];
     for (const t of dates) {
-      const pos = positionsAt(w.bodies, t);
-      const net = planShipping(w, t, pos, platformPositions(w.platforms, t, pos));
-      wanted += net.routes.length + net.unreachable.length;
-      failed += net.unreachable.length;
-      for (const [a, b] of net.unreachable.slice(0, 12)) {
-        const pa = net.ports.find((p) => p.id === a)!;
-        const pb = net.ports.find((p) => p.id === b)!;
-        const ca = pos.get(pa.body.id)!;
-        const cb = pos.get(pb.body.id)!;
-        misses.push({ a: { x: ca.x + pa.settlement.x, y: ca.y + pa.settlement.y }, b: { x: cb.x + pb.settlement.x, y: cb.y + pb.settlement.y } });
+      const pos = positionsAt(world.bodies, t);
+      const at = harbours(ports, pos);
+      const xy = platformPositions(resupply, t, pos);
+      const group = hopGroups([...at, ...Array.from({ length: resupply.length }, (_, i) => ({ x: xy[i * 2], y: xy[i * 2 + 1] }))], range);
+      const pairs = busiestPairs(ports, at, T.distance_decay, T.pairs);
+      wanted += pairs.length;
+      for (const { a, b } of pairs) {
+        if (group[a] === group[b]) continue;
+        failed++;
+        misses.push({ a: at[a], b: at[b] });
       }
     }
-    return { share: wanted ? 1 - failed / wanted : 1, misses, warnings: parsed.warnings };
+    return { share: wanted ? 1 - failed / wanted : 1, misses: misses.slice(0, 200), warnings: parsed.warnings };
   };
   let rows = toRows(sited);
   let check = evaluate(rows);
@@ -381,11 +369,11 @@ export function sitePlatforms(world: World, yearDays: number): { rows: PlatformR
       if (added >= P.siting.repair) break;
       // Along the line, wherever no anchored platform is within half a range, add one (in open water).
       const len = Math.hypot(b.x - a.x, b.y - a.y);
-      const steps = Math.ceil(len / (S.resupply_range * 0.6));
+      const steps = Math.ceil(len / (range * 0.6));
       for (let s = 1; s < steps && added < P.siting.repair; s++) {
         const p = { x: a.x + ((b.x - a.x) * s) / steps, y: a.y + ((b.y - a.y) * s) / steps };
         // Near a thinned belt, only where there is nothing at all within range.
-        if (!inWater(p) || !far(p, S.resupply_range * (nearBelt(Math.hypot(p.x, p.y)) < 1 ? 0.9 : 0.5))) continue;
+        if (!inWater(p) || !far(p, range * (nearBelt(Math.hypot(p.x, p.y)) < 1 ? 0.9 : 0.5))) continue;
         const k = anchorAt(p, 0);
         anchored.push(k);
         sited.push(k);

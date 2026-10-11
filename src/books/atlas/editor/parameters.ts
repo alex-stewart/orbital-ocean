@@ -30,10 +30,6 @@ const PLATFORMS = 'When platforms are re-sited';
 const BELTS = 'When archipelagos are regenerated';
 
 export const PARAMETERS: ParamSpec[] = [
-  P(LIVE, 'shipping', 'resupply_range', 'Resupply range (IL)', { step: 50, hint: 'Longest leg a ship sails between resupply points' }),
-  P(LIVE, 'shipping', 'max_routes', 'Routes planned', { step: 1 }),
-  P(LIVE, 'shipping', 'distance_decay', 'Trade falls with distance (power)', { step: 0.1 }),
-  P(LIVE, 'shipping', 'open_sea', 'Cost of long open-sea legs', { step: 0.1 }),
   P(LIVE, 'roads', 'slope_weight', 'Roads avoid slopes', { step: 0.5 }),
   P(LIVE, 'roads', 'bridge', 'Cost of a bridge', { step: 1 }),
   P(LIVE, 'roads', 'reuse', 'Roads share routes (lower: more)', { step: 0.05 }),
@@ -53,6 +49,7 @@ export const PARAMETERS: ParamSpec[] = [
   P(PLACES, 'settlements', 'spacing.town', 'Space round a town (IL)', { step: 1 }),
   P(PLACES, 'settlements', 'spacing.village', 'Space round a village (IL)', { step: 1 }),
 
+  P(PLATFORMS, 'platforms', 'siting.range', "A ship's longest leg between resupply points (IL)", { step: 50 }),
   P(PLATFORMS, 'platforms', 'count.grand', 'Grand platforms', { step: 1 }),
   P(PLATFORMS, 'platforms', 'count.keep', 'Keeps', { step: 5 }),
   P(PLATFORMS, 'platforms', 'motion.anchored', 'Share anchored', { step: 0.05 }),

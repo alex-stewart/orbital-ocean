@@ -118,7 +118,7 @@ Little Wick (village)
 - **City**: the largest places. Shown first when zoomed out, with a ringed symbol and small capitals, and joined by highways.
 - **Town**: shown at medium zoom as a solid dot.
 - **Village**: shown up close as an open circle, joined by tracks.
-- `port` marks a harbour, shown with an anchor. Use it for places on the coast, ready for sea routes later.
+- `port` marks a harbour, shown with an anchor. Use it for places on the coast.
 - Names must be unique on a continent. Each settlement gets the id `<continent id>/<name>`, used in links (`#/atlas?place=mort/varrowick`).
 - Put settlements on dry land, not in a lake or the sea. The gazetteer notes any that aren't.
 
@@ -157,7 +157,7 @@ Generated settlements keep at least **30 IL** from a city, **14 IL** from a town
 - Important roads are routed first, and later roads are drawn onto them, so they merge rather than run side by side.
 - **Ranks:** city to city is a **highway**, links involving a town are **roads**, and links involving a village are **tracks**.
 - The costs (slope, height, bridges, reuse) are in `src/parameters/roads.yaml`.
-- Settlements on separate landmasses aren't joined by road; that's for sea routes.
+- Settlements on separate landmasses aren't joined by road: ferries join them instead.
 
 ### Rivers and lakes
 
@@ -165,7 +165,7 @@ Generated water flows downhill from every point to the sea. Basins deep enough f
 
 ### Sea trade
 
-Each body's largest harbour is its **chief port**, the one that appears on the Imperial shipping routes. Mark a city or town on the coast with `port` to make it eligible.
+When platforms are sited (`npm run seed -- platforms`), each body's largest harbour stands for its trade. Mark a city or town on the coast with `port` to make it count.
 
 ---
 
