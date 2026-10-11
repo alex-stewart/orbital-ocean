@@ -3,9 +3,10 @@ import { platformPositions, positionsAt } from '../orbits';
 import { planShipping } from '../shipping';
 import { continentMap, mappedBodies } from '../terrain';
 import { archipelagoFerries } from '../terrain/archipelago';
-import { cal, loadWorld } from './world';
+import { cal, seededWorld } from './world';
 
-const world = loadWorld();
+// Seeding is what these test; the shipped files are checked in data.test.ts.
+const world = await seededWorld();
 for (const b of mappedBodies(world)) continentMap(world, b);
 const bp = world.params.belts;
 

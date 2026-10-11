@@ -1,0 +1,5 @@
+# Settlements on Camere (see README.md in this folder).
+
+- {name: Faswharf, kind: city, x: -16.14, y: -24.47, harbour: true}
+- {name: Fasands, kind: village, x: 15.35, y: -14.82, harbour: true}
+- {name: Trandysands, kind: village, x: 2.25, y: 30.81, harbour: true}

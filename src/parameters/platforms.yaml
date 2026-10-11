@@ -1,42 +1,74 @@
 # ─────────────────────────────────────────────────────────────────────────────
-#  OCEAN PLATFORMS — how many, of what kind, how spaced
+#  OCEAN PLATFORMS — how many, of what kind, and how they are sited
 #  (Which size classes and owners exist, and their names, are in world.yaml.)
+#
+#  Platforms themselves are listed in src/data/platforms.yaml. These numbers
+#  are used when they are sited, by `npm run seed -- platforms` (or the
+#  editor's "Re-site platforms"), which places them where valuable trade
+#  passes most often over the years. Re-site after moving continents around.
 # ─────────────────────────────────────────────────────────────────────────────
 
 seed: 1
 clearance: 20          # IL kept clear of continents, moons, belts and lanes
 spacing: 1.5           # IL between neighbouring platforms
 
-# How many platforms each band holds, and what share are anchored.
-bands:
-  home:     { count: 1100, anchored: 0.7 }
-  second:   { count: 800,  anchored: 0.25 }
-  frontier: { count: 500,  anchored: 0.15 }
+# How many of each class to site. Grand platforms go to the busiest spots.
+count:
+  grand: 40
+  keep: 160
 
-# How orbital (non-anchored) platforms divide between kinds of orbit.
-orbital:
-  lane: 0.45
-  convoy: 0.25
-  continent: 0.30
+# Share of platforms by how they move. Anchored ones sit still where trade
+# routes cross most often; lanes orbit the centre where much traffic crosses
+# their radius; convoys ride ahead of and behind busy continents; rings orbit
+# busy continents.
+motion:
+  anchored: 0.55
+  lane: 0.15
+  convoy: 0.2
+  ring: 0.1
 
-# Lanes about the centre: up to `max_per_gap` in each clear gap, if the gap is
-# at least `min_gap_in_clearances` × clearance wide.
-lanes:
-  max_per_gap: 3
-  min_gap_in_clearances: 6
+siting:
+  # Trade is sampled on this many dates spread over this many years, so that
+  # platforms suit the routes on any date, not just one.
+  years: 60
+  samples: 90
+  # Share of anchored platforms that form the backbone: rings of keeps round
+  # the open water between orbits, a little under resupply range apart, so
+  # ships can always work their way round. The rest go to the busiest spots.
+  backbone: 0.9
+  # Anchored platforms gather the traffic of cells this size (IL)...
+  cell: 40
+  # ...and keep at least this far apart (IL).
+  separation: 160
+  # Most lanes to open about the centre.
+  max_lanes: 6
+  # At most this many extra keeps, added where wanted routes are beyond
+  # resupply range on some dates.
+  repair: 40
+
+# Continents that draw more or fewer orbiting platforms than their trade
+# alone would, by id: `weight` multiplies their share of convoys and rings;
+# `ring` and `convoy` set exact numbers instead.
+continents:
+  holy-purple-homeland: { weight: 2 }
+  brock: { ring: 1, convoy: 0 }
+
+# Far fewer platforms near these belts: the share of what siting would put
+# within `near_belt_reach` IL of each belt that is kept there.
+near_belts:
+  far-belt: 0.15
+near_belt_reach: 700
 
 # A moonless continent's platform ring sits within this × its coast's reach.
 moonless_ring_reach: 1.3
 
-# Per size class (ids as in world.yaml): radius in IL, share of platforms,
-# and the zoom (px per IL) at which the class appears as symbols.
+# Per size class (ids as in world.yaml): radius in IL, and the zoom (px per
+# IL) at which the class appears as symbols.
 sizes:
-  grand:   { radius: 0.1,   share: 0.06, reveal: 0.12 }
-  keep:    { radius: 0.05,  share: 0.16, reveal: 0.35 }
-  station: { radius: 0.025, share: 0.3,  reveal: 1 }
-  beacon:  { radius: 0.008, share: 0.48, reveal: 3 }
+  grand: { radius: 0.1,  reveal: 0.03 }
+  keep:  { radius: 0.05, reveal: 0.08 }
 
-# Share of platforms per owner (ids as in world.yaml).
+# Share of keeps per owner (ids as in world.yaml). Grand platforms are all Imperial.
 owners:
   imperial: 0.88
   independent: 0.08

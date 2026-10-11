@@ -30,6 +30,8 @@ export interface SettlementParams {
   spacing: Kind3<number>;
   siting: { base: number; fresh_water: number; coast: number; shore: number; gentle_slope: number; min_region_cells: number };
   village_harbour_chance: number;
+  /** Bodies settled differently from their band, by id: density (per 10,000 IL²), coast (settle only within this many IL of the sea). */
+  bodies: Record<string, { density?: number; coast?: number }>;
 }
 
 export interface RoadParams {
@@ -46,11 +48,16 @@ export interface PlatformParams {
   seed: number;
   clearance: number;
   spacing: number;
-  bands: Record<string, { count: number; anchored: number }>;
-  orbital: { lane: number; convoy: number; continent: number };
-  lanes: { max_per_gap: number; min_gap_in_clearances: number };
+  count: Record<string, number>;
+  motion: { anchored: number; lane: number; convoy: number; ring: number };
+  siting: { years: number; samples: number; backbone: number; cell: number; separation: number; max_lanes: number; repair: number };
+  /** Continents that draw more or fewer orbiting platforms, by id: weight × their trade, or exact ring and convoy counts. */
+  continents: Record<string, { weight?: number; ring?: number; convoy?: number }>;
+  /** How many of the platforms siting would put near a belt to keep there (by belt id), and how near counts (IL). */
+  near_belts: Record<string, number>;
+  near_belt_reach: number;
   moonless_ring_reach: number;
-  sizes: Record<string, { radius: number; share: number; reveal: number }>;
+  sizes: Record<string, { radius: number; reveal: number }>;
   owners: Record<string, number>;
 }
 
@@ -138,17 +145,21 @@ const SPECS: Record<keyof Parameters, Spec> = {
     spacing: k3,
     siting: { base: 'n', fresh_water: 'n', coast: 'n', shore: 'n', gentle_slope: 'n', min_region_cells: 'n' },
     village_harbour_chance: 'n',
+    bodies: { each: 'n{}' },
   },
   roads: { grade_scale: 'n', slope_weight: 'n', height_scale: 'n', bridge: 'n', reuse: 'n', neighbours: 'n', extra_link_every: 'n' },
   platforms: {
     seed: 'n',
     clearance: 'n',
     spacing: 'n',
-    bands: { each: { count: 'n', anchored: 'n' } },
-    orbital: { lane: 'n', convoy: 'n', continent: 'n' },
-    lanes: { max_per_gap: 'n', min_gap_in_clearances: 'n' },
+    count: 'n{}',
+    motion: { anchored: 'n', lane: 'n', convoy: 'n', ring: 'n' },
+    siting: { years: 'n', samples: 'n', backbone: 'n', cell: 'n', separation: 'n', max_lanes: 'n', repair: 'n' },
+    continents: { each: 'n{}' },
+    near_belts: 'n{}',
+    near_belt_reach: 'n',
     moonless_ring_reach: 'n',
-    sizes: { each: { radius: 'n', share: 'n', reveal: 'n' } },
+    sizes: { each: { radius: 'n', reveal: 'n' } },
     owners: 'n{}',
   },
   belts: {

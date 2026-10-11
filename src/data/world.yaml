@@ -15,6 +15,8 @@
 #  ground in metres; `settlement_density` overrides its band's density
 #  (see src/parameters/settlements.yaml).
 #  To hand-draw a continent, see docs/designing-continents.md.
+#  `shape: islands` (with `islands: <how many>`) makes a body a scatter of
+#  small islands within its radius instead of one landmass.
 #  `moons:` orbit their continent (same fields as an orbital). Keep each
 #  continent's moons within reach so they clear the neighbouring orbits —
 #  the tests check this.
@@ -41,19 +43,7 @@ central:
   radius: 210          # ≈ 140,000 IL², between Iceland and Great Britain
   seed: 11
   description: The largest known landmass, at the centre of the Orbital Ocean.
-  moons:
-    - id: land-of-the-large-i
-      name: Land of the Large I
-      orbit_radius: 320
-      bearing: 60
-      period_days: 30
-      radius: 12
-    - id: land-of-the-large-ii
-      name: Land of the Large II
-      orbit_radius: 430
-      bearing: 250
-      period_days: 52
-      radius: 8
+  # No moons: whatever orbits the centre is a continent.
 
 orbitals:
   - id: continent-2
@@ -216,6 +206,9 @@ orbitals:
     period_years: 12.66
     radius: 65
     seed: 112
+    shape: islands
+    islands: 9
+    description: A scatter of small, windswept islands.
     moons:
       - id: windstones-i
         name: Windstones I
@@ -344,20 +337,19 @@ bands:
 # ─────────────────────────────────────────────────────────────────────────────
 #  OCEAN PLATFORMS
 #
-#  Platforms are generated (thousands of them); how many, where and how
-#  spaced is tuned in src/parameters/platforms.yaml. Here is only what kinds
-#  exist and what they're called. Each platform gets a number in the Imperial
-#  register: <register>-<owner code>-<number>, e.g. HPBE-P-01423.
+#  The platforms themselves are listed in src/data/platforms.yaml (sited by
+#  `npm run seed -- platforms`, tuned in src/parameters/platforms.yaml). Here
+#  is only what kinds exist and what they're called. Each platform has a
+#  number in the Imperial register: <register>-<owner code>-<number>,
+#  e.g. HPBE-P-01423.
 # ─────────────────────────────────────────────────────────────────────────────
 
 platform_register: HPBE
 
-# Size classes, smallest last. Their sizes and shares are parameters.
+# Size classes, largest first. Their sizes are parameters.
 platform_classes:
   - { id: grand,   name: Grand platform, like: a large cathedral }
   - { id: keep,    name: Keep,           like: a castle keep }
-  - { id: station, name: Station,        like: a manor house }
-  - { id: beacon,  name: Beacon,         like: a lighthouse }
 
 # Who holds platforms. `code` is the register letter; `imperial` marks the Empire.
 platform_owners:

@@ -1,0 +1,8 @@
+# Settlements on Continent 2 (see README.md in this folder).
+
+- {name: Draport, kind: city, x: -45.09, y: -0.54, harbour: true}
+- {name: Kornogard, kind: town, x: 19.65, y: -36.14}
+- {name: Craerrhaven, kind: town, x: -2.31, y: -34.31, harbour: true}
+- {name: Braelmsands, kind: village, x: -7.99, y: 40.28, harbour: true}
+- {name: Braerham, kind: village, x: 0.44, y: 41.16}
+- {name: Oruham, kind: village, x: -33.03, y: 27.81, harbour: true}

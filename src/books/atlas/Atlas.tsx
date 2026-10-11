@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { calendar, onWorldReload, world as initialWorld } from '../../data';
 import { dateToDays, daysToDate } from '../../lib/calendar';
 import type { View } from '../../lib/camera';
@@ -7,7 +7,7 @@ import { currentParams, pushParams, replaceParams } from '../../lib/route';
 import { stepDate } from '../../lib/calendar';
 import { measureBetween, placeSummary } from '../../lib/places';
 import { MapTooltip } from './MapTooltip';
-import { AtlasMap, type AtlasMapHandle } from './AtlasMap';
+import { AtlasMap, type AtlasMapHandle, type MapEditor } from './AtlasMap';
 import { Compass, CursorReadout, ScaleBar } from './Instruments';
 import { Gazetteer } from './Gazetteer';
 import { loadLayers, saveLayers, type Layers } from './layers';
@@ -17,6 +17,11 @@ import { Timeline } from './Timeline';
 import { findSettlement } from '../../lib/terrain';
 import type { ShippingNetwork } from '../../lib/shipping';
 import '../../styles/atlas.css';
+
+// The editor exists only under `npm run dev` (it writes to the data files);
+// a production build leaves it out entirely.
+const EditorUI = import.meta.env.DEV ? lazy(() => import('./editor/EditorUI')) : null;
+const EditPanel = import.meta.env.DEV ? lazy(() => import('./editor/EditorUI').then((m) => ({ default: m.EditPanel }))) : null;
 
 function parseDateParam(v: string | null): number | null {
   const m = v?.match(/^(-?\d+)-(\d+)-(\d+)$/);
@@ -85,6 +90,8 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
     const v = params.get('view')?.split(',').map(Number);
     return v && v.length === 3 && v.every(Number.isFinite) && v[2] > 0 ? { cx: v[0], cy: v[1], scale: v[2] } : null;
   });
+  const [editing, setEditing] = useState(false);
+  const [mapEditor, setMapEditor] = useState<MapEditor | null>(null);
   // Set while the selection is being restored from Back/Forward, so it isn't pushed again.
   const restoring = useRef(false);
 
@@ -158,6 +165,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
       else if (e.key === '-' || e.key === '_') mapRef.current?.zoomBy(1 / 1.6);
       else if (e.key === '0') mapRef.current?.reset();
       else if (e.key === 'l' || e.key === 'L') setLayersOpen((o) => !o);
+      else if ((e.key === 'e' || e.key === 'E') && EditorUI && !e.ctrlKey && !e.metaKey) setEditing((x) => !x);
       // Arrow keys pan; [ and ] step a day, { and } a month.
       else if (e.key.startsWith('Arrow')) {
         e.preventDefault();
@@ -221,6 +229,7 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             measure={measure}
             onHover={setHover}
             onMeasureTarget={(id) => setMeasure((m) => (m ? { ...m, to: id } : m))}
+            editor={editing ? mapEditor : null}
           />
           <MapTooltip world={world} t={t} shipping={shipping} hover={hover} from={measure ? (measure.to ? null : measure.from) : selectedId} />
           {measure && (
@@ -276,7 +285,26 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
             >
               ☰
             </button>
+            {EditorUI && (
+              <button className={editing ? 'active' : ''} onClick={() => setEditing((x) => !x)} aria-pressed={editing} aria-label="Edit the world" title="Edit the world (E) — development only">
+                ✎
+              </button>
+            )}
           </div>
+          {EditorUI && editing && (
+            <Suspense fallback={null}>
+              <EditorUI
+                world={world}
+                calendar={calendar}
+                t={t}
+                onSelect={select}
+                onFocus={focus}
+                onMapEditor={setMapEditor}
+                clearDrag={() => mapRef.current?.clearDrag()}
+                onClose={() => setEditing(false)}
+              />
+            </Suspense>
+          )}
           {layersOpen && <LayersPanel layers={layers} onChange={setLayers} onClose={() => setLayersOpen(false)} />}
 
           <div className="map-foot">
@@ -300,6 +328,13 @@ export default function Atlas({ params }: { params: URLSearchParams }) {
               setFollowId(id);
               if (id) mapRef.current?.flyTo(id);
             }}
+            editSlot={
+              EditPanel && editing && selectedId && !selectedId.startsWith('route:') ? (
+                <Suspense fallback={null}>
+                  <EditPanel world={world} calendar={calendar} t={t} selectedId={selectedId} onSelect={select} />
+                </Suspense>
+              ) : null
+            }
           />
         </div>
 

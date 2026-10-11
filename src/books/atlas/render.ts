@@ -30,6 +30,8 @@ export interface RenderInput {
   shipping: ShippingNetwork | null;
   /** Explicit measuring (from the gazetteer's Measure button), if active. */
   measure: { from: string; to: string | null } | null;
+  /** Something being moved in the editor, and where it is being dropped. */
+  drag?: { id: string; at: Point } | null;
 }
 
 export interface RenderResult {
@@ -340,6 +342,32 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
     ctx.font = `italic 600 14px ${fonts.serif}`;
     // Label the line nearer the hovered end, clear of the selected island's own label.
     haloText(ctx, text, sa.x + (sb.x - sa.x) * 0.62 + 8, sa.y + (sb.y - sa.y) * 0.62 - 8, theme.accent);
+  }
+
+  // ── Editor: what is being moved, and where to ─────────────────────────────
+  if (s.drag) {
+    const from = placeAt(s.drag.id);
+    const a = from && toScreen(from);
+    const b = toScreen(s.drag.at);
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    if (a) {
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const body = world.bodies.find((x) => x.id === s.drag!.id);
+    const r = Math.max(6, (body?.outerRadius ?? 0) * view.scale);
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = theme.accent;
+    ctx.fill();
   }
 
   const placed = drawLabels(ctx, s, drawn, new Map(bodyHits.map((t) => [t.id, t])));

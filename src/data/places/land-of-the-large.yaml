@@ -1,0 +1,13 @@
+# Settlements on Land of the Large (see README.md in this folder).
+
+- {name: Veworth, kind: city, x: -23.69, y: -203.32}
+- {name: Hehythe, kind: town, x: 206.57, y: -54.05, harbour: true}
+- {name: Stinport, kind: town, x: 89.13, y: -176.61, harbour: true}
+- {name: Veby, kind: town, x: 211.35, y: -38.51}
+- {name: Stiley, kind: village, x: 0.1, y: 212.3, harbour: true}
+- {name: Dimere, kind: village, x: 68.21, y: -193.74, harbour: true}
+- {name: Glindholm, kind: village, x: -55.57, y: -203.33, harbour: true}
+- {name: Wirnhythe, kind: village, x: -206.95, y: 33.81}
+- {name: Tisands, kind: village, x: 193.15, y: -89.56}
+- {name: Wrindworth, kind: village, x: 216.65, y: -20.89}
+- {name: Gousport, kind: village, x: -46.32, y: 196.98}

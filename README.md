@@ -4,7 +4,7 @@ A reference library for a worldbuilding project. The Orbital Ocean is a perfect
 circle surrounded by the Endless Gunk. At its centre sits the Land of the
 Large, the largest known landmass. Thirteen medium continents and two belts of
 islands orbit it clockwise, most continents attended by up to three moons,
-and thousands of ocean platforms dot the water between them. The belts' islands
+and a few hundred ocean platforms keep the sea lanes between them. The belts' islands
 gather in named archipelagos, some settled, some wild. Each continent
 has terrain, rivers and lakes, cities, towns and villages, and roads that
 follow the lie of the land.
@@ -30,7 +30,7 @@ Endless Gunk.
 - **Back and Forward:** each place you select is a browser history entry.
 - **Time:** the timeline is one slim row: play (`space`), the date (click to type one in), the slider and the speed. `[` and `]` step a day, `{` and `}` a month. ⌃ expands it to step by day, month or year and see the year scale; ⌄ folds it back. The choice is remembered.
 - **Layers:** ☰ (or `L`) toggles relief, water, settlements, roads, moons, belts and archipelagos, shipping routes and ferries, anchored and orbital platforms, orbit lines, the imperial bands, range rings and names, with a key to the platform symbols. Choices are remembered in this browser.
-- **Platforms:** look one up by register number in the gazetteer (just the digits work too, e.g. `1423`).
+- **Platforms:** look one up by register number in the gazetteer (just the digits work too, e.g. `12`).
 - **Sharing:** the date, the view and the selected place are kept in the URL (`#/atlas?date=1000-1-1&view=…&place=mort`), so a link opens exactly what you were looking at.
 
 Distances are drawn to true scale. Zoomed out, each island is a fixed-size
@@ -45,6 +45,15 @@ and lakes, cities and highways, towns and roads, and finally villages and
 tracks. Harbours are marked with an anchor. Navigable rivers carry a dashed
 route line. Each continent's gazetteer entry lists its settlements, waters
 and roads; each settlement's entry lists its road links and their lengths.
+
+Some bodies follow the lore rather than their band: the Land of the Large has
+only a few footholds on its coast (it has been hard to colonise), the Holy
+Purple Homeland is the most crowded land in the ocean, nobody lives on Brock,
+and Windstones is a scatter of small islands (`shape: islands` in
+`world.yaml`). These are `bodies:` in `src/parameters/settlements.yaml`, and
+`continents:` and `near_belts:` in `src/parameters/platforms.yaml`, which give
+the Homeland the most orbiting platforms, leave Brock a single one, and keep
+few platforms near the Far Belt.
 
 Every continent starts as a **generated placeholder**. Inner continents are
 settled more densely than outer ones, and roads are routed over the terrain:
@@ -99,30 +108,43 @@ platforms spans the gap. The rules and numbers are in
 
 ## Ocean platforms
 
-Platforms are generated (thousands of them) rather than listed one by one.
-Their kinds and owners are named in `world.yaml`; their counts per band, sizes,
-shares and spacing are in `src/parameters/platforms.yaml`. Every
-platform has an Imperial register number: `HPBE-P-…` for Imperial platforms
-and `HPBE-X-…` for those the Empire registers but does not own.
+There are about 240 platforms: the Empire's **grand platforms** (the size of a
+large cathedral) and **keeps** (a castle keep), and a few keeps held by
+independents or left derelict. Each is listed in `src/data/platforms.yaml`
+with its Imperial register number: `HPBE-P-…` for Imperial platforms and
+`HPBE-X-…` for those the Empire registers but does not own.
 
-They come in two kinds. **Anchored** platforms are fixed in place and are
-most common in the Home Band. **Orbital** platforms are most common in the
-Second and Frontier Bands, and move in one of three ways: in shared lanes
-about the centre, in convoy on a continent's own orbit (ahead of or behind
-it), or in rings about a continent, clear of its moons.
+They were **sited by trade**, by `npm run seed -- platforms`, and can be
+re-sited the same way (or from the editor) after you move continents about:
 
-Platforms never collide with anything. Each continent sweeps a ring of the
+- Trade between every pair of chief ports is sampled on 90 dates over 60
+  years, and each voyage's value is spread along its line.
+- Most anchored platforms form a **backbone**: rings of keeps round the open
+  water between the orbits, a little under resupply range apart, given out
+  to the water that trade crosses most. Ships can always work their way round.
+- The rest go where valuable traffic passes most often. Lanes open about the
+  centre at the radii most traffic crosses. Convoys ride ahead of and behind
+  the continents that trade most, and rings orbit them.
+- The busiest spots get the grand platforms.
+- Finally, routes still out of range on some dates get extra keeps.
+
+Over the years the continents come round every way, so siting mostly finds
+*how far out* trade crosses, rather than in which direction. Lower
+`siting.years` in `src/parameters/platforms.yaml` to site for the routes of
+the present era instead. With the seeded platforms, nearly every Imperial
+platform is called at by some route over the years, and about nine in ten
+wanted routes are within resupply range on any date. The rest are mostly
+frontier routes, which lore says can fall out of reach. Counts and siting are
+tuned in `src/parameters/platforms.yaml`.
+
+**Anchored** platforms are fixed in place. **Orbital** ones move in one of three
+ways: in shared lanes about the centre, in convoy on a continent's own orbit
+(ahead of or behind it), or in rings about a continent, clear of its moons.
+None of them can collide with anything. Each continent sweeps a ring of the
 ocean over time, covering its orbit plus the reach of its moons. Anchored
-platforms and lanes are only placed in the water between those rings, and
-anything sharing a circle moves at one speed, so its spacing never changes.
-`src/lib/__tests__/platforms.test.ts` checks this by simulating centuries of
-dates.
-
-To keep the chart readable, platforms are drawn by zoom. Zoomed out, they show
-as a faint haze whose density shows where they cluster. Grand platforms appear
-as symbols first, then keeps and stations, and beacons only up close. When a
-platform is larger on screen than its symbol, it is drawn to scale. Register
-numbers appear only when zoomed well in.
+platforms and lanes keep to the water between those rings, and anything
+sharing a circle moves at one speed. If an edit breaks these rules, the Atlas
+names the platform and what it is in the path of.
 
 ## How it's organised
 
@@ -130,23 +152,64 @@ Three kinds of thing are kept apart:
 
 | | Where | What |
 | --- | --- | --- |
-| **Data** | `src/data/` | What exists and what it's called: the calendar, the roster of bodies and orbits, belts, bands, platform kinds and owners, the sounds of place names, and hand-drawn continents. |
+| **Data** | `src/data/` | What exists, where, and what it's called: the calendar, the bodies and orbits, belts, bands, the archipelagos, every settlement and platform, the sounds of place names, and hand-drawn continents. Seeded once by the generators, then yours to edit. |
 | **Parameters** | `src/parameters/` | How much, how often and how strongly: settlement density and mix, terrain and water thresholds, road costs, platform counts and spacing, shipping range and costs, and when things appear as you zoom. See [src/parameters/README.md](src/parameters/README.md). |
-| **Mechanics** | `src/lib/` | How it all works: orbits, terrain, water, settlement siting, road and shipping routing, platform placement. It reads every number from the parameters. |
+| **Mechanics** | `src/lib/` | How it all works: orbits, terrain and water, road and shipping routing, and the generators that seed the data (`src/lib/seed/`). It reads every number from the parameters. |
 
 Every parameter file is checked when the Atlas loads. A missing or mistyped
 value stops it with a message naming the file and key.
 
 ## Editing the world
 
-The world is defined by these files in `src/data`:
+### In the Atlas (the editor)
+
+Run `npm run dev`, open the Atlas and press **✎** (or `E`). The editor exists
+only on your machine: it writes your changes straight into the files below,
+and the published site leaves it out.
+
+- **Move** anything by dragging it on the chart: a settlement (its roads
+  re-route), a platform, a continent or moon (its orbit), an archipelago
+  (zoomed out), or an island within its archipelago (zoomed in).
+- **Add** a city, town or village by choosing it in the toolbar and clicking dry
+  land, or a grand platform or keep by clicking open water.
+- **Edit** the selection in the gazetteer's *Edit* section: names, sizes,
+  harbours, orbits and periods, coastline seeds, a platform's class, owner or
+  motion. `Delete` removes the selected place or platform.
+- **Undo** (`Ctrl+Z`) puts the files back as they were before each change.
+- **Parameters** tunes the numbers worth judging by eye. Some apply at once
+  (shipping, roads, rivers); the rest apply when you **regenerate** places,
+  archipelagos or platforms, which overwrites what you regenerate.
+- **Warnings** lists anything an edit broke: a town in the sea, a harbour away
+  from the water, a platform in a continent's path, archipelagos that will
+  collide. `npm test` checks the same.
+
+### The files
 
 | File | Contents |
 | --- | --- |
-| `src/data/calendar.yaml` | Era name, months and their lengths, intercalary/festival days, weekdays, the date the atlas opens on, and the range of the timeline. |
-| `src/data/continents/<id>.svg` | Optional hand-drawn continents and moons; see [docs/designing-continents.md](docs/designing-continents.md). |
-| `src/data/names.yaml` | The sounds placeholder place names are built from. |
 | `src/data/world.yaml` | Units (Imperial Leagues, 1 IL ≈ 1 km), the ocean's radius and edge, the Land of the Large, the continents (position 1–16, orbit radius, starting bearing, period, size, coastline seed, description) and their moons, the belts, the Empire's bands, and the kinds and owners of platforms. |
+| `src/data/archipelagos.yaml` | The belts' archipelagos and their islands. |
+| `src/data/places/<id>.yaml` | Each body's settlements; see [its README](src/data/places/README.md). |
+| `src/data/platforms.yaml` | Every platform, one per line. |
+| `src/data/calendar.yaml` | Era name, months and their lengths, intercalary/festival days, weekdays, the date the atlas opens on, and the range of the timeline. |
+| `src/data/names.yaml` | The sounds placeholder place names are built from. |
+| `src/data/continents/<id>.svg` | Optional hand-drawn continents and moons; see [docs/designing-continents.md](docs/designing-continents.md). |
+
+### Seeding
+
+Archipelagos, settlements and platforms were generated once, then written to
+those files. Nothing regenerates unless you ask:
+
+```sh
+npm run seed -- archipelagos        # new archipelagos (and their islands' places)
+npm run seed -- places [ids…]       # settlements on some bodies (or archipelagos, arch:…), or all
+npm run seed -- platforms           # re-site every platform by trade
+npm run seed -- all                 # everything, in that order
+```
+
+Each overwrites what it seeds, edits included. Terrain, rivers, lakes and
+roads are not stored: they are worked out from each body's seed and settlements
+whenever the Atlas loads.
 
 The roster and the bands follow the lore. Sizes, distances, bearings and
 periods are placeholders, and positions without a name in the lore are called
@@ -160,7 +223,8 @@ between Iceland and Great Britain). Brock, the outermost continent, orbits at
 ```sh
 npm install
 npm run dev        # http://localhost:5173/orbital-ocean/
-npm test           # orbits, terrain, settlements, roads, archipelagos, platforms, shipping, parameters
+npm test           # the generators, the data files, orbits, terrain, roads, shipping, the editor
+npm run seed -- …  # regenerate data files (see Seeding)
 npm run build      # typecheck + production build into dist/
 npm run test:e2e   # browser smoke tests against the build (Playwright)
 ```
@@ -181,10 +245,14 @@ Built with React, TypeScript and Vite. The chart is drawn on a 2D canvas
 ```
 src/
   data/            calendar.yaml, world.yaml, names.yaml (the world's content)
+  data/places/     each body's settlements
   data/continents/ hand-drawn continent and moon designs (SVG)
   parameters/      tuning: terrain, settlements, roads, belts, platforms, shipping, display
   lib/             calendar, orbits, world parsing, archipelagos, platforms, shipping, coastlines, camera
   lib/terrain/     elevation, water, settlements, roads, archipelago settling and ferries, design reader and template
+  lib/seed/        the generators that seed the data files (archipelagos, places, platform siting)
+  books/atlas/editor/  the editor (npm run dev only)
+scripts/           the seed command, and the editor's server (a Vite plugin) that writes your edits
   books/atlas/     the Atlas: map canvas, renderer, timeline, gazetteer, instruments
   Library.tsx      the Imperial Reference Shelf (home page)
   books.ts         the list of books on the shelf

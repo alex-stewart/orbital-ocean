@@ -1,0 +1,10 @@
+# Settlements on Magmarnus (see README.md in this folder).
+
+- {name: Wriamill, kind: city, x: 76.67, y: 47.66, harbour: true}
+- {name: Thouby, kind: town, x: -54.81, y: -24.09}
+- {name: Reasands, kind: town, x: 44.7, y: -82.01, harbour: true}
+- {name: Oreaholm, kind: village, x: -65.3, y: 18.2}
+- {name: Hialmbridge, kind: village, x: 34.34, y: -59.65}
+- {name: Thiasands, kind: village, x: -39.62, y: -73.46}
+- {name: Thaesingas, kind: village, x: -78.72, y: 21.53, harbour: true}
+- {name: Dyby, kind: village, x: 33.23, y: -67.12}

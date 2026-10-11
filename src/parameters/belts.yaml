@@ -1,5 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  BELTS — the archipelagos of the War and Far Belts
+#  Used when archipelagos are seeded (`npm run seed -- archipelagos`); the
+#  archipelagos themselves live in src/data/archipelagos.yaml.
 #
 #  Each belt is made of archipelagos: groups of islands that orbit together,
 #  so neighbouring islands stay neighbours. Archipelagos sit in lanes across

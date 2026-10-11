@@ -1332,3 +1332,201 @@ button.link:hover {
     top: 4px;
   }
 }
+
+/* ── Editor (npm run dev only) ─────────────────────────────────────────────── */
+
+.editor-bar {
+  position: absolute;
+  top: 108px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: min(774px, calc(100% - 140px));
+  padding: 5px 8px;
+  background: rgba(244, 236, 214, 0.97);
+  border: 1px solid var(--accent);
+  box-shadow: 0 6px 16px -10px rgba(59, 47, 36, 0.6);
+  font-size: 0.92rem;
+}
+
+.editor-title {
+  font-family: var(--caps);
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+.editor-tools {
+  display: flex;
+  border: 1px solid var(--ink-faint);
+}
+
+.editor-bar button,
+.edit-panel button,
+.editor-panel button:not(.link) {
+  font: inherit;
+  border: 1px solid var(--ink-faint);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 2px 9px;
+  cursor: pointer;
+}
+
+.editor-tools button {
+  border: 0;
+  border-right: 1px solid var(--ink-faint);
+}
+
+.editor-tools button:last-child {
+  border-right: 0;
+}
+
+.editor-bar button.active {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.editor-bar button.warn:not(.active) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.editor-bar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.editor-status {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(700px, 90vw);
+  margin: 0;
+  padding: 2px 10px;
+  background: rgba(244, 236, 214, 0.95);
+  text-align: center;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.editor-status.error {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.editor-panel {
+  position: absolute;
+  top: calc(100% + 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, 92vw);
+  max-height: 60vh;
+  overflow: auto;
+  padding: 10px 14px 12px;
+  background: rgba(244, 236, 214, 0.99);
+  border: 1px solid var(--ink);
+  box-shadow: 0 8px 20px -10px rgba(59, 47, 36, 0.5);
+}
+
+.editor-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.editor-panel h3,
+.edit-panel h3 {
+  margin: 0 0 4px;
+  font-family: var(--caps);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.editor-panel h4 {
+  margin: 10px 0 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ink-faint);
+  font-family: var(--caps);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+
+.param-row,
+.edit-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.param-row input,
+.edit-field input[type='number'],
+.edit-field input[type='text'],
+.edit-field select,
+.edit-field textarea {
+  font: inherit;
+  width: 9em;
+  padding: 1px 4px;
+  border: 1px solid var(--ink-faint);
+  background: #fbf6e8;
+  color: var(--ink);
+}
+
+.edit-field input[type='text'],
+.edit-field textarea,
+.edit-field select {
+  width: 13em;
+}
+
+.edit-field textarea {
+  resize: vertical;
+}
+
+.edit-inline {
+  display: flex;
+  gap: 4px;
+}
+
+.edit-inline input {
+  width: 7em !important;
+}
+
+.edit-panel {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px dashed var(--accent);
+  background: rgba(155, 58, 38, 0.04);
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.editor-actions button.danger {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.editor-warnings {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.editor-warnings li {
+  margin: 2px 0;
+}

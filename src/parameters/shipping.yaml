@@ -11,7 +11,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Longest leg between resupply points, IL.
-resupply_range: 1400
+resupply_range: 1800
 
 # Platforms that can resupply ships: these size classes, held by the Empire.
 resupply_classes: [grand, keep]

@@ -1,23 +1,62 @@
 import { describe, expect, it } from 'vitest';
-import { loadWorld } from './world';
+import { parameters } from '../../parameters';
+import { data, loadWorld, seededWorld } from './world';
 import { buildContinentMap, continentMap, mappedBodies } from '../terrain';
 import { flattenPath, parseDesign, parseSettlementLabel } from '../terrain/design';
 import { cellAt, sample } from '../terrain/grid';
 import { designTemplate } from '../terrain/template';
 import exampleSource from '../../../docs/example-continent.svg?raw';
 
-const world = loadWorld();
+// Seeding is what these test; the shipped files are checked in data.test.ts.
+const world = await seededWorld();
 const maps = mappedBodies(world).map((b) => ({ body: b, map: continentMap(world, b) }));
 
-describe('generated continents', () => {
+describe('seeded continents', () => {
   it('gives every continent terrain, water and at least one settlement', () => {
+    const own = world.params.settlements.bodies;
     for (const { body, map } of maps.filter(({ body }) => body.kind !== 'islet')) {
-      expect(map.maxElevation, body.id).toBeGreaterThan(300);
-      expect(map.rivers.length, body.id).toBeGreaterThan(0);
+      // A scatter of small islands has lower ground and fewer rivers.
+      if (body.coast.length === 1) {
+        expect(map.maxElevation, body.id).toBeGreaterThan(300);
+        expect(map.rivers.length, body.id).toBeGreaterThan(0);
+      }
+      if (own[body.id]?.density === 0) continue;
       expect(map.settlements.length, body.id).toBeGreaterThan(0);
       // Continents have at least a town; moons at least a village.
       if (body.kind !== 'moon') expect(map.settlements.some((s) => s.kind !== 'village'), body.id).toBe(true);
     }
+  });
+
+  it('settles bodies as the lore has them', () => {
+    const map = (id: string) => maps.find((m) => m.body.id === id)!.map;
+    const perArea = (id: string) => map(id).settlements.length / (map(id).land.reduce((a, v) => a + v, 0) * map(id).grid.cell ** 2);
+    // The Land of the Large: a few footholds, all on the coast.
+    const lotl = map('land-of-the-large');
+    expect(lotl.settlements.length).toBeGreaterThan(2);
+    expect(lotl.settlements.length).toBeLessThan(20);
+    const coast = world.params.settlements.bodies['land-of-the-large'].coast!;
+    for (const s of lotl.settlements) {
+      let near = false;
+      for (let a = 0; a < 360 && !near; a += 10)
+        for (let d = 0; d <= coast + lotl.grid.cell; d += lotl.grid.cell / 2) {
+          const k = cellAt(lotl.grid, s.x + Math.cos((a * Math.PI) / 180) * d, s.y + Math.sin((a * Math.PI) / 180) * d);
+          if (k < 0 || !lotl.land[k]) near = true;
+        }
+      expect(near, s.name).toBe(true);
+    }
+    // The Holy Purple Homeland: the most crowded land of any continent.
+    for (const c of world.bodies.filter((b) => b.kind === 'isle' && b.id !== 'holy-purple-homeland'))
+      expect(perArea('holy-purple-homeland'), c.id).toBeGreaterThan(perArea(c.id));
+    // Nobody lives on Brock.
+    expect(map('brock').settlements).toEqual([]);
+  });
+
+  it('makes Windstones a scatter of islands, joined by ferry where settled', () => {
+    const ws = world.bodies.find((b) => b.id === 'windstones')!;
+    expect(ws.coast.length).toBeGreaterThan(4);
+    const m = maps.find((x) => x.body.id === 'windstones')!.map;
+    const islands = new Set(m.settlements.map((s) => s.id));
+    for (const f of m.ferries) expect(islands.has(f.from) && islands.has(f.to)).toBe(true);
   });
 
   it('gives moons settlements too', () => {
@@ -162,7 +201,9 @@ describe('designed continents', () => {
       'village High Hale',
       'village Westby port',
     ]);
-    const w = loadWorld({ 'continent-7': exampleSource });
+    // (Its places file would be ignored, with a warning: the design draws its own.)
+    const places = new Map([...data.places].filter(([id]) => id !== 'continent-7'));
+    const w = loadWorld({ 'continent-7': exampleSource }, parameters, { places });
     const map = buildContinentMap(w, w.bodies.find((b) => b.id === 'continent-7')!);
     expect(map.source).toBe('designed');
     expect(map.maxElevation).toBeGreaterThan(900);

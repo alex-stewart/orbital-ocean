@@ -31,6 +31,8 @@ export interface SettlementRules {
   exact?: Record<SettlementKind, number>;
   /** Islanders: everyone lives by the sea, and every place on the shore keeps boats. */
   islanders?: boolean;
+  /** Settle only within this many IL of the sea. */
+  coastWithin?: number;
 }
 
 /**
@@ -121,6 +123,7 @@ export function placeSettlements(
   };
   for (let k = 0; k < N; k++) {
     if (!dry(k) || water.riverMask[k] || regionSize[region[k]] < minRegion) continue;
+    if (rules.coastWithin !== undefined && toSea[k] > rules.coastWithin) continue;
     const low = 1 - Math.min(1, elevation[k] / (maxElevation * 0.7));
     const flat = Math.exp(-slopeAt(k) / st.gentle_slope);
     const fresh = Math.exp(-toWater[k] / (g.cell * 3));

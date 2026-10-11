@@ -1,0 +1,11 @@
+# Settlements on Continent 4 (see README.md in this folder).
+
+- {name: Mornoweir, kind: city, x: 15.38, y: -50.05, harbour: true}
+- {name: Moley, kind: town, x: -2.66, y: 50.99, harbour: true}
+- {name: Fiport, kind: town, x: -28.49, y: -26.52, harbour: true}
+- {name: Wernstead, kind: village, x: -28.58, y: 18.44}
+- {name: Pevham, kind: village, x: 48.06, y: -40.68}
+- {name: Wrisby, kind: village, x: -47.9, y: -10.63}
+- {name: Sarnford, kind: village, x: -49.93, y: 40.82}
+- {name: Sorham, kind: village, x: 8.56, y: 35.63}
+- {name: Woumill, kind: village, x: -36.42, y: 22.78}
