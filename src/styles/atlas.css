@@ -86,6 +86,14 @@
   padding-top: 4px;
 }
 
+.cartouche-authority {
+  margin: 4px 0 0;
+  font-family: var(--caps);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--imperial);
+}
+
 .cartouche-back {
   display: block;
   text-align: left;
@@ -238,7 +246,7 @@
 
 .gazetteer {
   position: absolute;
-  top: 262px;
+  top: 300px;
   right: 18px;
   bottom: 80px;
   width: 320px;
@@ -687,7 +695,8 @@ button.link {
   .cartouche h1 {
     font-size: 1.05rem;
   }
-  .cartouche-sub {
+  .cartouche-sub,
+  .cartouche-authority {
     display: none;
   }
   .compass {
@@ -735,4 +744,265 @@ button.link {
   .timeline-controls .today {
     display: none;
   }
+}
+
+/* ── Lore additions: positions, bands ─────────────────────────────────── */
+
+.index .pos {
+  min-width: 1.4em;
+  font-variant-numeric: tabular-nums oldstyle-nums;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: normal;
+}
+
+.bands {
+  margin: 0;
+}
+
+.bands div {
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--ink-faint);
+}
+
+.bands dt {
+  font-family: var(--caps);
+  letter-spacing: 0.06em;
+  color: var(--imperial);
+}
+
+.bands dd {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.bands .num {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-variant-numeric: oldstyle-nums;
+}
+
+.edge-note {
+  margin-top: 12px;
+}
+
+.entry-desc {
+  margin: -4px 0 12px;
+}
+
+/* ── Layers panel ──────────────────────────────────────────────────────── */
+
+.zoom-controls button.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.layers-panel {
+  position: absolute;
+  top: 132px;
+  right: 64px;
+  z-index: 4;
+  width: 240px;
+  max-height: calc(100% - 150px);
+  overflow: auto;
+  padding: 10px 14px 12px;
+  background: rgba(244, 236, 214, 0.98);
+  border: 1px solid var(--ink);
+  box-shadow: 0 8px 20px -10px rgba(59, 47, 36, 0.5);
+  font-size: 0.95rem;
+}
+
+.layers-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.layers-head h2 {
+  margin: 0;
+  font-family: var(--caps);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+}
+
+.layers-head button {
+  border: 0;
+  background: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.layers-panel fieldset {
+  border: 0;
+  border-top: 1px solid var(--ink-faint);
+  margin: 8px 0 0;
+  padding: 6px 0 0;
+}
+
+.layers-panel legend {
+  font-family: var(--caps);
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  padding: 0;
+}
+
+.layers-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 1px 0;
+  cursor: pointer;
+}
+
+.layers-panel input[type='checkbox'] {
+  accent-color: var(--imperial);
+}
+
+.layers-key ul {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+}
+
+.layers-key li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layers-key svg {
+  width: 14px;
+  height: 14px;
+}
+
+.k-imperial {
+  fill: var(--imperial);
+  stroke: var(--paper);
+  stroke-width: 0.7;
+}
+
+.k-independent {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.k-derelict {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+  stroke-dasharray: 1.5 1.5;
+}
+
+.layers-key p {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 720px) {
+  .layers-panel {
+    top: 80px;
+    right: 56px;
+    width: auto;
+    left: 8px;
+  }
+}
+
+/* ── Platform register ─────────────────────────────────────────────────── */
+
+.register {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums oldstyle-nums;
+  font-size: 0.95rem;
+}
+
+.register th,
+.register td {
+  padding: 2px 0;
+  border-bottom: 1px dotted var(--ink-faint);
+}
+
+.register thead th {
+  font-family: var(--caps);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+.register tbody th {
+  text-align: left;
+  font-weight: 500;
+}
+
+.register td {
+  text-align: right;
+}
+
+.owners {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.lookup {
+  margin-top: 10px;
+}
+
+.lookup label {
+  display: block;
+  font-family: var(--caps);
+  letter-spacing: 0.06em;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.lookup div {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.lookup input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  padding: 2px 8px;
+  font-family: var(--caps);
+  letter-spacing: 0.06em;
+}
+
+.lookup button {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.index-moons {
+  margin: -2px 0 3px 2.1em;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.index-moons button.link {
+  display: inline;
+  width: auto;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
 }

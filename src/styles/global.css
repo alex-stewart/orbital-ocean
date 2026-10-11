@@ -6,6 +6,7 @@
   --ink-soft: rgba(59, 47, 36, 0.62);
   --ink-faint: rgba(59, 47, 36, 0.2);
   --accent: #9b3a26;
+  --imperial: #5b3a7a;
   --land: #efe0b6;
   --caps: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
   --serif: 'Cormorant Garamond', Georgia, serif;
@@ -68,8 +69,54 @@ input {
 }
 
 .library-head {
+  position: relative;
   text-align: center;
   margin-bottom: 48px;
+}
+
+.seal {
+  position: absolute;
+  right: 24px;
+  bottom: -190px;
+  width: 120px;
+  height: 120px;
+  transform: rotate(-14deg);
+  opacity: 0.78;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.seal-line {
+  fill: none;
+  stroke: var(--imperial);
+  stroke-width: 2.4;
+}
+
+.seal-line.thin {
+  stroke-width: 1;
+}
+
+.seal text {
+  fill: var(--imperial);
+  font-family: var(--caps);
+  text-anchor: middle;
+}
+
+.seal .seal-ring-text {
+  font-size: 6.6px;
+  letter-spacing: 0.06em;
+  text-anchor: start;
+}
+
+.seal-mid {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.seal-small {
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
 }
 
 .eyebrow {
@@ -151,6 +198,13 @@ a.book:focus-visible {
   border-bottom: 1px solid rgba(236, 217, 166, 0.7);
 }
 
+.spine-mark {
+  font-family: var(--caps);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  opacity: 0.75;
+}
+
 .spine-title {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
@@ -165,6 +219,49 @@ a.book:focus-visible {
   background: linear-gradient(#7a5a3a, #5b4129);
   border-radius: 2px;
   box-shadow: 0 6px 14px -6px rgba(59, 47, 36, 0.6);
+}
+
+.register-title {
+  max-width: 600px;
+  margin: 0 auto 4px;
+  font-family: var(--caps);
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 4px;
+}
+
+.shelfmark {
+  font-style: normal;
+  font-family: var(--caps);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.catalogue-state.approved {
+  color: var(--imperial);
+}
+
+.notice {
+  max-width: 600px;
+  margin: 24px auto 0;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .seal {
+    right: 50%;
+    bottom: -40px;
+    width: 84px;
+    height: 84px;
+    transform: translateX(50%) rotate(-14deg);
+    opacity: 0.25;
+  }
 }
 
 .catalogue {

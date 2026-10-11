@@ -1,8 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { screenToWorld, zoomAbout, type View } from '../../lib/camera';
 import { generateIsland, type IslandShape } from '../../lib/coastline';
-import { positionsAt, type Point } from '../../lib/orbits';
+import { platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { World } from '../../lib/world';
+import type { Layers } from './layers';
 import { render, type HitTarget } from './render';
 
 export interface AtlasMapHandle {
@@ -16,14 +17,15 @@ interface Props {
   t: number;
   selectedId: string | null;
   followId: string | null;
+  layers: Layers;
   onSelect(id: string | null): void;
   onFollowEnd(): void;
   onViewChange(view: View): void;
   onCursor(p: Point | null): void;
 }
 
-/** Most zoomed-in scale, pixels per IL. */
-const MAX_SCALE = 40;
+/** Most zoomed-in scale, pixels per IL — close enough to see a platform's shape. */
+const MAX_SCALE = 400;
 /** Exponential smoothing rate for zoom/fly animation, per second. */
 const EASE = 11;
 
@@ -42,6 +44,14 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     return m;
   }, [world]);
 
+  /** Map position of a body or platform by id. */
+  const placeAt = (id: string, positions: Map<string, Point>, platformXY: Float64Array): Point | null => {
+    const body = positions.get(id);
+    if (body) return body;
+    const i = world.platformIndex.get(id);
+    return i === undefined ? null : { x: platformXY[i * 2], y: platformXY[i * 2 + 1] };
+  };
+
   // Mutable rendering state lives outside React to keep interaction at 60fps.
   const st = useRef({
     w: 0,
@@ -52,6 +62,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     anchor: null as null | { sx: number; sy: number; wx: number; wy: number },
     velocity: { x: 0, y: 0 },
     hits: [] as HitTarget[],
+    platformXY: new Float64Array(0),
     hoveredId: null as string | null,
     dirty: true,
     frame: 0,
@@ -83,10 +94,11 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     let animating = false;
     const p = latest.current;
 
-    // Follow a body: keep the target centred on it.
+    // Follow a body or platform: keep the target centred on it.
     const positions = positionsAt(world.bodies, p.t);
+    s.platformXY = platformPositions(world.platforms, p.t, positions, s.platformXY);
     if (p.followId) {
-      const fp = positions.get(p.followId);
+      const fp = placeAt(p.followId, positions, s.platformXY);
       if (fp) {
         s.target.cx = fp.x;
         s.target.cy = fp.y;
@@ -155,6 +167,8 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         dpr: s.dpr,
         selectedId: p.selectedId,
         hoveredId: s.hoveredId,
+        layers: p.layers,
+        platformXY: s.platformXY,
       });
       p.onViewChange({ ...s.view });
     }
@@ -163,15 +177,25 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   };
 
   // Redraw whenever inputs from React change.
-  useEffect(requestFrame, [props.t, props.selectedId, props.followId, world, shapes]);
+  useEffect(requestFrame, [props.t, props.selectedId, props.followId, props.layers, world, shapes]);
 
   const flyTo = (id: string) => {
     const s = st.current;
-    const body = world.bodies.find((b) => b.id === id);
-    const p = positionsAt(world.bodies, latest.current.t).get(id);
-    if (!body || !p) return;
+    const t = latest.current.t;
+    const positions = positionsAt(world.bodies, t);
+    const p = placeAt(id, positions, platformPositions(world.platforms, t, positions));
+    if (!p) return;
     s.anchor = null;
     s.velocity = { x: 0, y: 0 };
+    const platform = world.platforms[world.platformIndex.get(id) ?? -1];
+    if (platform) {
+      // Show the platform among its neighbours: about 40 IL across.
+      s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.min(s.w, s.h) / 40) };
+      requestFrame();
+      return;
+    }
+    const body = world.bodies.find((b) => b.id === id);
+    if (!body) return;
     // Frame the island and its moons with room to spare.
     const span = Math.max(body.radius * 2.5, body.radius * 1.5 + Math.max(0, ...body.moons.map((m) => m.orbitRadius)) * 1.25);
     s.target = { cx: p.x, cy: p.y, scale: clampScale(Math.min(s.w, s.h) / 2 / span) };

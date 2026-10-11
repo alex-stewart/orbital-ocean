@@ -1,0 +1,68 @@
+/** Which kinds of thing the chart draws. Toggled from the Layers panel. */
+export interface Layers {
+  moons: boolean;
+  belts: boolean;
+  anchored: boolean;
+  orbital: boolean;
+  orbits: boolean;
+  bands: boolean;
+  graticule: boolean;
+  labels: boolean;
+}
+
+export const defaultLayers: Layers = {
+  moons: true,
+  belts: true,
+  anchored: true,
+  orbital: true,
+  orbits: true,
+  bands: true,
+  graticule: true,
+  labels: true,
+};
+
+export const layerGroups: { title: string; items: { key: keyof Layers; label: string }[] }[] = [
+  {
+    title: 'Places',
+    items: [
+      { key: 'moons', label: 'Moons' },
+      { key: 'belts', label: 'Belts' },
+    ],
+  },
+  {
+    title: 'Platforms',
+    items: [
+      { key: 'anchored', label: 'Anchored platforms' },
+      { key: 'orbital', label: 'Orbital platforms' },
+    ],
+  },
+  {
+    title: 'Chart',
+    items: [
+      { key: 'orbits', label: 'Orbits and lanes' },
+      { key: 'bands', label: 'Imperial bands' },
+      { key: 'graticule', label: 'Range rings' },
+      { key: 'labels', label: 'Names' },
+    ],
+  },
+];
+
+const KEY = 'orbital-ocean.layers';
+
+/** Read saved layer choices; storage can be unavailable, so fall back quietly. */
+export function loadLayers(): Layers {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    return { ...defaultLayers, ...(saved && typeof saved === 'object' ? saved : {}) };
+  } catch {
+    return defaultLayers;
+  }
+}
+
+export function saveLayers(layers: Layers) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(layers));
+  } catch {
+    // Not saved; the choice still applies for this visit.
+  }
+}

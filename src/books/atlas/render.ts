@@ -1,8 +1,11 @@
 import { niceCeil, worldToScreen, type View } from '../../lib/camera';
 import type { IslandShape } from '../../lib/coastline';
 import { bearingAt, bearingBetween, distance, isletPosition, polar, type Point } from '../../lib/orbits';
-import type { Body, World } from '../../lib/world';
-import { fonts, theme } from './theme';
+import { orbitalDistance, type Body, type World } from '../../lib/world';
+import { rng } from '../../lib/random';
+import type { Layers } from './layers';
+import { drawPlatformLabels, drawPlatforms } from './platformLayer';
+import { bandWash, fonts, theme, washedOcean } from './theme';
 
 export interface RenderInput {
   world: World;
@@ -15,9 +18,12 @@ export interface RenderInput {
   dpr: number;
   selectedId: string | null;
   hoveredId: string | null;
+  layers: Layers;
+  /** Platform positions at `t`, [x0, y0, x1, y1, …]. */
+  platformXY: Float64Array;
 }
 
-/** On-screen footprint of a body, used for hit testing. */
+/** On-screen footprint of a body or platform, used for hit testing. */
 export interface HitTarget {
   id: string;
   x: number;
@@ -41,6 +47,24 @@ function smoothstep(a: number, b: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/**
+ * Add a circle to the current path — or, when it is far larger than the
+ * canvas, only the arc that crosses the canvas. Stroking (especially dashing)
+ * a full circle hundreds of thousands of pixels round stalls the browser.
+ */
+export function circlePath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, w: number, h: number) {
+  const diag = Math.hypot(w, h);
+  if (r < diag * 2) {
+    ctx.moveTo(cx + r, cy);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    return;
+  }
+  const mid = Math.atan2(h / 2 - cy, w / 2 - cx);
+  const span = Math.min(Math.PI, (diag / r) * 1.5);
+  ctx.moveTo(cx + r * Math.cos(mid - span), cy + r * Math.sin(mid - span));
+  ctx.arc(cx, cy, r, mid - span, mid + span);
+}
+
 const fmt = new Intl.NumberFormat('en-GB');
 
 export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget[] {
@@ -53,17 +77,26 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   /** Is a circle of radius r about the origin visible? */
   const ringVisible = (r: number) => Math.abs(viewDist - r) < halfDiag;
 
-  base();
-  ctx.fillStyle = theme.ocean;
-  ctx.fillRect(0, 0, w, h);
+  const { layers } = s;
+  /** Map position of a body or platform by id. */
+  const placeAt = (id: string): Point | null => {
+    const body = s.positions.get(id);
+    if (body) return body;
+    const i = world.platformIndex.get(id);
+    return i === undefined ? null : { x: s.platformXY[i * 2], y: s.platformXY[i * 2 + 1] };
+  };
 
+  base();
+  drawOcean(ctx, s, origin);
   drawGraticule(ctx, s, origin, ringVisible);
 
   // ── Orbits ────────────────────────────────────────────────────────────────
-  const visibleMoon = (b: Body) => b.kind !== 'moon' || b.orbitRadius * view.scale > symbolRadius(b.parent!) + 9;
+  const visibleMoon = (b: Body) =>
+    b.kind !== 'moon' || (layers.moons && b.orbitRadius * view.scale > symbolRadius(b.parent!) + 9);
   ctx.lineWidth = 0.9;
   for (const b of world.bodies) {
     if (!b.parent || !visibleMoon(b)) continue;
+    if (!layers.orbits && b.id !== s.selectedId) continue;
     const centre = toScreen(s.positions.get(b.parent.id)!);
     const r = b.orbitRadius * view.scale;
     if (b.kind === 'isle' && !ringVisible(b.orbitRadius)) continue;
@@ -71,14 +104,14 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     ctx.strokeStyle = selected ? theme.accentSoft : theme.inkSoft;
     ctx.setLineDash(selected ? [] : b.kind === 'moon' ? [2, 3] : [5, 4]);
     ctx.beginPath();
-    ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2);
+    circlePath(ctx, centre.x, centre.y, r, w, h);
     ctx.stroke();
   }
   ctx.setLineDash([]);
 
   // Direction-of-travel chevrons just ahead of each isle.
   for (const b of world.bodies) {
-    if (b.kind !== 'isle') continue;
+    if (b.kind !== 'isle' || !layers.orbits) continue;
     const r = b.orbitRadius * view.scale;
     const ahead = bearingAt(b, s.t) + ((symbolRadius(b) + 16) / r) * (180 / Math.PI);
     const p = toScreen(polar(b.orbitRadius, ahead));
@@ -99,6 +132,7 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
 
   // ── Belts ─────────────────────────────────────────────────────────────────
   for (const belt of world.belts) {
+    if (!layers.belts) break;
     if (!ringVisible(belt.innerRadius) && !ringVisible(belt.outerRadius)) continue;
     ctx.fillStyle = 'rgba(59, 47, 36, 0.035)';
     ctx.beginPath();
@@ -142,16 +176,23 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
 
   // Engraved water-lines: concentric offsets of the coast, drawn as a thick ink
   // stroke overpainted by a slightly thinner ocean stroke, largest first.
+  // The overpainting colour must match the sea under each island, purple wash included.
+  const seaUnder = (b: Body) => {
+    const r = orbitalDistance(b);
+    const i = world.bands.findIndex((band) => r >= band.innerRadius && r < band.outerRadius);
+    return layers.bands && i >= 0 && bandWash(i) > 0 ? washedOcean(bandWash(i)) : theme.ocean;
+  };
   ctx.lineJoin = 'round';
   for (const { b, p, sr } of onScreen) {
     if (sr < SYMBOL_BELOW) continue;
+    const sea = seaUnder(b);
     const gaps = [16, 10, 5.5, 2.5].filter((d) => d < sr * 1.2);
     withShape(b, p, sr, (shape) => {
       gaps.forEach((d, i) => {
         ctx.strokeStyle = `rgba(59, 47, 36, ${0.18 + i * 0.1})`;
         ctx.lineWidth = (2 * d + 0.9) / sr;
         ctx.stroke(shape.coast);
-        ctx.strokeStyle = theme.ocean;
+        ctx.strokeStyle = sea;
         ctx.lineWidth = (2 * d - 0.9) / sr;
         ctx.stroke(shape.coast);
       });
@@ -206,7 +247,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     ctx.globalAlpha = 1;
   }
 
-  const hits: HitTarget[] = drawn.map(({ b, p, sr }) => ({ id: b.id, x: p.x, y: p.y, r: Math.max(sr, symbolRadius(b)) }));
+  const bodyHits: HitTarget[] = drawn.map(({ b, p, sr }) => ({ id: b.id, x: p.x, y: p.y, r: Math.max(sr, symbolRadius(b)) }));
+  const platformHits = drawPlatforms(ctx, s, toScreen);
+  const hits = [...bodyHits, ...platformHits];
   const hitById = new Map(hits.map((t) => [t.id, t]));
 
   // ── Selection, hover and measurement ─────────────────────────────────────
@@ -224,9 +267,11 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
   ring(s.hoveredId !== s.selectedId ? s.hoveredId : null, theme.inkSoft, [3, 3]);
   ring(s.selectedId, theme.accent, []);
 
-  if (s.selectedId && s.hoveredId && s.selectedId !== s.hoveredId) {
-    const a = s.positions.get(s.selectedId)!;
-    const b = s.positions.get(s.hoveredId)!;
+  const measureA = s.selectedId && placeAt(s.selectedId);
+  const measureB = s.hoveredId && placeAt(s.hoveredId);
+  if (measureA && measureB && s.selectedId !== s.hoveredId) {
+    const a = measureA;
+    const b = measureB;
     const sa = toScreen(a);
     const sb = toScreen(b);
     ctx.strokeStyle = theme.accent;
@@ -237,7 +282,8 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     ctx.lineTo(sb.x, sb.y);
     ctx.stroke();
     ctx.setLineDash([]);
-    const text = `${fmt.format(Math.round(distance(a, b)))} ${world.units.abbr} · ${Math.round(bearingBetween(a, b))
+    const d = distance(a, b);
+    const text = `${d < 10 ? d.toFixed(2) : fmt.format(Math.round(d))} ${world.units.abbr} · ${Math.round(bearingBetween(a, b))
       .toString()
       .padStart(3, '0')}°`;
     ctx.font = `italic 600 14px ${fonts.serif}`;
@@ -245,7 +291,8 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): HitTarget
     haloText(ctx, text, sa.x + (sb.x - sa.x) * 0.62 + 8, sa.y + (sb.y - sa.y) * 0.62 - 8, theme.accent);
   }
 
-  drawLabels(ctx, s, drawn, hitById);
+  const placed = drawLabels(ctx, s, drawn, new Map(bodyHits.map((t) => [t.id, t])));
+  drawPlatformLabels(ctx, s, platformHits, placed);
   return hits;
 }
 
@@ -258,6 +305,82 @@ function haloText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
   ctx.fillText(text, x, y);
 }
 
+let gunkPattern: { pattern: CanvasPattern; dpr: number } | null = null;
+
+/** A tile of murky stipple and swirls for the Endless Gunk. */
+function gunkTile(ctx: CanvasRenderingContext2D, dpr: number): CanvasPattern | null {
+  if (gunkPattern?.dpr === dpr) return gunkPattern.pattern;
+  const size = 160;
+  const c = document.createElement('canvas');
+  c.width = c.height = size * dpr;
+  const g = c.getContext('2d')!;
+  g.scale(dpr, dpr);
+  g.fillStyle = theme.gunk;
+  g.fillRect(0, 0, size, size);
+  const rand = rng(7);
+  g.fillStyle = theme.gunkInk;
+  for (let i = 0; i < 380; i++) {
+    g.beginPath();
+    g.arc(rand() * size, rand() * size, 0.3 + rand() * 0.7, 0, Math.PI * 2);
+    g.fill();
+  }
+  // A few short wavy strokes suggest slow-moving sludge.
+  g.strokeStyle = theme.gunkInk;
+  g.lineWidth = 0.6;
+  for (let i = 0; i < 10; i++) {
+    const x = rand() * size;
+    const y = rand() * size;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.bezierCurveTo(x + 5, y - 3, x + 9, y + 3, x + 14, y);
+    g.stroke();
+  }
+  const pattern = ctx.createPattern(c, 'repeat');
+  if (!pattern) return null;
+  gunkPattern = { pattern, dpr };
+  return pattern;
+}
+
+/** The Gunk everywhere, the circular ocean over it, and the Empire's bands. */
+function drawOcean(ctx: CanvasRenderingContext2D, s: RenderInput, origin: Point) {
+  const { view, world, width: w, height: h, dpr } = s;
+  const R = world.oceanRadius * view.scale;
+
+  const pattern = gunkTile(ctx, dpr);
+  // Anchor the texture to the map so it pans with it.
+  pattern?.setTransform(new DOMMatrix([1 / dpr, 0, 0, 1 / dpr, origin.x % 160, origin.y % 160]));
+  ctx.fillStyle = pattern ?? theme.gunk;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = theme.ocean;
+  ctx.beginPath();
+  ctx.arc(origin.x, origin.y, R, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Imperial influence: a purple wash that fades band by band away from the centre.
+  world.bands.forEach((band, i) => {
+    if (!s.layers.bands) return;
+    const alpha = bandWash(i);
+    if (alpha <= 0) return;
+    ctx.fillStyle = theme.imperialWash(alpha);
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, band.outerRadius * view.scale, 0, Math.PI * 2);
+    if (band.innerRadius > 0) ctx.arc(origin.x, origin.y, band.innerRadius * view.scale, 0, Math.PI * 2, true);
+    ctx.fill();
+  });
+
+  // The shoreline of the world: a heavy rule with a fine inner line.
+  ctx.strokeStyle = theme.ink;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  circlePath(ctx, origin.x, origin.y, R, w, h);
+  ctx.stroke();
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  circlePath(ctx, origin.x, origin.y, Math.max(0, R - 4), w, h);
+  ctx.stroke();
+}
+
 function drawGraticule(
   ctx: CanvasRenderingContext2D,
   s: RenderInput,
@@ -266,23 +389,29 @@ function drawGraticule(
 ) {
   const { view, world, width: w, height: h } = s;
   const step = niceCeil(110 / view.scale);
-  const rim = world.extent * 1.08;
+  const rim = world.oceanRadius;
   const maxRing = Math.floor(rim / step) * step;
 
   ctx.strokeStyle = theme.inkFaint;
   ctx.lineWidth = 0.8;
   ctx.font = `italic 12px ${fonts.serif}`;
   ctx.textAlign = 'center';
-  for (let r = step; r <= maxRing; r += step) {
+  const showGrid = s.layers.graticule;
+  // Only rings that can cross the screen (there may be thousands in total).
+  const viewDist = Math.hypot(view.cx, view.cy);
+  const halfDiag = Math.hypot(w, h) / 2 / view.scale;
+  const firstRing = Math.max(step, Math.floor((viewDist - halfDiag) / step) * step);
+  const lastRing = Math.min(maxRing, viewDist + halfDiag);
+  for (let r = firstRing; r <= lastRing && showGrid; r += step) {
     if (!ringVisible(r)) continue;
     ctx.beginPath();
-    ctx.arc(origin.x, origin.y, r * view.scale, 0, Math.PI * 2);
+    circlePath(ctx, origin.x, origin.y, r * view.scale, w, h);
     ctx.stroke();
   }
   // Radial bearing lines.
   const every = view.scale * rim > 2500 ? 10 : 30;
   const inner = Math.min(step, rim) * view.scale;
-  for (let deg = 0; deg < 360; deg += every) {
+  for (let deg = 0; deg < 360 && showGrid; deg += every) {
     const a = ((deg - 90) * Math.PI) / 180;
     ctx.beginPath();
     ctx.moveTo(origin.x + Math.cos(a) * inner, origin.y + Math.sin(a) * inner);
@@ -292,7 +421,7 @@ function drawGraticule(
   // Ring distance labels along the north line (or whichever bearing faces the viewer).
   const toward = Math.hypot(view.cx, view.cy) > step ? Math.atan2(view.cx, -view.cy) * (180 / Math.PI) : 0;
   const lb = Math.round(toward / every) * every + every / 2;
-  for (let r = step; r <= maxRing; r += step) {
+  for (let r = firstRing; r <= lastRing && showGrid; r += step) {
     const p = worldToScreen(view, w, h, polar(r, lb));
     if (p.x < 0 || p.y < 0 || p.x > w || p.y > h) continue;
     ctx.fillStyle = theme.inkSoft;
@@ -302,14 +431,10 @@ function drawGraticule(
   // Bezel: a double rim with degree ticks, like the border of a star chart.
   if (ringVisible(rim)) {
     const R = rim * view.scale;
-    ctx.strokeStyle = theme.inkSoft;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.arc(origin.x, origin.y, R, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.strokeStyle = theme.ink;
     ctx.lineWidth = 0.6;
     ctx.beginPath();
-    ctx.arc(origin.x, origin.y, R + 14, 0, Math.PI * 2);
+    circlePath(ctx, origin.x, origin.y, R + 14, w, h);
     ctx.stroke();
     ctx.lineWidth = 0.8;
     ctx.font = `13px ${fonts.caps}`;
@@ -343,8 +468,11 @@ interface Drawn {
   sr: number;
 }
 
-function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[], hitById: Map<string, HitTarget>) {
-  const placed: { x: number; y: number; w: number; h: number }[] = [];
+export type Box = { x: number; y: number; w: number; h: number };
+
+/** Draws names; returns the boxes taken so later labels can avoid them. */
+function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[], hitById: Map<string, HitTarget>): Box[] {
+  const placed: Box[] = [];
   // Reserve the island footprints themselves so labels never sit on land.
   for (const t of hitById.values()) placed.push({ x: t.x - t.r, y: t.y - t.r, w: t.r * 2, h: t.r * 2 });
   const collides = (r: { x: number; y: number; w: number; h: number }) =>
@@ -355,6 +483,7 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
   const order = [...drawn].sort((a, b) => priority(a) - priority(b));
 
   for (const d of order) {
+    if (!s.layers.labels && d.b.id !== s.selectedId) continue;
     const t = hitById.get(d.b.id)!;
     if (t.x < -200 || t.y < -50 || t.x > s.width + 200 || t.y > s.height + 50) continue;
     const central = d.b.kind === 'central';
@@ -384,20 +513,41 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
   }
   ctx.letterSpacing = '0px';
 
-  // Belt names follow the curve of the belt.
+  // Ring names follow their curve, on the side of the chart nearest the viewer.
+  // Zoomed out, belts are named along the top and bands along the bottom.
+  const centred = Math.hypot(s.view.cx, s.view.cy) * s.view.scale < 40;
+  const toward = centred ? 0 : Math.atan2(s.view.cx, -s.view.cy) * (180 / Math.PI);
+  if (!s.layers.labels) return placed;
   for (const belt of s.world.belts) {
+    if (!s.layers.belts) break;
     const r = ((belt.innerRadius + belt.outerRadius) / 2) * s.view.scale;
     if (r < 120) continue;
-    const toward = Math.atan2(s.view.cx, -s.view.cy) * (180 / Math.PI);
-    const near = Math.hypot(s.view.cx, s.view.cy) * s.view.scale > 1 ? toward : 0;
-    curvedText(ctx, belt.name.toUpperCase(), s, r, near);
+    curvedText(ctx, belt.name.toUpperCase(), s, r, toward, theme.inkSoft, `italic 500 13px ${fonts.serif}`);
   }
+  for (const band of s.world.bands) {
+    if (!s.layers.bands) break;
+    const r = ((band.innerRadius + band.outerRadius) / 2) * s.view.scale;
+    if (r < 120) continue;
+    curvedText(ctx, band.name.toUpperCase(), s, r, centred ? 180 : toward + 4, theme.imperial, `600 12px ${fonts.caps}`);
+  }
+  const edge = s.world.oceanRadius * s.view.scale + 58;
+  curvedText(ctx, s.world.edgeName.toUpperCase(), s, edge, centred ? 0 : toward, theme.ink, `italic 600 16px ${fonts.serif}`, 7, theme.gunk);
+  return placed;
 }
 
-function curvedText(ctx: CanvasRenderingContext2D, text: string, s: RenderInput, r: number, bearing: number) {
+function curvedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  s: RenderInput,
+  r: number,
+  bearing: number,
+  color: string,
+  font: string,
+  spacing = 4,
+  halo: string = theme.halo,
+) {
   const origin = worldToScreen(s.view, s.width, s.height, { x: 0, y: 0 });
-  ctx.font = `italic 500 13px ${fonts.serif}`;
-  const spacing = 4;
+  ctx.font = font;
   const widths = [...text].map((ch) => ctx.measureText(ch).width + spacing);
   const total = widths.reduce((a, b) => a + b, 0);
   // Upright text across the top half, reversed across the bottom half.
@@ -412,9 +562,9 @@ function curvedText(ctx: CanvasRenderingContext2D, text: string, s: RenderInput,
     ctx.translate(x, y);
     ctx.rotate(bottom ? mid + Math.PI : mid);
     ctx.lineWidth = 3;
-    ctx.strokeStyle = theme.halo;
+    ctx.strokeStyle = halo;
     ctx.strokeText(ch, 0, 4);
-    ctx.fillStyle = theme.inkSoft;
+    ctx.fillStyle = color;
     ctx.fillText(ch, 0, 4);
     ctx.restore();
     a += ((bottom ? -1 : 1) * widths[i]) / r;
