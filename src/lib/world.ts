@@ -4,7 +4,7 @@ import type { Parameters } from '../parameters/schema';
 import { generatePlatforms, type Platform, type PlatformContent, type PlatformRules } from './platforms';
 import { coastlinePoints } from './coastline';
 import { rng } from './random';
-import { parseDesign, type ContinentDesign } from './terrain/design';
+import type { ContinentDesign } from './terrain/design';
 import type { NameParts } from './terrain/names';
 
 export type BodyKind = 'central' | 'isle' | 'moon';
@@ -12,6 +12,8 @@ export type BodyKind = 'central' | 'isle' | 'moon';
 export interface Body {
   id: string;
   name: string;
+  /** For crowded places (zoomed out, the island strip): `short_name`, or "C. 7" for "Continent 7". */
+  shortName: string;
   kind: BodyKind;
   /** Island radius, IL. */
   radius: number;
@@ -97,6 +99,7 @@ interface RawBody {
   period_days?: number;
   position?: number;
   description?: string;
+  short_name?: string;
   max_elevation?: number;
   settlement_density?: number;
   moons?: RawBody[];
@@ -131,8 +134,8 @@ export interface WorldSources {
   params: Parameters;
   /** Name-building sounds (src/data/names.yaml), already parsed. */
   names: NameParts;
-  /** Hand-drawn continent SVGs by body id (src/data/continents/<id>.svg). */
-  designs?: Record<string, string>;
+  /** Hand-drawn designs by body id, already read (see terrain/design.ts parseDesign). */
+  designs?: Map<string, ContinentDesign>;
 }
 
 function hash(s: string): number {
@@ -143,10 +146,9 @@ function hash(s: string): number {
 
 /** Build the world from world.yaml text, the calendar, parameters and any designs. */
 export function parseWorld(source: string, cal: Calendar, sources: WorldSources): World {
-  const { params, names, designs: designSources = {} } = sources;
+  const { params, names, designs = new Map<string, ContinentDesign>() } = sources;
   const raw = yaml.load(source) as RawWorld;
   if (!raw?.central) throw new Error('world.yaml: `central` is required');
-  const designs = new Map(Object.entries(designSources).map(([id, svg]) => [id, parseDesign(svg, `continents/${id}.svg`)]));
 
   const toBody = (r: RawBody, kind: BodyKind, parent: Body | null): Body => {
     let periodDays = Infinity;
@@ -157,6 +159,7 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
     const body: Body = {
       id: r.id,
       name: r.name ?? r.id,
+      shortName: r.short_name ?? (r.name ?? r.id).replace(/^Continent (\d+)$/, 'C. $1'),
       kind,
       radius: r.radius,
       seed: r.seed ?? hash(r.id),

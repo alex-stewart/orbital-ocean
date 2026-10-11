@@ -24,8 +24,15 @@ export function drawShipping(
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  // Quietest first, so busy routes sit on top.
-  const ordered = [...net.routes].sort((a, b) => a.traffic - b.traffic);
+  // Zoomed out, only the busiest few (and any selected one); quietest drawn first,
+  // so busy routes sit on top.
+  const sp = s.world.params.shipping;
+  const busiest = [...net.routes].sort((a, b) => b.traffic - a.traffic);
+  const shown =
+    s.view.scale < sp.overview_below_zoom
+      ? busiest.filter((r, i) => i < sp.overview_routes || r.id === s.selectedId || r.id === s.hoveredId)
+      : busiest;
+  const ordered = [...shown].reverse();
   for (const r of ordered) {
     const pts = routeGeometry(s.world, r, s.positions, s.platformXY).map(toScreen);
     const selected = r.id === s.selectedId || r.id === s.hoveredId;
@@ -49,11 +56,13 @@ export function drawShipping(
   }
   ctx.setLineDash([]);
 
-  // Hubs: resupply platforms on routes, ringed by how much traffic passes;
-  // smaller when zoomed far out, where many crowd together.
-  const top = Math.max(...net.hubs.values(), 1e-9);
+  // Hubs: resupply platforms on the routes shown, ringed by how much traffic
+  // passes; smaller when zoomed far out, where many crowd together.
+  const hubs = new Map<string, number>();
+  for (const r of shown) for (const id of r.stops) hubs.set(id, (hubs.get(id) ?? 0) + r.traffic);
+  const top = Math.max(...hubs.values(), 1e-9);
   const z = 0.45 + 0.55 * Math.min(1, Math.max(0, (s.view.scale - 0.03) / 0.2));
-  for (const [id, traffic] of net.hubs) {
+  for (const [id, traffic] of hubs) {
     const i = s.world.platformIndex.get(id);
     if (i === undefined) continue;
     const p = toScreen({ x: s.platformXY[i * 2], y: s.platformXY[i * 2 + 1] });

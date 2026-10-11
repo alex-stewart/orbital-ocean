@@ -131,3 +131,15 @@ export function formatDuration(cal: Calendar, days: number): string {
   const years = days / cal.yearLength;
   return `${years.toFixed(years < 10 ? 2 : 1)} years`;
 }
+
+/** Step a day, month or year forwards or back (months keep the day, clamped to the month's length). */
+export function stepDate(cal: Calendar, t: number, unit: 'day' | 'month' | 'year', dir: 1 | -1): number {
+  if (unit === 'day') return Math.floor(t) + dir;
+  const d = daysToDate(cal, t);
+  if (unit === 'year') return dateToDays(cal, d.year + dir, d.monthIndex, d.day);
+  let mi = d.monthIndex + dir;
+  let y = d.year;
+  if (mi < 0) (mi = cal.months.length - 1), y--;
+  if (mi >= cal.months.length) (mi = 0), y++;
+  return dateToDays(cal, y, mi, Math.min(d.day, cal.months[mi].days));
+}

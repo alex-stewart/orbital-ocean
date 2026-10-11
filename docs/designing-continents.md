@@ -21,7 +21,7 @@ A design replaces exactly what you draw and nothing else. The Atlas works out th
 2. Open it in **Inkscape** (free; recommended). Show the layers with **Layer → Layers and Objects…**.
 3. Edit, redraw or delete whatever you like (see [the layers](#the-layers)).
 4. Save it as **`src/data/continents/<id>.svg`**, for example `src/data/continents/mort.svg` (moons work the same way: `mort-i.svg`). The filename must match the `id` in `src/data/world.yaml`.
-5. Run `npm run dev` and open the Atlas. The continent now uses your design, and its gazetteer entry says *Drawn by hand*.
+5. Run `npm run dev` and open the Atlas. The continent now uses your design, and its gazetteer entry says *Drawn by hand*. Keep the Atlas open while you work: each time you save the SVG, the chart updates in place.
 6. Run `npm test` to check the design, then commit it.
 
 To go back to the generated placeholder, delete the file.

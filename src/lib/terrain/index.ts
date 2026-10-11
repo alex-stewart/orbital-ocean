@@ -50,6 +50,15 @@ export function continentMap(world: World, body: Body): ContinentMap {
   return m;
 }
 
+/** Accept a map built elsewhere (the background worker), unless one is already in use. */
+export function primeContinentMap(world: World, id: string, map: ContinentMap): boolean {
+  let byId = cache.get(world);
+  if (!byId) cache.set(world, (byId = new Map()));
+  if (byId.has(id)) return false;
+  byId.set(id, map);
+  return true;
+}
+
 /** Whether a body's map is already built (so using it costs nothing). */
 export function hasContinentMap(world: World, body: Body): boolean {
   return cache.get(world)?.has(body.id) ?? false;

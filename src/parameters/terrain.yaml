@@ -6,7 +6,7 @@
 # side, clamped to [min_cells, max_cells]. Finer grids are slower to build.
 grid:
   cells_per_il_of_radius: 0.9
-  min_cells: 96
+  min_cells: 128
   max_cells: 200
 
 # Generated coastlines: `roughness` 0 is a circle, ~0.4 is ragged;

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { screenToWorld, zoomAbout, type View } from '../../lib/camera';
 import { shapeFromPolygons, type IslandShape } from '../../lib/coastline';
-import { continentMap, findSettlement, mappedBodies } from '../../lib/terrain';
+import { continentMap, findSettlement, mappedBodies, primeContinentMap, type ContinentMap } from '../../lib/terrain';
 import { platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { World } from '../../lib/world';
 import type { Layers } from './layers';
@@ -11,6 +11,8 @@ import { planShipping, routeGeometry, type ShippingNetwork } from '../../lib/shi
 
 export interface AtlasMapHandle {
   zoomBy(factor: number): void;
+  /** Pan by a fraction of the canvas size (e.g. 0.15, 0). */
+  panBy(fx: number, fy: number): void;
   reset(): void;
   flyTo(id: string): void;
 }
@@ -27,6 +29,14 @@ interface Props {
   onCursor(p: Point | null): void;
   /** Called whenever shipping is re-planned. */
   onShipping(net: ShippingNetwork | null): void;
+  /** The view to open on (e.g. from a shared link), instead of the whole ocean. */
+  initialView: View | null;
+  /** Measuring: from one place to the hovered one, or to a pinned one. */
+  measure: { from: string; to: string | null } | null;
+  /** The place under the pointer and where it is on screen, for tooltips. */
+  onHover(h: { id: string; x: number; y: number } | null): void;
+  /** While measuring, a click pins the far end instead of selecting. */
+  onMeasureTarget(id: string): void;
 }
 
 
@@ -78,6 +88,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     plannedWithMaps: -1,
     mapsReady: 0,
     platformXY: new Float64Array(0),
+    /** Positions are reused while only the view changes (panning, zooming). */
+    positionsT: NaN,
+    positions: new Map<string, Point>(),
     hoveredId: null as string | null,
     dirty: true,
     frame: 0,
@@ -110,8 +123,12 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     const p = latest.current;
 
     // Follow a body or platform: keep the target centred on it.
-    const positions = positionsAt(world.bodies, p.t);
-    s.platformXY = platformPositions(world.platforms, p.t, positions, s.platformXY);
+    if (s.positionsT !== p.t) {
+      s.positions = positionsAt(world.bodies, p.t);
+      s.platformXY = platformPositions(world.platforms, p.t, s.positions, s.platformXY);
+      s.positionsT = p.t;
+    }
+    const positions = s.positions;
     if (p.followId) {
       const fp = placeAt(p.followId, positions, s.platformXY);
       if (fp) {
@@ -201,6 +218,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         dpr: s.dpr,
         selectedId: p.selectedId,
         hoveredId: s.hoveredId,
+        measure: p.measure,
         layers: p.layers,
         platformXY: s.platformXY,
         shipping: p.layers.shipping ? s.shipping : null,
@@ -214,7 +232,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   };
 
   // Redraw whenever inputs from React change.
-  useEffect(requestFrame, [props.t, props.selectedId, props.followId, props.layers, world, shapes]);
+  useEffect(requestFrame, [props.t, props.selectedId, props.followId, props.layers, props.measure, world, shapes]);
 
   const flyTo = (id: string) => {
     const s = st.current;
@@ -266,6 +284,14 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   };
 
   useImperativeHandle(ref, () => ({
+    panBy(fx, fy) {
+      const s = st.current;
+      latest.current.onFollowEnd();
+      s.anchor = null;
+      s.velocity = { x: 0, y: 0 };
+      s.target = { ...s.target, cx: s.target.cx + (fx * s.w) / s.target.scale, cy: s.target.cy + (fy * s.h) / s.target.scale };
+      requestFrame();
+    },
     zoomBy(factor) {
       const s = st.current;
       s.velocity = { x: 0, y: 0 };
@@ -285,9 +311,24 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     flyTo,
   }));
 
-  // Build continent maps in idle moments, largest first, so zooming in never waits.
+  // Build continent maps in a background worker, largest first, so zooming in
+  // never waits and the chart never stutters. If workers aren't available, fall
+  // back to building them here in idle moments.
   useEffect(() => {
     const queue = [...mappedBodies(world)].sort((a, b) => b.radius - a.radius);
+    try {
+      const worker = new Worker(new URL('../../workers/maps.worker.ts', import.meta.url), { type: 'module' });
+      worker.onmessage = (e: MessageEvent<{ id: string; map: ContinentMap }>) => {
+        if (primeContinentMap(world, e.data.id, e.data.map)) {
+          st.current.mapsReady++;
+          requestFrame();
+        }
+      };
+      worker.postMessage({ order: queue.map((b) => b.id) });
+      return () => worker.terminate();
+    } catch {
+      // No module workers: build here instead.
+    }
     // Safari lacks requestIdleCallback; a short timeout is close enough.
     const idle = (cb: () => void) =>
       typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(cb, { timeout: 2000 }) : setTimeout(cb, 50);
@@ -317,7 +358,8 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       canvas.width = Math.round(width * s.dpr);
       canvas.height = Math.round(height * s.dpr);
       if (!s.initialised && width > 0) {
-        s.view = fitView();
+        const iv = latest.current.initialView;
+        s.view = iv ? { ...iv, scale: clampScale(iv.scale) } : fitView();
         s.target = { ...s.view };
         s.initialised = true;
       }
@@ -428,6 +470,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
           s.hoveredId = id;
           requestFrame();
         }
+        latest.current.onHover(id ? { id, x: p.x, y: p.y } : null);
         return;
       }
       pointers.set(e.pointerId, p);
@@ -468,7 +511,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       if (pointers.size > 0) return;
       canvas.style.cursor = 'grab';
       if (!dragged) {
-        latest.current.onSelect(hitAt(p.x, p.y)?.id ?? null);
+        const id = hitAt(p.x, p.y)?.id ?? null;
+        if (latest.current.measure && id) latest.current.onMeasureTarget(id);
+        else latest.current.onSelect(id);
         return;
       }
       const first = samples[0];
@@ -500,6 +545,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
 
     const onLeave = () => {
       latest.current.onCursor(null);
+      latest.current.onHover(null);
       if (st.current.hoveredId) {
         st.current.hoveredId = null;
         requestFrame();

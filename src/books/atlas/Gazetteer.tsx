@@ -1,10 +1,9 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { formatDuration, ordinal, type Calendar } from '../../lib/calendar';
 import { bearingAt, bearingBetween, compassPoint, distance, platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { Platform } from '../../lib/platforms';
 import type { ShippingNetwork, ShippingRoute } from '../../lib/shipping';
 import { continentMap, findSettlement, hasContinentMap, type Settlement, type SettlementKind } from '../../lib/terrain';
-import { designTemplate } from '../../lib/terrain/template';
 import { bandAt, orbitalDistance, type Body, type World } from '../../lib/world';
 
 interface Props {
@@ -19,6 +18,8 @@ interface Props {
   onSelect(id: string | null): void;
   onFocus(id: string): void;
   onFollow(id: string | null): void;
+  /** Start measuring from a place. */
+  onMeasure(id: string): void;
 }
 
 const fmt = new Intl.NumberFormat('en-GB');
@@ -55,9 +56,42 @@ function bandOfBody(world: World, b: Body) {
   return bandAt(world, orbitalDistance(b));
 }
 
+/**
+ * On phones the gazetteer is a bottom sheet: drag its handle between about
+ * half and nearly full height, or down to fold it away.
+ */
+function useSheet(open: boolean, onToggle: () => void) {
+  const [height, setHeight] = useState<number | null>(null);
+  const drag = useRef<{ y: number; h: number; parent: number } | null>(null);
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const aside = e.currentTarget.closest('aside')!;
+    const parent = aside.parentElement!.clientHeight;
+    drag.current = { y: e.clientY, h: aside.getBoundingClientRect().height, parent };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    setHeight(Math.max(48, Math.min(d.parent * 0.92, d.h - (e.clientY - d.y))));
+  };
+  const onUp = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || height === null) return;
+    // Snap: folded, half, or nearly full.
+    const f = height / d.parent;
+    if (f < 0.22) {
+      setHeight(null);
+      if (open) onToggle();
+    } else setHeight(d.parent * (f < 0.65 ? 0.5 : 0.88));
+  };
+  return { style: open && height !== null ? { height, maxHeight: 'none' } : undefined, handle: { onPointerDown: onDown, onPointerMove: onMove, onPointerUp: onUp, onPointerCancel: onUp } };
+}
+
 export function Gazetteer(p: Props) {
   const { world, shipping } = p;
   const sel = resolve(world, shipping, p.selectedId);
+  const sheet = useSheet(p.open, p.onToggle);
 
   // Breadcrumb: Index › body › place.
   const crumbs: { id: string | null; label: string }[] = [{ id: null, label: 'Index' }];
@@ -71,7 +105,8 @@ export function Gazetteer(p: Props) {
   }
 
   return (
-    <aside className={`gazetteer ${p.open ? 'open' : 'closed'}`} aria-label="Gazetteer">
+    <aside className={`gazetteer ${p.open ? 'open' : 'closed'}`} aria-label="Gazetteer" style={sheet.style}>
+      <div className="gz-handle" {...sheet.handle} aria-hidden />
       <header className="gz-head">
         <button className="gz-title" onClick={p.onToggle} aria-expanded={p.open}>
           <span>Gazetteer</span>
@@ -357,10 +392,22 @@ function SeaIndex({ world, shipping, onFocus }: Props) {
 
 // ── Entries ─────────────────────────────────────────────────────────────────
 
-function Actions({ id, followable, followId, onFocus, onFollow }: { id: string; followable: boolean } & Pick<Props, 'followId' | 'onFocus' | 'onFollow'>) {
+function Actions({
+  id,
+  followable,
+  followId,
+  onFocus,
+  onFollow,
+  onMeasure,
+}: { id: string; followable: boolean; onMeasure?: (id: string) => void } & Pick<Props, 'followId' | 'onFocus' | 'onFollow'>) {
   return (
     <div className="gz-actions">
       <button onClick={() => onFocus(id)}>Centre on chart</button>
+      {onMeasure && (
+        <button onClick={() => onMeasure(id)} title="Measure the distance and bearing to another place">
+          Measure
+        </button>
+      )}
       {followable && (
         <button className={followId === id ? 'active' : ''} onClick={() => onFollow(followId === id ? null : id)}>
           {followId === id ? 'Following' : 'Follow'}
@@ -394,7 +441,9 @@ function RouteList({ routes, bodyId, world, onFocus }: { routes: ShippingRoute[]
   );
 }
 
-function downloadTemplate(world: World, body: Body) {
+/** The template exporter is loaded only when someone asks for a template. */
+async function downloadTemplate(world: World, body: Body) {
+  const { designTemplate } = await import('../../lib/terrain/template');
   const svg = designTemplate(body, continentMap(world, body));
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
   const a = document.createElement('a');
@@ -404,7 +453,7 @@ function downloadTemplate(world: World, body: Body) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect }: Props & { body: Body }) {
+function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { body: Body }) {
   const u = world.units.abbr;
   const map = continentMap(world, body);
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
@@ -445,12 +494,15 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
   return (
     <article className="gz-entry">
       <Head title={body.name} kind={kind} description={body.description} />
-      <Actions id={body.id} followable={body.kind !== 'central'} followId={followId} onFocus={onFocus} onFollow={onFollow} />
+      <Actions id={body.id} followable={body.kind !== 'central'} followId={followId} onFocus={onFocus} onFollow={onFollow} onMeasure={onMeasure} />
       <Facts rows={facts} />
 
       <Section title="Settlements" count={map.settlements.length}>
         <p className="gz-line">
-          {(['city', 'town', 'village'] as SettlementKind[]).map((k) => count(by(k).length, k)).join(', ')}
+          {(['city', 'town', 'village'] as SettlementKind[])
+            .filter((k) => by(k).length > 0)
+            .map((k) => count(by(k).length, k))
+            .join(', ')}
           {ports ? `; ${ports} with harbours` : ''}.
         </p>
         {by('city').length > 0 && (
@@ -547,7 +599,7 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
   );
 }
 
-function SettlementEntry({ world, body, settlement: st, shipping, onFocus }: Props & { body: Body; settlement: Settlement }) {
+function SettlementEntry({ world, body, settlement: st, shipping, onFocus, onMeasure }: Props & { body: Body; settlement: Settlement }) {
   const map = continentMap(world, body);
   const u = world.units.abbr;
   const name = (id: string | null) => map.settlements.find((x) => x.id === id);
@@ -571,7 +623,7 @@ function SettlementEntry({ world, body, settlement: st, shipping, onFocus }: Pro
         title={st.name}
         kind={`${cap(KIND[st.kind][0])} on ${body.name}${features.length ? `; ${features.join(', ')}` : ''}`}
       />
-      <Actions id={st.id} followable={false} followId={null} onFocus={onFocus} onFollow={() => undefined} />
+      <Actions id={st.id} followable={false} followId={null} onFocus={onFocus} onFollow={() => undefined} onMeasure={onMeasure} />
       <Facts
         rows={[
           ['Elevation', `${fmt.format(st.elevation)} m`],
@@ -636,7 +688,7 @@ function describeMotion(p: Platform, world: World, cal: Calendar): string {
   }
 }
 
-function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect }: Props & { platform: Platform }) {
+function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { platform: Platform }) {
   const u = world.units.abbr;
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
   const here = useMemo<Point>(() => {
@@ -657,7 +709,7 @@ function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, follow
         title={pf.id}
         kind={`${pf.motion === 'anchored' ? 'Anchored' : 'Orbital'} platform · ${pf.size.name}${pf.size.like ? `, the size of ${pf.size.like}` : ''}`}
       />
-      <Actions id={pf.id} followable={pf.motion !== 'anchored'} followId={followId} onFocus={onFocus} onFollow={onFollow} />
+      <Actions id={pf.id} followable={pf.motion !== 'anchored'} followId={followId} onFocus={onFocus} onFollow={onFollow} onMeasure={onMeasure} />
       <Facts
         rows={[
           ['Held by', pf.owner.name],

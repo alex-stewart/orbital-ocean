@@ -27,6 +27,8 @@ export interface RenderInput {
   platformXY: Float64Array;
   /** Shipping planned for (about) this date, or null if not planned yet. */
   shipping: ShippingNetwork | null;
+  /** Explicit measuring (from the gazetteer's Measure button), if active. */
+  measure: { from: string; to: string | null } | null;
 }
 
 export interface RenderResult {
@@ -276,9 +278,12 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderInput): RenderRes
   ring(s.hoveredId !== s.selectedId ? s.hoveredId : null, theme.inkSoft, [3, 3]);
   ring(s.selectedId, theme.accent, []);
 
-  const measureA = s.selectedId && placeAt(s.selectedId);
-  const measureB = s.hoveredId && placeAt(s.hoveredId);
-  if (measureA && measureB && s.selectedId !== s.hoveredId) {
+  // Measure from the selection (or an explicit origin) to the hovered (or pinned) place.
+  const fromId = s.measure?.from ?? s.selectedId;
+  const toId = s.measure?.to ?? s.hoveredId;
+  const measureA = fromId && !fromId.startsWith('route:') && placeAt(fromId);
+  const measureB = toId && !toId.startsWith('route:') && placeAt(toId);
+  if (measureA && measureB && fromId !== toId) {
     const a = measureA;
     const b = measureB;
     const sa = toScreen(a);
@@ -481,6 +486,21 @@ interface Drawn {
 export type Box = { x: number; y: number; w: number; h: number };
 
 /** Draws names; returns the boxes taken so later labels can avoid them. */
+/** Where each label went last frame, tried first, so labels don't jump about. */
+const lastSlot = new Map<string, number>();
+
+/** measureText is slow and labels rarely change: remember widths by font and text. */
+const widths = new Map<string, number>();
+export function textWidth(ctx: CanvasRenderingContext2D, text: string): number {
+  const key = `${ctx.font}|${ctx.letterSpacing}|${text}`;
+  let w = widths.get(key);
+  if (w === undefined) {
+    if (widths.size > 4000) widths.clear();
+    widths.set(key, (w = ctx.measureText(text).width));
+  }
+  return w;
+}
+
 function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[], hitById: Map<string, HitTarget>): Box[] {
   const placed: Box[] = [];
   // Reserve the island footprints themselves so labels never sit on land.
@@ -492,16 +512,20 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
     (d.b.id === s.selectedId ? -10 : 0) + (d.b.kind === 'central' ? 0 : d.b.kind === 'isle' ? 1 : 2);
   const order = [...drawn].sort((a, b) => priority(a) - priority(b));
 
+  const symbolBelow = s.world.params.display.symbol_below;
   for (const d of order) {
     if (!s.layers.labels && d.b.id !== s.selectedId) continue;
+    // Moons are named a little after their dots appear, so names don't flicker at the threshold.
+    if (d.b.kind === 'moon' && d.b.orbitRadius * s.view.scale < symbolRadius(d.b.parent!) + 22 && d.b.id !== s.selectedId) continue;
     const t = hitById.get(d.b.id)!;
     if (t.x < -200 || t.y < -50 || t.x > s.width + 200 || t.y > s.height + 50) continue;
     const central = d.b.kind === 'central';
     const size = central ? 19 : d.b.kind === 'isle' ? 15 : 13;
     ctx.font = d.b.kind === 'moon' ? `italic ${size}px ${fonts.serif}` : `${central ? 600 : 500} ${size}px ${fonts.caps}`;
     ctx.letterSpacing = d.b.kind === 'moon' ? '0px' : central ? '3px' : '1.5px';
-    const text = d.b.name;
-    const tw = ctx.measureText(text).width;
+    // Zoomed out (drawn as a symbol), use the short name.
+    const text = d.sr < symbolBelow ? d.b.shortName : d.b.name;
+    const tw = textWidth(ctx, text);
     const gap = t.r + 6;
     // Labels sit inside a large central isle; otherwise beside the symbol.
     const candidates =
@@ -513,10 +537,14 @@ function drawLabels(ctx: CanvasRenderingContext2D, s: RenderInput, drawn: Drawn[
             { x: t.x - tw / 2, y: t.y - gap - 2 },
             { x: t.x - tw / 2, y: t.y + gap + size * 0.8 },
           ];
-    for (const c of candidates) {
+    const prev = lastSlot.get(d.b.id) ?? 0;
+    const tryOrder = candidates.map((_, i) => i).sort((a, b) => (a === prev ? -1 : b === prev ? 1 : a - b));
+    for (const i of tryOrder) {
+      const c = candidates[i];
       const box = { x: c.x - 2, y: c.y - size * 0.8, w: tw + 4, h: size * 1.05 };
       if (!(central && t.r > 60) && collides(box)) continue;
       placed.push(box);
+      lastSlot.set(d.b.id, i);
       haloText(ctx, text, c.x, c.y, d.b.id === s.selectedId ? theme.accent : theme.ink);
       break;
     }
@@ -558,7 +586,7 @@ function curvedText(
 ) {
   const origin = worldToScreen(s.view, s.width, s.height, { x: 0, y: 0 });
   ctx.font = font;
-  const widths = [...text].map((ch) => ctx.measureText(ch).width + spacing);
+  const widths = [...text].map((ch) => textWidth(ctx, ch) + spacing);
   const total = widths.reduce((a, b) => a + b, 0);
   // Upright text across the top half, reversed across the bottom half.
   const bottom = Math.cos((bearing * Math.PI) / 180) < 0;

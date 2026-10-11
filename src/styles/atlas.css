@@ -1182,3 +1182,153 @@ button.link:hover {
     width: auto;
   }
 }
+
+/* ── Tooltip and measuring ─────────────────────────────────────────────── */
+
+.map-tooltip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  max-width: 280px;
+  padding: 4px 9px 5px;
+  background: rgba(244, 236, 214, 0.97);
+  border: 1px solid var(--ink);
+  box-shadow: 0 4px 12px -6px rgba(59, 47, 36, 0.5);
+  pointer-events: none;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.map-tooltip strong {
+  font-family: var(--caps);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}
+
+.map-tooltip span {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.map-tooltip .map-tooltip-measure {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.measure-banner {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 28px);
+  padding: 5px 8px 5px 12px;
+  background: var(--paper);
+  border: 1px solid var(--accent);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.measure-banner strong {
+  font-family: var(--caps);
+  font-weight: 600;
+}
+
+.measure-banner button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+  padding: 1px 10px;
+  cursor: pointer;
+}
+
+@media (hover: none) {
+  .map-tooltip {
+    display: none;
+  }
+}
+
+/* ── Key to the land ───────────────────────────────────────────────────── */
+
+.height-bar {
+  height: 8px;
+  margin-top: 4px;
+  border: 1px solid var(--ink-faint);
+}
+
+.height-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  font-variant-numeric: oldstyle-nums;
+  margin-bottom: 4px;
+}
+
+.land-key svg {
+  width: 24px;
+  height: 12px;
+  flex: none;
+}
+
+/* ── Island strip modes ────────────────────────────────────────────────── */
+
+/* Numbers only: bigger numerals, tight chips. */
+.quick-select.mode-numbers .qs-chip {
+  min-width: 30px;
+  padding: 3px 4px;
+}
+
+.quick-select.mode-numbers .qs-pos {
+  font-size: 0.95rem;
+  opacity: 1;
+}
+
+.quick-select.mode-numbers .qs-chip.active .qs-pos {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Still too wide: scrolls, with a faded edge to show there is more. */
+.quick-select.overflowing {
+  -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+
+/* ── Gazetteer as a bottom sheet on phones ─────────────────────────────── */
+
+.gz-handle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .gz-handle {
+    display: block;
+    height: 18px;
+    cursor: ns-resize;
+    touch-action: none;
+    position: relative;
+  }
+  .gz-handle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 7px;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 2px;
+    background: var(--ink-faint);
+  }
+  .gazetteer.closed .gz-handle {
+    height: 10px;
+  }
+  .gazetteer.closed .gz-handle::after {
+    top: 4px;
+  }
+}

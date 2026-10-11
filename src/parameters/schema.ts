@@ -62,6 +62,8 @@ export interface ShippingParams {
   weights: Kind3<number>;
   distance_decay: number;
   max_routes: number;
+  overview_routes: number;
+  overview_below_zoom: number;
   replan_interval: number;
 }
 
@@ -138,6 +140,8 @@ const SPECS: Record<keyof Parameters, Spec> = {
     weights: k3,
     distance_decay: 'n',
     max_routes: 'n',
+    overview_routes: 'n',
+    overview_below_zoom: 'n',
     replan_interval: 'n',
   },
   display: {

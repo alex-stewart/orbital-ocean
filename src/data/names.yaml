@@ -23,3 +23,8 @@ shape:
   # Chance a site-specific ending is used where it applies.
   site_ending_chance: { coast: 0.6, river: 0.5, high: 0.5 }
   length: { min: 4, max: 13 }
+  # Reject awkward names: more vowel groups than this ("Wrou-lme-sands" has 3),
+  # the same vowel sound twice ("Dounouhaven"), or a vowel doubled at a join ("Eliingas").
+  max_syllables: 3
+  no_repeated_vowel_sound: true
+  no_doubled_vowel: true

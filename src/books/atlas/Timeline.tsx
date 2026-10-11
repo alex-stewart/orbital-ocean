@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { dateToDays, daysToDate, formatYear, ordinal, weekdayOf, type Calendar } from '../../lib/calendar';
+import { dateToDays, daysToDate, formatYear, ordinal, stepDate, weekdayOf, type Calendar } from '../../lib/calendar';
 
 interface Props {
   calendar: Calendar;
@@ -49,14 +49,7 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
 
   const stepBy = (unit: 'day' | 'month' | 'year', dir: 1 | -1) => {
     onPlayingChange(false);
-    if (unit === 'day') return onChange(Math.floor(t) + dir);
-    if (unit === 'year') return onChange(dateToDays(cal, date.year + dir, date.monthIndex, date.day));
-    // Month: move to the same day of the next/previous month, clamped to its length.
-    let mi = date.monthIndex + dir;
-    let y = date.year;
-    if (mi < 0) (mi = cal.months.length - 1), y--;
-    if (mi >= cal.months.length) (mi = 0), y++;
-    onChange(dateToDays(cal, y, mi, Math.min(date.day, cal.months[mi].days)));
+    onChange(stepDate(cal, t, unit, dir));
   };
 
   const slider = (
@@ -138,23 +131,23 @@ export function Timeline({ calendar: cal, t, onChange, playing, onPlayingChange,
         </div>
 
         <div className="timeline-controls" role="group" aria-label="Step through time">
-          <button onClick={() => stepBy('year', -1)} title="Back one year">
+          <button onClick={() => stepBy('year', -1)} title="Back one year" aria-label="Back one year">
             «Y
           </button>
-          <button onClick={() => stepBy('month', -1)} title="Back one month">
+          <button onClick={() => stepBy('month', -1)} title="Back one month" aria-label="Back one month">
             ‹M
           </button>
-          <button onClick={() => stepBy('day', -1)} title="Back one day">
+          <button onClick={() => stepBy('day', -1)} title="Back one day" aria-label="Back one day">
             ‹D
           </button>
           {playButton}
-          <button onClick={() => stepBy('day', 1)} title="Forward one day">
+          <button onClick={() => stepBy('day', 1)} title="Forward one day" aria-label="Forward one day">
             D›
           </button>
-          <button onClick={() => stepBy('month', 1)} title="Forward one month">
+          <button onClick={() => stepBy('month', 1)} title="Forward one month" aria-label="Forward one month">
             M›
           </button>
-          <button onClick={() => stepBy('year', 1)} title="Forward one year">
+          <button onClick={() => stepBy('year', 1)} title="Forward one year" aria-label="Forward one year">
             Y»
           </button>
           {speedSelect}
