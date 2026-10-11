@@ -2,7 +2,6 @@ import { Fragment, useMemo, useRef, useState, type PointerEvent as ReactPointerE
 import { formatDuration, ordinal, type Calendar } from '../../lib/calendar';
 import { bearingAt, bearingBetween, compassPoint, distance, platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { Platform } from '../../lib/platforms';
-import { portName, type ShippingNetwork, type ShippingRoute } from '../../lib/shipping';
 import { continentMap, findSettlement, hasContinentMap, type Settlement, type SettlementKind } from '../../lib/terrain';
 import { archipelagoFerries, type Ferry } from '../../lib/terrain/archipelago';
 import { bandAt, orbitalDistance, type Archipelago, type Belt, type Body, type World } from '../../lib/world';
@@ -15,7 +14,6 @@ interface Props {
   t: number;
   selectedId: string | null;
   followId: string | null;
-  shipping: ShippingNetwork | null;
   onSelect(id: string | null): void;
   onFocus(id: string): void;
   onFollow(id: string | null): void;
@@ -41,12 +39,10 @@ type Selection =
   | { type: 'archipelago'; archipelago: Archipelago }
   | { type: 'settlement'; body: Body; settlement: Settlement }
   | { type: 'platform'; platform: Platform }
-  | { type: 'route'; route: ShippingRoute | null; id: string }
   | null;
 
-function resolve(world: World, shipping: ShippingNetwork | null, id: string | null): Selection {
+function resolve(world: World, id: string | null): Selection {
   if (!id) return null;
-  if (id.startsWith('route:')) return { type: 'route', route: shipping?.routes.find((r) => r.id === id) ?? null, id };
   const body = world.bodies.find((b) => b.id === id);
   if (body) return { type: 'body', body };
   const archipelago = world.archipelagos.find((a) => a.id === id);
@@ -111,8 +107,8 @@ function useSheet(open: boolean, onToggle: () => void) {
 }
 
 export function Gazetteer(p: Props) {
-  const { world, shipping } = p;
-  const sel = resolve(world, shipping, p.selectedId);
+  const { world } = p;
+  const sel = resolve(world, p.selectedId);
   const sheet = useSheet(p.open, p.onToggle);
 
   // Breadcrumb: Index › body › place.
@@ -124,7 +120,7 @@ export function Gazetteer(p: Props) {
     if (sel.body.kind === 'moon') crumbs.push({ id: sel.body.parent!.id, label: sel.body.parent!.name });
     if (sel.body.archipelago) crumbs.push({ id: sel.body.archipelago.id, label: sel.body.archipelago.name });
     crumbs.push({ id: sel.body.id, label: sel.body.name });
-  } else if (sel?.type === 'route' || sel?.type === 'platform') {
+  } else if (sel?.type === 'platform') {
     crumbs.push({ id: null, label: 'Sea' });
   }
 
@@ -161,7 +157,6 @@ export function Gazetteer(p: Props) {
             {sel?.type === 'archipelago' && <ArchipelagoEntry {...p} archipelago={sel.archipelago} />}
             {sel?.type === 'settlement' && <SettlementEntry {...p} body={sel.body} settlement={sel.settlement} />}
             {sel?.type === 'platform' && <PlatformEntry {...p} platform={sel.platform} />}
-            {sel?.type === 'route' && <RouteEntry {...p} route={sel.route} />}
           </div>
         </>
       )}
@@ -390,45 +385,12 @@ function BeltIndex({ world, belt, onFocus }: Props & { belt: Belt }) {
   );
 }
 
-function SeaIndex({ world, shipping, onFocus }: Props) {
-  const routes = shipping ? [...shipping.routes].sort((a, b) => b.traffic - a.traffic) : [];
+function SeaIndex({ world }: Props) {
   const counts = (band: string, anchored: boolean) =>
     world.platforms.filter((q) => q.band?.id === band && (q.motion === 'anchored') === anchored).length;
   return (
     <>
-      <Section title="Imperial shipping" count={routes.length || undefined}>
-        {!shipping ? (
-          <p className="hint">Turn on shipping routes in Layers to plan them for this date.</p>
-        ) : (
-          <>
-            <p className="hint">
-              Cargo routes between {shipping.ports.length} chief ports for this date, calling at {shipping.hubs.size} resupply platforms. Busiest
-              first.
-            </p>
-            <ul className="gz-list">
-              {routes.map((r) => (
-                <li key={r.id}>
-                  <button onClick={() => onFocus(r.id)}>
-                    <span className="gz-name">
-                      {portName(r.from)} ⇄ {portName(r.to)}
-                    </span>
-                    <span className="gz-meta">
-                      {fmt.format(Math.round(r.length))} {world.units.abbr}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {shipping.unreachable.length > 0 && (
-              <p className="hint">
-                {shipping.unreachable.length} wanted {shipping.unreachable.length === 1 ? 'route lies' : 'routes lie'} beyond resupply range on this
-                date.
-              </p>
-            )}
-          </>
-        )}
-      </Section>
-      <Section title="Ocean platforms" count={fmt.format(world.platforms.length)} open={false}>
+      <Section title="Ocean platforms" count={fmt.format(world.platforms.length)}>
         <table className="gz-table">
           <thead>
             <tr>
@@ -485,30 +447,6 @@ function Actions({
   );
 }
 
-function routesFrom(shipping: ShippingNetwork | null, bodyId: string) {
-  return (shipping?.routes ?? []).filter((r) => r.from.body.id === bodyId || r.to.body.id === bodyId).sort((a, b) => b.traffic - a.traffic);
-}
-
-function RouteList({ routes, bodyId, world, onFocus }: { routes: ShippingRoute[]; bodyId: string; world: World; onFocus(id: string): void }) {
-  return (
-    <ul className="gz-list">
-      {routes.map((r) => {
-        const other = r.from.body.id === bodyId ? r.to : r.from;
-        return (
-          <li key={r.id}>
-            <button onClick={() => onFocus(r.id)}>
-              <span className="gz-name">to {portName(other)}</span>
-              <span className="gz-meta">
-                {fmt.format(Math.round(r.length))} {world.units.abbr} · {r.stops.length} {r.stops.length === 1 ? 'stop' : 'stops'}
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 /** The template exporter is loaded only when someone asks for a template. */
 async function downloadTemplate(world: World, body: Body) {
   const { designTemplate } = await import('../../lib/terrain/template');
@@ -522,7 +460,7 @@ async function downloadTemplate(world: World, body: Body) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { body: Body }) {
+function BodyEntry({ world, body, calendar: cal, t, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { body: Body }) {
   const u = world.units.abbr;
   const map = continentMap(world, body);
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
@@ -533,8 +471,6 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
   const navigable = map.rivers.filter((r) => r.navigableFrom >= 0).length;
   const orbiting = world.platforms.filter((q) => q.parent?.id === body.id && q.motion === 'ring').length;
   const convoy = world.platforms.filter((q) => q.companion?.id === body.id).length;
-  const seaRoutes = routesFrom(shipping, body.id);
-  const chief = shipping?.ports.find((pt) => pt.body.id === body.id);
   const arch = body.archipelago;
   const ids = new Set(map.settlements.map((x) => x.id));
   const ferries = arch ? (ferriesOf(world, arch) ?? []).filter((f) => ids.has(f.from) || ids.has(f.to)) : map.ferries;
@@ -615,19 +551,6 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
         </Section>
       )}
 
-      {(chief || seaRoutes.length > 0) && (
-        <Section title="Sea routes" count={seaRoutes.length}>
-          {chief && (
-            <p className="gz-line">
-              <span className="gz-label">Chief port</span>{' '}
-              <button className="link" onClick={() => onFocus(chief.id)}>
-                {chief.settlement.name}
-              </button>
-            </p>
-          )}
-          <RouteList routes={seaRoutes} bodyId={body.id} world={world} onFocus={onFocus} />
-        </Section>
-      )}
 
       <Section title="Land and water" open={false}>
         <Facts
@@ -715,14 +638,12 @@ function FerryList({ world, ferries, onFocus, from }: { world: World; ferries: F
   );
 }
 
-function ArchipelagoEntry({ world, archipelago: a, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { archipelago: Archipelago }) {
+function ArchipelagoEntry({ world, archipelago: a, calendar: cal, t, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { archipelago: Archipelago }) {
   const u = world.units.abbr;
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
   const places = archipelagoPlaces(world, a);
   const ferries = ferriesOf(world, a);
   const by = (k: SettlementKind) => (places ?? []).filter((s) => s.kind === k);
-  const chief = shipping?.ports.find((pt) => pt.archipelago?.id === a.id);
-  const seaRoutes = chief ? routesFrom(shipping, chief.body.id) : [];
   const land = a.islands.reduce((sum, i) => sum + Math.PI * i.radius * i.radius, 0);
   const b = bearingAt(a, t);
   const islands = [...a.islands].sort((x, y) => y.radius - x.radius);
@@ -801,20 +722,6 @@ function ArchipelagoEntry({ world, archipelago: a, calendar: cal, t, shipping, f
           <FerryList world={world} ferries={ferries} onFocus={onFocus} />
         </Section>
       )}
-      {(chief || seaRoutes.length > 0) && (
-        <Section title="Sea routes" count={seaRoutes.length}>
-          {chief && (
-            <p className="gz-line">
-              <span className="gz-label">Chief port</span>{' '}
-              <button className="link" onClick={() => onFocus(chief.id)}>
-                {chief.settlement.name}
-              </button>
-              , on {chief.body.name}
-            </p>
-          )}
-          <RouteList routes={seaRoutes} bodyId={chief!.body.id} world={world} onFocus={onFocus} />
-        </Section>
-      )}
       <Section title="Nearest continents on this date" open={false}>
         <table className="gz-table">
           <tbody>
@@ -834,7 +741,7 @@ function ArchipelagoEntry({ world, archipelago: a, calendar: cal, t, shipping, f
   );
 }
 
-function SettlementEntry({ world, body, settlement: st, shipping, onFocus, onMeasure }: Props & { body: Body; settlement: Settlement }) {
+function SettlementEntry({ world, body, settlement: st, onFocus, onMeasure }: Props & { body: Body; settlement: Settlement }) {
   const map = continentMap(world, body);
   const u = world.units.abbr;
   const name = (id: string | null) => map.settlements.find((x) => x.id === id);
@@ -848,9 +755,7 @@ function SettlementEntry({ world, body, settlement: st, shipping, onFocus, onMea
     .map((x) => ({ x, d: Math.hypot(x.x - st.x, x.y - st.y) }))
     .sort((a, b) => a.d - b.d)
     .slice(0, 5);
-  const chief = shipping?.ports.some((pt) => pt.id === st.id);
-  const seaRoutes = chief ? routesFrom(shipping, body.id) : [];
-  const features = [chief ? 'the chief port' : st.port && 'a harbour', st.riverPort && 'a river port', st.river && !st.riverPort && 'on a river'].filter(Boolean);
+  const features = [st.port && 'a harbour', st.riverPort && 'a river port', st.river && !st.riverPort && 'on a river'].filter(Boolean);
   const ferries = (body.archipelago ? (ferriesOf(world, body.archipelago) ?? []) : map.ferries).filter((f) => f.from === st.id || f.to === st.id);
 
   return (
@@ -886,11 +791,6 @@ function SettlementEntry({ world, body, settlement: st, shipping, onFocus, onMea
       {ferries.length > 0 && (
         <Section title="By ferry" count={ferries.length}>
           <FerryList world={world} ferries={ferries} onFocus={onFocus} from={st.id} />
-        </Section>
-      )}
-      {seaRoutes.length > 0 && (
-        <Section title="Sea routes" count={seaRoutes.length}>
-          <RouteList routes={seaRoutes} bodyId={body.id} world={world} onFocus={onFocus} />
         </Section>
       )}
       <Section title="Nearest settlements" open={!links.length && !ferries.length}>
@@ -929,7 +829,7 @@ function describeMotion(p: Platform, world: World, cal: Calendar): string {
   }
 }
 
-function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { platform: Platform }) {
+function PlatformEntry({ world, platform: pf, calendar: cal, t, followId, onFocus, onFollow, onSelect, onMeasure }: Props & { platform: Platform }) {
   const u = world.units.abbr;
   const positions = useMemo(() => positionsAt(world.bodies, t), [world, t]);
   const here = useMemo<Point>(() => {
@@ -941,7 +841,6 @@ function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, follow
     .map((b) => ({ b, d: distance(here, positions.get(b.id)!), bearing: bearingBetween(here, positions.get(b.id)!) }))
     .sort((a, b) => a.d - b.d)
     .slice(0, 5);
-  const onRoutes = (shipping?.routes ?? []).filter((r) => r.stops.includes(pf.id)).sort((a, b) => b.traffic - a.traffic);
   const breadth = pf.size.radius * 2;
 
   return (
@@ -959,22 +858,7 @@ function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, follow
           ['Station', describeMotion(pf, world, cal)],
         ]}
       />
-      {onRoutes.length > 0 && (
-        <Section title="Resupplies" count={onRoutes.length}>
-          <ul className="gz-list">
-            {onRoutes.map((r) => (
-              <li key={r.id}>
-                <button onClick={() => onFocus(r.id)}>
-                  <span className="gz-name">
-                    {portName(r.from)} ⇄ {portName(r.to)}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-      <Section title="Nearest places on this date" open={!onRoutes.length}>
+      <Section title="Nearest places on this date">
         <table className="gz-table">
           <tbody>
             {nearest.map(({ b, d, bearing }) => (
@@ -988,60 +872,6 @@ function PlatformEntry({ world, platform: pf, calendar: cal, t, shipping, follow
             ))}
           </tbody>
         </table>
-      </Section>
-    </article>
-  );
-}
-
-function RouteEntry({ world, route: r, shipping, onFocus }: Props & { route: ShippingRoute | null }) {
-  const u = world.units.abbr;
-  if (!r) {
-    return (
-      <article className="gz-entry">
-        <Head title="Route not running" kind="Imperial shipping" />
-        <p className="hint">This route isn't among the busiest on the current date. Pick another from the Sea index.</p>
-      </article>
-    );
-  }
-  const ranked = [...(shipping?.routes ?? [])].sort((a, b) => b.traffic - a.traffic);
-  const rank = ranked.findIndex((x) => x.id === r.id) + 1;
-  return (
-    <article className="gz-entry">
-      <Head title={`${portName(r.from)} ⇄ ${portName(r.to)}`} kind="Imperial cargo route, as planned for this date" />
-      <Actions id={r.id} followable={false} followId={null} onFocus={onFocus} onFollow={() => undefined} />
-      <Facts
-        rows={[
-          [
-            'Between',
-            <>
-              <button className="link" onClick={() => onFocus(r.from.id)}>
-                {r.from.settlement.name}
-              </button>{' '}
-              and{' '}
-              <button className="link" onClick={() => onFocus(r.to.id)}>
-                {r.to.settlement.name}
-              </button>
-            </>,
-          ],
-          ['Distance', `${fmt.format(Math.round(r.length))} ${u} under sail`],
-          ['Longest leg', `${fmt.format(Math.round(r.longestLeg))} ${u} (limit ${fmt.format(world.params.shipping.resupply_range)})`],
-          ['Traffic', `${rank ? `${ordinal(rank)} busiest of ${ranked.length}` : ''} · ${Math.round(r.traffic * 100)}% of the busiest`],
-        ]}
-      />
-      <Section title="Calls at" count={r.stops.length}>
-        {r.stops.length ? (
-          <ol className="gz-stops">
-            {r.stops.map((id) => (
-              <li key={id}>
-                <button className="link" onClick={() => onFocus(id)}>
-                  {id}
-                </button>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="hint">Sails direct, within one resupply range.</p>
-        )}
       </Section>
     </article>
   );

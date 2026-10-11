@@ -24,12 +24,12 @@ Endless Gunk.
 - **Pan:** drag the map (flicks carry on with inertia), or use the arrow keys (shift for bigger steps).
 - **Zoom:** scroll, pinch, double-click (shift + double-click zooms out), or use the + / − buttons. Press `0` or ◎ to see the whole ocean again.
 - **Islands:** the strip along the top lists the Land of the Large and the 13 continents by band; click one to fly there. It shows full names when they fit, then short names (`short_name` in `world.yaml`, or "C. 7"), then just numbers, so it always fits. Click anything on the chart for its gazetteer entry; double-click to fly to it. *Follow* keeps the chart centred on it as time passes.
-- **Gazetteer:** search for any place, island, archipelago or platform number. The index has a *Places* tab (continents by band, and each belt's archipelagos) and a *Sea* tab (shipping routes and the platform register). Entries fold their details into sections, with a breadcrumb back to the body and the index.
+- **Gazetteer:** search for any place, island, archipelago or platform number. The index has a *Places* tab (continents by band, and each belt's archipelagos) and a *Sea* tab (the platform register). Entries fold their details into sections, with a breadcrumb back to the body and the index.
 - **Hover:** a tooltip names whatever is under the pointer, and how far it is from the selected place.
 - **Measure:** with something selected, hover another place to see the distance and bearing on the current date, or press *Measure* in its entry and click a second place to pin the measurement (`Esc` stops).
 - **Back and Forward:** each place you select is a browser history entry.
 - **Time:** the timeline is one slim row: play (`space`), the date (click to type one in), the slider and the speed. `[` and `]` step a day, `{` and `}` a month. ⌃ expands it to step by day, month or year and see the year scale; ⌄ folds it back. The choice is remembered.
-- **Layers:** ☰ (or `L`) toggles relief, water, settlements, roads, moons, belts and archipelagos, shipping routes and ferries, anchored and orbital platforms, orbit lines, the imperial bands, range rings and names, with a key to the platform symbols. Choices are remembered in this browser.
+- **Layers:** ☰ (or `L`) toggles relief, water, settlements, roads and ferries, moons, belts and archipelagos, anchored and orbital platforms, orbit lines, the imperial bands, range rings and names, with a key to the platform symbols. Choices are remembered in this browser.
 - **Platforms:** look one up by register number in the gazetteer (just the digits work too, e.g. `12`).
 - **Sharing:** the date, the view and the selected place are kept in the URL (`#/atlas?date=1000-1-1&view=…&place=mort`), so a link opens exactly what you were looking at.
 
@@ -79,32 +79,13 @@ in its settled archipelagos: the larger ones gather round a town or a city on
 their biggest island, with villages on the islands about it, while small
 settled ones hold just a village or two, like a moon. The rest are wild.
 Islanders live by the sea, so their places are harbours, joined by **ferries**
-(main ferries between towns and cities, local ones out to the villages). Each
-settled archipelago trades with the wider ocean through a single chief port.
+(main ferries between towns and cities, local ones out to the villages).
 
 Zoomed out, a belt is a scatter of specks. Zoom in and each archipelago is
 named, then its islands' coasts, places and ferries appear. Click an
-archipelago for its islands, settlements, ferries and sea routes. The numbers
+archipelago for its islands, settlements and ferries. The numbers
 are in `src/parameters/belts.yaml` and `belt_density` in
 `src/parameters/settlements.yaml`; names come from `src/data/names.yaml`.
-
-## Imperial shipping
-
-Cargo routes run between each body's **chief port** (its largest harbour),
-and each settled archipelago's (the largest harbour on any of its islands).
-How much two ports trade grows with the size of the places they serve and
-falls with distance; the busiest routes are drawn, heavier for more traffic.
-Ships must resupply: no leg may be longer than the resupply range, so routes
-hop between the larger Imperial platforms (grand platforms and keeps), which
-become ringed hubs. Long open-water legs cost more than short hops, crossing
-a belt costs extra, and no leg crosses land.
-
-Because everything moves, routes are re-planned for the date on the timeline
-(a few times a second while playing), so the network bends and re-forms as
-continents swing round. Click a route for its stops, distance and traffic.
-Frontier ports can fall out of reach on some dates, when no chain of
-platforms spans the gap. The rules and numbers are in
-`src/parameters/shipping.yaml`.
 
 ## Ocean platforms
 
@@ -117,25 +98,28 @@ with its Imperial register number: `HPBE-P-…` for Imperial platforms and
 They were **sited by trade**, by `npm run seed -- platforms`, and can be
 re-sited the same way (or from the editor) after you move continents about:
 
-- Trade between every pair of chief ports is sampled on 90 dates over 60
-  years, and each voyage's value is spread along its line.
+- Trade is estimated between every body's largest harbour (and every settled
+  archipelago's): more between larger places, less across greater distances.
+  It is sampled on 90 dates over 60 years, and each voyage's value is spread
+  along its line. This rough model is used only for siting; the Atlas doesn't
+  plan or draw voyages.
 - Most anchored platforms form a **backbone**: rings of keeps round the open
-  water between the orbits, a little under resupply range apart, given out
+  water between the orbits, a little under a ship's range (1,800 IL) apart, given out
   to the water that trade crosses most. Ships can always work their way round.
 - The rest go where valuable traffic passes most often. Lanes open about the
   centre at the radii most traffic crosses. Convoys ride ahead of and behind
   the continents that trade most, and rings orbit them.
 - The busiest spots get the grand platforms.
-- Finally, routes still out of range on some dates get extra keeps.
+- Finally, busy pairs of ports that ships couldn't link on some dates, hopping
+  no further than their range between Imperial platforms, get extra keeps.
 
 Over the years the continents come round every way, so siting mostly finds
 *how far out* trade crosses, rather than in which direction. Lower
 `siting.years` in `src/parameters/platforms.yaml` to site for the routes of
-the present era instead. With the seeded platforms, nearly every Imperial
-platform is called at by some route over the years, and about nine in ten
-wanted routes are within resupply range on any date. The rest are mostly
-frontier routes, which lore says can fall out of reach. Counts and siting are
-tuned in `src/parameters/platforms.yaml`.
+the present era instead. With the seeded platforms, nearly nine in ten of the
+busiest port pairs can be linked on any date; the rest are mostly across the
+Far Belt and the frontier. Counts and siting are tuned in
+`src/parameters/platforms.yaml`.
 
 **Anchored** platforms are fixed in place. **Orbital** ones move in one of three
 ways: in shared lanes about the centre, in convoy on a continent's own orbit
@@ -153,8 +137,8 @@ Three kinds of thing are kept apart:
 | | Where | What |
 | --- | --- | --- |
 | **Data** | `src/data/` | What exists, where, and what it's called: the calendar, the bodies and orbits, belts, bands, the archipelagos, every settlement and platform, the sounds of place names, and hand-drawn continents. Seeded once by the generators, then yours to edit. |
-| **Parameters** | `src/parameters/` | How much, how often and how strongly: settlement density and mix, terrain and water thresholds, road costs, platform counts and spacing, shipping range and costs, and when things appear as you zoom. See [src/parameters/README.md](src/parameters/README.md). |
-| **Mechanics** | `src/lib/` | How it all works: orbits, terrain and water, road and shipping routing, and the generators that seed the data (`src/lib/seed/`). It reads every number from the parameters. |
+| **Parameters** | `src/parameters/` | How much, how often and how strongly: settlement density and mix, terrain and water thresholds, road costs, platform counts and siting, and when things appear as you zoom. See [src/parameters/README.md](src/parameters/README.md). |
+| **Mechanics** | `src/lib/` | How it all works: orbits, terrain and water, road routing, and the generators that seed the data (`src/lib/seed/`). It reads every number from the parameters. |
 
 Every parameter file is checked when the Atlas loads. A missing or mistyped
 value stops it with a message naming the file and key.
@@ -177,7 +161,7 @@ and the published site leaves it out.
   motion. `Delete` removes the selected place or platform.
 - **Undo** (`Ctrl+Z`) puts the files back as they were before each change.
 - **Parameters** tunes the numbers worth judging by eye. Some apply at once
-  (shipping, roads, rivers); the rest apply when you **regenerate** places,
+  (roads, rivers); the rest apply when you **regenerate** places,
   archipelagos or platforms, which overwrites what you regenerate.
 - **Warnings** lists anything an edit broke: a town in the sea, a harbour away
   from the water, a platform in a continent's path, archipelagos that will
@@ -223,7 +207,7 @@ between Iceland and Great Britain). Brock, the outermost continent, orbits at
 ```sh
 npm install
 npm run dev        # http://localhost:5173/orbital-ocean/
-npm test           # the generators, the data files, orbits, terrain, roads, shipping, the editor
+npm test           # the generators, the data files, orbits, terrain, roads, the editor
 npm run seed -- …  # regenerate data files (see Seeding)
 npm run build      # typecheck + production build into dist/
 npm run test:e2e   # browser smoke tests against the build (Playwright)
@@ -247,8 +231,8 @@ src/
   data/            calendar.yaml, world.yaml, names.yaml (the world's content)
   data/places/     each body's settlements
   data/continents/ hand-drawn continent and moon designs (SVG)
-  parameters/      tuning: terrain, settlements, roads, belts, platforms, shipping, display
-  lib/             calendar, orbits, world parsing, archipelagos, platforms, shipping, coastlines, camera
+  parameters/      tuning: terrain, settlements, roads, belts, platforms, display
+  lib/             calendar, orbits, world parsing, archipelagos, platforms, coastlines, camera
   lib/terrain/     elevation, water, settlements, roads, archipelago settling and ferries, design reader and template
   lib/seed/        the generators that seed the data files (archipelagos, places, platform siting)
   books/atlas/editor/  the editor (npm run dev only)

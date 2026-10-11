@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { cal, loadWorld } from './world';
 import { isletPosition, platformPositions, positionsAt } from '../orbits';
 import { parsePlatforms, reach } from '../platforms';
-import { continentMap, primeContinentMap } from '../terrain';
 import { sitePlatforms } from '../seed';
-import { planShipping } from '../shipping';
+import { harbours, traders } from '../seed/trade';
 
 const world = loadWorld();
 const { platforms } = world;
@@ -50,7 +49,7 @@ describe('siting platforms', () => {
     expect(Number(line.match(/(\d+)%/)![1])).toBeGreaterThanOrEqual(85);
   });
 
-  it('puts platforms where ships call: nearly all are used as stops over the years', () => {
+  it("puts platforms within a ship's range of another stop, nearly always", () => {
     const parsed = parsePlatforms(rows, world.platformContent, P, {
       central: world.central,
       continents: world.bodies.filter((b) => b.kind === 'isle'),
@@ -58,16 +57,22 @@ describe('siting platforms', () => {
       bands: world.bands,
       oceanRadius: world.oceanRadius,
     });
-    const w = { ...world, platforms: parsed.platforms, platformIndex: new Map(parsed.platforms.map((p, i) => [p.id, i])), platformRules: parsed.rules };
-    for (const b of world.bodies) primeContinentMap(w, b.id, continentMap(world, b));
-    const used = new Set<string>();
+    const resupply = parsed.platforms.filter((p) => p.owner.imperial);
+    const ports = traders(world, P.trade.weights);
+    let near = 0;
+    let all = 0;
     for (let k = 0; k < 16; k++) {
       const t = cal.defaultDay + k * 1300;
-      const pos = positionsAt(w.bodies, t);
-      for (const r of planShipping(w, t, pos, platformPositions(w.platforms, t, pos)).routes) r.stops.forEach((s) => used.add(s));
+      const pos = positionsAt(world.bodies, t);
+      const xy = platformPositions(resupply, t, pos);
+      const stops = [...harbours(ports, pos), ...resupply.map((_, i) => ({ x: xy[i * 2], y: xy[i * 2 + 1] }))];
+      resupply.forEach((_, i) => {
+        const me = stops[ports.length + i];
+        all++;
+        if (stops.some((q, j) => j !== ports.length + i && Math.hypot(q.x - me.x, q.y - me.y) <= P.siting.range)) near++;
+      });
     }
-    const resupply = w.platforms.filter((p) => p.owner.imperial);
-    expect(resupply.filter((p) => used.has(p.id)).length / resupply.length).toBeGreaterThan(0.9);
+    expect(near / all).toBeGreaterThan(0.95);
   });
 });
 

@@ -41,15 +41,11 @@ test('back returns to the previous place', async ({ page }) => {
   await expect(page.locator('.gz-entry-head h2')).toHaveText('Mort');
 });
 
-test('the sea index lists shipping routes, which open', async ({ page }) => {
+test('the sea index lists the platforms', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('#/atlas');
   await page.getByRole('tab', { name: 'Sea' }).click();
-  const first = page.locator('.gz-list button').first();
-  await expect(first).toContainText('⇄', { timeout: 20_000 });
-  await first.click();
-  await expect(page.locator('.gz-kind')).toContainText('cargo route');
-  await expect(page.locator('.gz-section', { hasText: 'Calls at' })).toBeVisible();
+  await expect(page.locator('.gz-section', { hasText: 'Ocean platforms' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

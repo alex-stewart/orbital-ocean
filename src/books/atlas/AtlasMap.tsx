@@ -2,12 +2,10 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'rea
 import { screenToWorld, zoomAbout, type View } from '../../lib/camera';
 import { shapeFromPolygons, type IslandShape } from '../../lib/coastline';
 import { continentMap, findSettlement, mappedBodies, primeContinentMap, type ContinentMap } from '../../lib/terrain';
-import { platformPositions, positionsAt, type Point } from '../../lib/orbits';
+import { archipelagoCentre, platformPositions, positionsAt, type Point } from '../../lib/orbits';
 import type { World } from '../../lib/world';
 import type { Layers } from './layers';
 import { render, type HitTarget } from './render';
-import { distanceToLine, type RouteLine } from './shippingLayer';
-import { archipelagoCentre, planShipping, routeGeometry, type ShippingNetwork } from '../../lib/shipping';
 
 export interface AtlasMapHandle {
   zoomBy(factor: number): void;
@@ -29,8 +27,6 @@ interface Props {
   onFollowEnd(): void;
   onViewChange(view: View): void;
   onCursor(p: Point | null): void;
-  /** Called whenever shipping is re-planned. */
-  onShipping(net: ShippingNetwork | null): void;
   /** The view to open on (e.g. from a shared link), instead of the whole ocean. */
   initialView: View | null;
   /** Measuring: from one place to the hovered one, or to a pinned one. */
@@ -98,13 +94,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     anchor: null as null | { sx: number; sy: number; wx: number; wy: number },
     velocity: { x: 0, y: 0 },
     hits: [] as HitTarget[],
-    routes: [] as RouteLine[],
-    shipping: null as ShippingNetwork | null,
-    lastPlan: 0,
-    planTimer: 0 as ReturnType<typeof setTimeout> | 0,
-    /** Bodies whose maps were built when shipping was last planned. */
-    plannedWithMaps: -1,
-    mapsReady: 0,
     platformXY: new Float64Array(0),
     /** Positions are reused while only the view changes (panning, zooming). */
     positionsT: NaN,
@@ -206,25 +195,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       s.target.cy = s.view.cy;
     }
 
-    // Shipping: re-plan when the date (or the set of built maps) changes, but
-    // no more often than replan_interval; the lines follow motion in between.
-    if (p.layers.shipping) {
-      const stale = !s.shipping || s.shipping.t !== p.t || s.plannedWithMaps !== s.mapsReady;
-      const now = performance.now();
-      const interval = world.params.shipping.replan_interval;
-      if (stale && now - s.lastPlan >= interval) {
-        s.shipping = planShipping(world, p.t, positions, s.platformXY);
-        s.lastPlan = now;
-        s.plannedWithMaps = s.mapsReady;
-        p.onShipping(s.shipping);
-      } else if (stale && !s.planTimer) {
-        s.planTimer = setTimeout(() => {
-          s.planTimer = 0;
-          requestFrame();
-        }, interval - (now - s.lastPlan));
-      }
-    }
-
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx && s.w > 0) {
       const out = render(ctx, {
@@ -241,11 +211,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         measure: p.measure,
         layers: p.layers,
         platformXY: s.platformXY,
-        shipping: p.layers.shipping ? s.shipping : null,
         drag: s.drag,
       });
       s.hits = out.hits;
-      s.routes = out.routes;
       p.onViewChange({ ...s.view });
     }
     s.dirty = false;
@@ -262,24 +230,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
 
   const flyTo = (id: string) => {
     const s = st.current;
-    // A route: frame the whole voyage.
-    const route = st.current.shipping?.routes.find((r) => r.id === id);
-    if (route) {
-      const t = latest.current.t;
-      const positions = positionsAt(world.bodies, t);
-      const pts = routeGeometry(world, route, positions, platformPositions(world.platforms, t, positions), t);
-      const xs = pts.map((q) => q.x);
-      const ys = pts.map((q) => q.y);
-      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-      st.current.anchor = null;
-      st.current.target = {
-        cx: (x0 + x1) / 2,
-        cy: (y0 + y1) / 2,
-        scale: clampScale(Math.min((st.current.w * 0.7) / Math.max(1, x1 - x0), (st.current.h * 0.7) / Math.max(1, y1 - y0))),
-      };
-      requestFrame();
-      return;
-    }
     const t = latest.current.t;
     const positions = positionsAt(world.bodies, t);
     const p = placeAt(id, positions, platformPositions(world.platforms, t, positions), t);
@@ -361,7 +311,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       const worker = new Worker(new URL('../../workers/maps.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (e: MessageEvent<{ id: string; map: ContinentMap }>) => {
         if (primeContinentMap(world, e.data.id, e.data.map)) {
-          st.current.mapsReady++;
           requestFrame();
         }
       };
@@ -377,7 +326,6 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     const next = () => {
       if (cancelled || !queue.length) return;
       continentMap(world, queue.shift()!);
-      st.current.mapsReady++;
       requestFrame();
       idle(next);
     };
@@ -437,7 +385,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     // The smallest target under the pointer wins, so a town beats the continent it
-    // stands on; a shipping route beats open water and the body it leaves from.
+    // stands on.
     const hitAt = (x: number, y: number): { id: string } | null => {
       let best: HitTarget | null = null;
       for (const h of st.current.hits) {
@@ -445,17 +393,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         if (d > Math.max(h.r, 8) + 6) continue;
         if (!best || h.r < best.r || (h.r === best.r && d < Math.hypot(best.x - x, best.y - y))) best = h;
       }
-      if (best && best.r <= 20) return best;
-      let route: RouteLine | null = null;
-      let routeD = 6;
-      for (const r of st.current.routes) {
-        const d = distanceToLine(x, y, r.points);
-        if (d < routeD) {
-          routeD = d;
-          route = r;
-        }
-      }
-      return route ?? best;
+      return best;
     };
     const stopFollow = () => {
       if (latest.current.followId) latest.current.onFollowEnd();
@@ -492,7 +430,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         // In the editor, pressing on something movable starts moving it rather than panning.
         const ed = latest.current.editor;
         const hit = ed && !ed.placing ? hitAt(p.x, p.y) : null;
-        if (hit && !hit.id.startsWith('route:') && ed!.canMove(hit.id)) moving = hit.id;
+        if (hit && ed!.canMove(hit.id)) moving = hit.id;
       } else if (pointers.size === 2) {
         const s = st.current;
         const [a, b] = [...pointers.values()];

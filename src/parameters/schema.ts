@@ -50,7 +50,8 @@ export interface PlatformParams {
   spacing: number;
   count: Record<string, number>;
   motion: { anchored: number; lane: number; convoy: number; ring: number };
-  siting: { years: number; samples: number; backbone: number; cell: number; separation: number; max_lanes: number; repair: number };
+  trade: { weights: Kind3<number>; distance_decay: number; pairs: number };
+  siting: { range: number; years: number; samples: number; backbone: number; cell: number; separation: number; max_lanes: number; repair: number };
   /** Continents that draw more or fewer orbiting platforms, by id: weight × their trade, or exact ring and convoy counts. */
   continents: Record<string, { weight?: number; ring?: number; convoy?: number }>;
   /** How many of the platforms siting would put near a belt to keep there (by belt id), and how near counts (IL). */
@@ -73,20 +74,6 @@ export interface BeltParams {
   coast_reach: number;
   edge_margin: number;
   populated_share: number;
-}
-
-export interface ShippingParams {
-  resupply_range: number;
-  resupply_classes: string[];
-  open_sea: number;
-  belt: number;
-  coast_margin: number;
-  weights: Kind3<number>;
-  distance_decay: number;
-  max_routes: number;
-  overview_routes: number;
-  overview_below_zoom: number;
-  replan_interval: number;
 }
 
 export interface DisplayParams {
@@ -112,7 +99,6 @@ export interface Parameters {
   roads: RoadParams;
   platforms: PlatformParams;
   belts: BeltParams;
-  shipping: ShippingParams;
   display: DisplayParams;
 }
 
@@ -154,7 +140,8 @@ const SPECS: Record<keyof Parameters, Spec> = {
     spacing: 'n',
     count: 'n{}',
     motion: { anchored: 'n', lane: 'n', convoy: 'n', ring: 'n' },
-    siting: { years: 'n', samples: 'n', backbone: 'n', cell: 'n', separation: 'n', max_lanes: 'n', repair: 'n' },
+    trade: { weights: k3, distance_decay: 'n', pairs: 'n' },
+    siting: { range: 'n', years: 'n', samples: 'n', backbone: 'n', cell: 'n', separation: 'n', max_lanes: 'n', repair: 'n' },
     continents: { each: 'n{}' },
     near_belts: 'n{}',
     near_belt_reach: 'n',
@@ -174,19 +161,6 @@ const SPECS: Record<keyof Parameters, Spec> = {
     coast_reach: 'n',
     edge_margin: 'n',
     populated_share: 'n',
-  },
-  shipping: {
-    resupply_range: 'n',
-    resupply_classes: 's[]',
-    open_sea: 'n',
-    belt: 'n',
-    coast_margin: 'n',
-    weights: k3,
-    distance_decay: 'n',
-    max_routes: 'n',
-    overview_routes: 'n',
-    overview_below_zoom: 'n',
-    replan_interval: 'n',
   },
   display: {
     max_zoom: 'n',

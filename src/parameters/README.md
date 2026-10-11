@@ -12,13 +12,12 @@ works lives in the code under [`src/lib/`](../lib/).
 | `roads.yaml` | How roads weigh slope, height, bridges and existing roads |
 | `platforms.yaml` | How many platforms, of which sizes and owners, and how they're sited by trade |
 | `belts.yaml` | Archipelagos in the belts: how many, how big, how populated |
-| `shipping.yaml` | Imperial cargo routes: resupply range, costs, how much trade |
 | `display.yaml` | When things appear as you zoom, and how far you can zoom |
 
 Every file is read at startup and checked; a missing or mistyped key stops the
 Atlas with a message naming the file and key.
 
-Some numbers act at once: terrain and water, roads, shipping and display.
+Some numbers act at once: terrain and water, roads and display.
 Others shape what the generators **seed**: settlement density and mix,
 archipelagos, platform counts and siting. Those take effect only when you
 regenerate (`npm run seed -- …`, or from the editor), because settlements,

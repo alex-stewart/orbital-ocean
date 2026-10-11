@@ -79,3 +79,8 @@ export function platformPositions(platforms: Platform[], t: number, bodyPosition
   }
   return xy;
 }
+
+/** An archipelago's centre at day `t` (its islands turn about it as one). */
+export function archipelagoCentre(arch: { orbitRadius: number; bearing: number; periodDays: number }, t: number): Point {
+  return polar(arch.orbitRadius, bearingAt(arch, t));
+}

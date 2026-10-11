@@ -1,7 +1,6 @@
 import type { Edit, EditRequest, PathSegment } from '../../../lib/editing';
-import { bearingAt, polar, positionsAt, type Point } from '../../../lib/orbits';
+import { archipelagoCentre, bearingAt, polar, positionsAt, type Point } from '../../../lib/orbits';
 import { convoyMinOffset, orbitLaws, type Platform, type PlatformMotion, type PlatformRow } from '../../../lib/platforms';
-import { archipelagoCentre } from '../../../lib/shipping';
 import { continentMap, findSettlement, type SettlementKind } from '../../../lib/terrain';
 import { cellAt } from '../../../lib/terrain/grid';
 import { nameMaker } from '../../../lib/terrain/names';

@@ -8,7 +8,6 @@ export interface Layers {
   belts: boolean;
   anchored: boolean;
   orbital: boolean;
-  shipping: boolean;
   orbits: boolean;
   bands: boolean;
   graticule: boolean;
@@ -24,7 +23,6 @@ export const defaultLayers: Layers = {
   belts: true,
   anchored: true,
   orbital: true,
-  shipping: true,
   orbits: true,
   bands: true,
   graticule: true,
@@ -38,7 +36,7 @@ export const layerGroups: { title: string; items: { key: keyof Layers; label: st
       { key: 'terrain', label: 'Relief and contours' },
       { key: 'water', label: 'Rivers and lakes' },
       { key: 'settlements', label: 'Settlements' },
-      { key: 'roads', label: 'Roads and navigable rivers' },
+      { key: 'roads', label: 'Roads, navigable rivers and ferries' },
     ],
   },
   {
@@ -51,7 +49,6 @@ export const layerGroups: { title: string; items: { key: keyof Layers; label: st
   {
     title: 'Sea',
     items: [
-      { key: 'shipping', label: 'Shipping routes and ferries' },
       { key: 'anchored', label: 'Anchored platforms' },
       { key: 'orbital', label: 'Orbital platforms' },
     ],

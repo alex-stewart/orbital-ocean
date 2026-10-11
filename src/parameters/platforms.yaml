@@ -27,7 +27,18 @@ motion:
   convoy: 0.2
   ring: 0.1
 
+# How much two ports trade, for siting: the places each serves, by size,
+# over their distance to this power. The `pairs` busiest pairs on each date
+# (and every port's best partner) are what platforms are sited for.
+trade:
+  weights: { city: 6, town: 2, village: 0.5 }
+  distance_decay: 1
+  pairs: 28
+
 siting:
+  # The longest leg a ship sails between harbours and Imperial platforms (IL):
+  # backbone rings are spaced a little under it, and gaps longer are closed.
+  range: 1800
   # Trade is sampled on this many dates spread over this many years, so that
   # platforms suit the routes on any date, not just one.
   years: 60
