@@ -1,6 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  SETTLEMENTS — how many, how large, where
-#  (Hand-drawn designs bring their own settlements; these rules fill the rest.)
+#  Used when places are seeded (`npm run seed -- places`, or the editor's
+#  Regenerate); the settlements themselves live in src/data/places/.
 # ─────────────────────────────────────────────────────────────────────────────
 
 seed: 1

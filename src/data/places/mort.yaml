@@ -1,0 +1,7 @@
+# Settlements on Mort (see README.md in this folder).
+
+- {name: Wrusands, kind: city, x: 34.06, y: 45.71, harbour: true}
+- {name: Zosmill, kind: town, x: 53.78, y: -25.07}
+- {name: Ashoford, kind: village, x: 38.34, y: 6.16}
+- {name: Bohythe, kind: village, x: 64.46, y: -7.67, harbour: true}
+- {name: Tosthorpe, kind: village, x: 44.74, y: -59.8}

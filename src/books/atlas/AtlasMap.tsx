@@ -15,6 +15,8 @@ export interface AtlasMapHandle {
   panBy(fx: number, fy: number): void;
   reset(): void;
   flyTo(id: string): void;
+  /** Forget a dropped editor ghost (when the edit failed). */
+  clearDrag(): void;
 }
 
 interface Props {
@@ -37,7 +39,21 @@ interface Props {
   onHover(h: { id: string; x: number; y: number } | null): void;
   /** While measuring, a click pins the far end instead of selecting. */
   onMeasureTarget(id: string): void;
+  /** Editing (development only): dragging things about, and placing new ones. */
+  editor?: MapEditor | null;
 }
+
+export interface MapEditor {
+  canMove(id: string): boolean;
+  /** Dropped at a map position (on the current date). */
+  onMove(id: string, at: Point): void;
+  /** Placing something new: a click puts it here instead of selecting. */
+  placing: boolean;
+  onPlace(at: Point): void;
+}
+
+/** The first world shown: maps from the background worker fit only it (an edit rebuilds the world). */
+let workerWorld: World | null = null;
 
 
 /** Exponential smoothing rate for zoom/fly animation, per second. */
@@ -94,6 +110,8 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     positionsT: NaN,
     positions: new Map<string, Point>(),
     hoveredId: null as string | null,
+    /** Something being dragged in the editor, and where to. */
+    drag: null as { id: string; at: Point } | null,
     dirty: true,
     frame: 0,
     last: 0,
@@ -224,6 +242,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         layers: p.layers,
         platformXY: s.platformXY,
         shipping: p.layers.shipping ? s.shipping : null,
+        drag: s.drag,
       });
       s.hits = out.hits;
       s.routes = out.routes;
@@ -232,6 +251,11 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     s.dirty = false;
     if (animating) requestFrame();
   };
+
+  // A new world (after an edit) replaces any dropped ghost.
+  useEffect(() => {
+    st.current.drag = null;
+  }, [world]);
 
   // Redraw whenever inputs from React change.
   useEffect(requestFrame, [props.t, props.selectedId, props.followId, props.layers, props.measure, world, shapes]);
@@ -320,6 +344,10 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       requestFrame();
     },
     flyTo,
+    clearDrag() {
+      st.current.drag = null;
+      requestFrame();
+    },
   }));
 
   // Build continent maps in a background worker, largest first, so zooming in
@@ -327,7 +355,9 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
   // back to building them here in idle moments.
   useEffect(() => {
     const queue = [...mappedBodies(world)].sort((a, b) => b.radius - a.radius);
+    workerWorld ??= world;
     try {
+      if (world !== workerWorld) throw new Error('edited: build here');
       const worker = new Worker(new URL('../../workers/maps.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (e: MessageEvent<{ id: string; map: ContinentMap }>) => {
         if (primeContinentMap(world, e.data.id, e.data.map)) {
@@ -400,6 +430,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
     let downAt = { x: 0, y: 0 };
     let pinch: { dist: number; scale: number; wx: number; wy: number } | null = null;
     let samples: { x: number; y: number; t: number }[] = [];
+    let moving: string | null = null;
 
     const local = (e: { clientX: number; clientY: number }) => {
       const r = canvas.getBoundingClientRect();
@@ -458,6 +489,10 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
         dragged = false;
         downAt = p;
         samples = [{ ...p, t: performance.now() }];
+        // In the editor, pressing on something movable starts moving it rather than panning.
+        const ed = latest.current.editor;
+        const hit = ed && !ed.placing ? hitAt(p.x, p.y) : null;
+        if (hit && !hit.id.startsWith('route:') && ed!.canMove(hit.id)) moving = hit.id;
       } else if (pointers.size === 2) {
         const s = st.current;
         const [a, b] = [...pointers.values()];
@@ -476,7 +511,8 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       if (!prev) {
         const hit = hitAt(p.x, p.y);
         const id = hit?.id ?? null;
-        canvas.style.cursor = id ? 'pointer' : 'grab';
+        const ed = latest.current.editor;
+        canvas.style.cursor = ed?.placing ? 'crosshair' : id && ed?.canMove(id) ? 'move' : id ? 'pointer' : 'grab';
         if (id !== s.hoveredId) {
           s.hoveredId = id;
           requestFrame();
@@ -500,6 +536,13 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       }
 
       if (!dragged && Math.hypot(p.x - downAt.x, p.y - downAt.y) < 4) return;
+      if (moving) {
+        dragged = true;
+        canvas.style.cursor = 'move';
+        s.drag = { id: moving, at: screenToWorld(s.view, s.w, s.h, p.x, p.y) };
+        requestFrame();
+        return;
+      }
       if (!dragged) stopFollow();
       dragged = true;
       canvas.style.cursor = 'grabbing';
@@ -521,6 +564,17 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(prop
       // Lifting one finger of a pinch leaves a one-finger drag in progress.
       if (pointers.size > 0) return;
       canvas.style.cursor = 'grab';
+      const wasMoving = moving;
+      moving = null;
+      if (wasMoving && dragged && s.drag) {
+        // Keep the ghost where it was dropped until the edited world arrives.
+        latest.current.editor?.onMove(wasMoving, s.drag.at);
+        return;
+      }
+      if (!dragged && latest.current.editor?.placing) {
+        latest.current.editor.onPlace(screenToWorld(s.view, s.w, s.h, p.x, p.y));
+        return;
+      }
       if (!dragged) {
         const id = hitAt(p.x, p.y)?.id ?? null;
         if (latest.current.measure && id) latest.current.onMeasureTarget(id);

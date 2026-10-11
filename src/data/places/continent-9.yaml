@@ -1,0 +1,5 @@
+# Settlements on Continent 9 (see README.md in this folder).
+
+- {name: Fahythe, kind: town, x: -7.29, y: 43.97, harbour: true}
+- {name: Henfield, kind: village, x: 50.03, y: 0.8}
+- {name: Umuskfield, kind: village, x: 22.94, y: 28.96}

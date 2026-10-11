@@ -1,0 +1,318 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  ARCHIPELAGOS — the islands of the belts, grouped by belt id
+#
+#  Seeded by `npm run seed -- archipelagos` (tuned in parameters/belts.yaml),
+#  then yours to edit: here or in the Atlas's editor (`npm run dev`).
+#
+#  Every island of an archipelago shares its orbit, so the group turns about
+#  the centre as one. Per archipelago:
+#    id            unique within its belt (the full id is arch:<belt>:<id>)
+#    orbit_radius  the group's centre: IL from the centre of the ocean...
+#    bearing       ...and compass bearing, at day 0
+#    period_days   optional; otherwise by the belt's law (P ∝ r^1.5)
+#    populated     whether `npm run seed -- places` settles it
+#  Per island: a body id (unique in the world), name, radius (IL), seed (its
+#  coastline), and x/y: its offset from the group's centre (IL, x east, y south).
+#  Archipelagos in a belt must not meet as they turn: groups at different
+#  radii need their lanes to be further apart than their reaches.
+# ─────────────────────────────────────────────────────────────────────────────
+
+war-belt:
+  - id: briagard-archipelago
+    name: Briagard Archipelago
+    populated: true
+    orbit_radius: 2400
+    bearing: 2.69
+    islands:
+      - {id: war-belt-feingas, name: Feingas, radius: 11.6, seed: 3130688331, x: -25.57, y: -8.54}
+      - {id: war-belt-thimere, name: Thimere, radius: 9.7, seed: 1664428000, x: -4.01, y: 17.22}
+      - {id: war-belt-mendstead, name: Mendstead, radius: 8.7, seed: 1347404787, x: 28.87, y: 16.03}
+      - {id: war-belt-bruham, name: Bruham, radius: 7.2, seed: 1681808411, x: -48.75, y: -30.61}
+      - {id: war-belt-sistead, name: Sistead, radius: 4.4, seed: 1502521727, x: 49.46, y: 5.89}
+  - id: the-cyholm-reach
+    name: The Cyholm Reach
+    populated: true
+    orbit_radius: 2400
+    bearing: 37.1
+    islands:
+      - {id: war-belt-cialmholm, name: Cialmholm, radius: 12.6, seed: 4051716430, x: 11.68, y: -9.98}
+      - {id: war-belt-hasholm, name: Hasholm, radius: 8.2, seed: 2824320358, x: -7.45, y: 19.82}
+      - {id: war-belt-theholm, name: Theholm, radius: 6.8, seed: 2287378161, x: 10.58, y: -42.54}
+      - {id: war-belt-vianedun, name: Vianedun, radius: 6.3, seed: 2488528552, x: -27.56, y: 7.26}
+      - {id: war-belt-gliathaedun, name: Gliathaedun, radius: 6.2, seed: 696980242, x: -29.75, y: 32.91}
+      - {id: war-belt-teholm, name: Teholm, radius: 5.1, seed: 310022249, x: 42.49, y: -7.46}
+  - id: the-laeholm-reach
+    name: The Laeholm Reach
+    populated: true
+    orbit_radius: 2400
+    bearing: 69.96
+    islands:
+      - {id: war-belt-camere, name: Camere, radius: 26, seed: 484759399, x: 36.44, y: -40.63}
+      - {id: war-belt-laerrmere, name: Laerrmere, radius: 19.3, seed: 6328029, x: -34.3, y: -29.49}
+      - {id: war-belt-fadun, name: Fadun, radius: 8.9, seed: 2189607900, x: -34.46, y: 13.9}
+      - {id: war-belt-salmdun, name: Salmdun, radius: 5.4, seed: 3682454598, x: -25.22, y: 37.18}
+      - {id: war-belt-koham, name: Koham, radius: 4.6, seed: 1168343196, x: 84.43, y: -29.13}
+      - {id: war-belt-yaby, name: Yaby, radius: 4.6, seed: 4134486195, x: 15.35, y: 2.34}
+      - {id: war-belt-howick, name: Howick, radius: 4.5, seed: 2160670751, x: -42.24, y: 45.83}
+  - id: the-glaerngard-cays
+    name: The Glaerngard Cays
+    populated: true
+    orbit_radius: 2400
+    bearing: 104.49
+    islands:
+      - {id: war-belt-delmere, name: Delmere, radius: 14, seed: 1936426962, x: -31.17, y: 40.5}
+      - {id: war-belt-baegard, name: Baegard, radius: 11.4, seed: 3139752118, x: -5.87, y: 6.68}
+      - {id: war-belt-craesley, name: Craesley, radius: 11.4, seed: 1272246574, x: 23.48, y: -17.05}
+      - {id: war-belt-noley, name: Noley, radius: 8.5, seed: 4107596891, x: 30.2, y: -50.16}
+      - {id: war-belt-zoworth, name: Zoworth, radius: 8.2, seed: 2434194905, x: 0.96, y: -41.61}
+      - {id: war-belt-glemere, name: Glemere, radius: 5.9, seed: 947843773, x: -17.51, y: -24.08}
+      - {id: war-belt-naerley, name: Naerley, radius: 5.2, seed: 1711887640, x: 20.37, y: 17.65}
+      - {id: war-belt-zolmeley, name: Zolmeley, radius: 4, seed: 1358198867, x: -20.45, y: 68.07}
+  - id: the-dreandaton-isles
+    name: The Dreandaton Isles
+    populated: false
+    orbit_radius: 2400
+    bearing: 142.68
+    islands:
+      - {id: war-belt-nyingas, name: Nyingas, radius: 5.4, seed: 3152203871, x: -7.11, y: 22.26}
+      - {id: war-belt-asheaton, name: Asheaton, radius: 5.1, seed: 2557684375, x: 1.4, y: 3.89}
+      - {id: war-belt-drundton, name: Drundton, radius: 5.1, seed: 2542749400, x: -3.41, y: 41.38}
+      - {id: war-belt-troulmeaby, name: Troulmeaby, radius: 4.9, seed: 2400543934, x: -2.62, y: -15.05}
+      - {id: war-belt-yesteaingas, name: Yesteaingas, radius: 4.5, seed: 3656090417, x: 16.16, y: -20.9}
+      - {id: war-belt-lyworth, name: Lyworth, radius: 4.1, seed: 1780401837, x: -4.41, y: -31.58}
+  - id: the-druworth-skerries
+    name: The Druworth Skerries
+    populated: false
+    orbit_radius: 2400
+    bearing: 183.98
+    islands:
+      - {id: war-belt-rinstead, name: Rinstead, radius: 26, seed: 3582633528, x: -18.4, y: -3.51}
+      - {id: war-belt-braethby, name: Braethby, radius: 5.2, seed: 2637857823, x: -11.3, y: 44.84}
+      - {id: war-belt-burrby, name: Burrby, radius: 4.7, seed: 377611372, x: 10.92, y: -44.71}
+      - {id: war-belt-stiarnygard, name: Stiarnygard, radius: 4.6, seed: 4182617938, x: 21.14, y: -58.97}
+      - {id: war-belt-wraeniby, name: Wraeniby, radius: 4.5, seed: 1692879791, x: -2.35, y: 62.35}
+  - id: the-gostead-isles
+    name: The Gostead Isles
+    populated: false
+    orbit_radius: 2400
+    bearing: 214.01
+    islands:
+      - {id: war-belt-feworth, name: Feworth, radius: 18.6, seed: 4146047227, x: 27.35, y: -20.24}
+      - {id: war-belt-volmstead, name: Volmstead, radius: 11.8, seed: 329956499, x: 2.43, y: -63.11}
+      - {id: war-belt-zernaton, name: Zernaton, radius: 7.4, seed: 1547421477, x: -9.86, y: -2.61}
+      - {id: war-belt-fafield, name: Fafield, radius: 7.2, seed: 3977799455, x: -13.23, y: 21.05}
+      - {id: war-belt-peafield, name: Peafield, radius: 5.9, seed: 1511345058, x: -1.96, y: -91.55}
+      - {id: war-belt-seanton, name: Seanton, radius: 4.9, seed: 3466714956, x: -27.92, y: 38.54}
+      - {id: war-belt-umeaworth, name: Umeaworth, radius: 4.6, seed: 3796452276, x: -19.69, y: 55.51}
+      - {id: war-belt-fostouton, name: Fostouton, radius: 4.4, seed: 654299417, x: -21.37, y: 72.69}
+      - {id: war-belt-drestead, name: Drestead, radius: 4.4, seed: 4257490404, x: 64.25, y: -10.28}
+  - id: the-raworth-reach
+    name: The Raworth Reach
+    populated: true
+    orbit_radius: 2400
+    bearing: 256.15
+    islands:
+      - {id: war-belt-hodun, name: Hodun, radius: 14.1, seed: 1764579912, x: -7.56, y: 24.68}
+      - {id: war-belt-ziaholm, name: Ziaholm, radius: 7.9, seed: 4131172050, x: -14.74, y: -11.11}
+      - {id: war-belt-hygard, name: Hygard, radius: 4.7, seed: 805283485, x: 2.14, y: -27.64}
+      - {id: war-belt-vaskgard, name: Vaskgard, radius: 4.1, seed: 1758284369, x: 20.16, y: 14.06}
+  - id: the-eloskwick-skerries
+    name: The Eloskwick Skerries
+    populated: true
+    orbit_radius: 2400
+    bearing: 285.54
+    islands:
+      - {id: war-belt-geawick, name: Geawick, radius: 9, seed: 1042502681, x: -12.39, y: 11.15}
+      - {id: war-belt-ashyskgard, name: Ashyskgard, radius: 5.4, seed: 2896079563, x: 0.69, y: -11.01}
+      - {id: war-belt-yogard, name: Yogard, radius: 4.8, seed: 391608186, x: 19.78, y: -8.99}
+      - {id: war-belt-bystead, name: Bystead, radius: 4.8, seed: 1368939516, x: 8.73, y: 25}
+      - {id: war-belt-pyskstead, name: Pyskstead, radius: 4.7, seed: 3093125240, x: -11.56, y: -24.42}
+      - {id: war-belt-stethorpe, name: Stethorpe, radius: 4.1, seed: 2310351516, x: 23.68, y: 35.6}
+      - {id: war-belt-waewick, name: Waewick, radius: 3.9, seed: 3018937297, x: -28.93, y: -27.33}
+  - id: the-brestead-isles
+    name: The Brestead Isles
+    populated: false
+    orbit_radius: 2400
+    bearing: 318.53
+    islands:
+      - {id: war-belt-seneley, name: Seneley, radius: 6, seed: 2697066729, x: -13.04, y: -16.31}
+      - {id: war-belt-credun, name: Credun, radius: 5.1, seed: 1101141303, x: -7.8, y: 3.01}
+      - {id: war-belt-yethorpe, name: Yethorpe, radius: 4.6, seed: 3037315432, x: 4.23, y: 16.39}
+      - {id: war-belt-gleingas, name: Gleingas, radius: 4.1, seed: 1636271078, x: -0.63, y: -29.42}
+      - {id: war-belt-gedun, name: Gedun, radius: 3.9, seed: 271913835, x: 17.24, y: 26.34}
+far-belt:
+  - id: the-gleaingas-skerries
+    name: The Gleaingas Skerries
+    populated: true
+    orbit_radius: 6104.2
+    bearing: 4.24
+    islands:
+      - {id: far-belt-tuthiwick, name: Tuthiwick, radius: 3.3, seed: 486744321, x: -1.4, y: -8.43}
+      - {id: far-belt-pathiwick, name: Pathiwick, radius: 2.9, seed: 1892843209, x: 10.75, y: -2.62}
+      - {id: far-belt-peaham, name: Peaham, radius: 2.7, seed: 2064092067, x: -1.31, y: 4.06}
+      - {id: far-belt-zeathingas, name: Zeathingas, radius: 2.5, seed: 2175446151, x: -8.06, y: 11.85}
+      - {id: far-belt-oruingas, name: Oruingas, radius: 2.4, seed: 1971355735, x: -14.85, y: -12.32}
+      - {id: far-belt-bulmuley, name: Bulmuley, radius: 2.3, seed: 3716141918, x: 14.87, y: 7.46}
+  - id: the-glelmthorpe-skerries
+    name: The Glelmthorpe Skerries
+    populated: false
+    orbit_radius: 6295.8
+    bearing: 29.79
+    islands:
+      - {id: far-belt-toundholm, name: Toundholm, radius: 9.1, seed: 1687236501, x: 0.13, y: 7.77}
+      - {id: far-belt-yelmdun, name: Yelmdun, radius: 4.6, seed: 1494893149, x: -8.26, y: -16.7}
+      - {id: far-belt-glouton, name: Glouton, radius: 4.4, seed: 3960693677, x: -20.08, y: -3.73}
+      - {id: far-belt-deskgard, name: Deskgard, radius: 3.4, seed: 3407694776, x: -3.19, y: -33.19}
+      - {id: far-belt-woton, name: Woton, radius: 2.7, seed: 3622551618, x: 19.73, y: 18.2}
+      - {id: far-belt-heingas, name: Heingas, radius: 2.5, seed: 4263389980, x: 11.67, y: 27.66}
+  - id: the-drouworth-cays
+    name: The Drouworth Cays
+    populated: true
+    orbit_radius: 6104.2
+    bearing: 56.73
+    islands:
+      - {id: far-belt-brarnthorpe, name: Brarnthorpe, radius: 16.5, seed: 3643286128, x: 23.64, y: 0.88}
+      - {id: far-belt-brianafield, name: Brianafield, radius: 7.6, seed: 3009349044, x: -13.74, y: 4.04}
+      - {id: far-belt-glouham, name: Glouham, radius: 3.5, seed: 2178763690, x: -35.7, y: 4.7}
+      - {id: far-belt-cialmby, name: Cialmby, radius: 3.4, seed: 1878607520, x: 4.04, y: -27.92}
+      - {id: far-belt-creby, name: Creby, radius: 3.1, seed: 905613240, x: -35.03, y: 17.39}
+      - {id: far-belt-bastthorpe, name: Bastthorpe, radius: 2.7, seed: 766379723, x: 56.78, y: 0.91}
+  - id: the-lindoham-cays
+    name: The Lindoham Cays
+    populated: true
+    orbit_radius: 6295.8
+    bearing: 73.81
+    islands:
+      - {id: far-belt-steandingas, name: Steandingas, radius: 6.2, seed: 3119970332, x: -15.05, y: -13.82}
+      - {id: far-belt-thidun, name: Thidun, radius: 5.2, seed: 2669156761, x: 6.69, y: -10.48}
+      - {id: far-belt-trernby, name: Trernby, radius: 3.7, seed: 4134085061, x: -4.86, y: 0.17}
+      - {id: far-belt-howick, name: Howick, radius: 3.3, seed: 2493447856, x: 9.71, y: 5.32}
+      - {id: far-belt-bethorpe, name: Bethorpe, radius: 2.7, seed: 3660149828, x: 3.51, y: 18.82}
+  - id: the-zoworth-isles
+    name: The Zoworth Isles
+    populated: true
+    orbit_radius: 6104.2
+    bearing: 100.78
+    islands:
+      - {id: far-belt-dirrworth, name: Dirrworth, radius: 26, seed: 1162544200, x: 13.28, y: 4.29}
+      - {id: far-belt-stearrby, name: Stearrby, radius: 8.2, seed: 3874449947, x: -2.94, y: 55.15}
+      - {id: far-belt-duholm, name: Duholm, radius: 4.6, seed: 3208628178, x: 39.28, y: 47.54}
+      - {id: far-belt-gleaton, name: Gleaton, radius: 3.8, seed: 1487795619, x: 14.95, y: -44.45}
+      - {id: far-belt-heaholm, name: Heaholm, radius: 3.8, seed: 966743577, x: -0.19, y: -51.49}
+      - {id: far-belt-wrerustead, name: Wrerustead, radius: 3.4, seed: 202977915, x: -10.15, y: 75.08}
+      - {id: far-belt-eleandby, name: Eleandby, radius: 3, seed: 2634765127, x: -15.03, y: -48.42}
+      - {id: far-belt-deingas, name: Deingas, radius: 2.7, seed: 3372394888, x: -8.86, y: -60.78}
+      - {id: far-belt-voworth, name: Voworth, radius: 2.6, seed: 1711821464, x: -30.33, y: 23.07}
+  - id: the-tradun-isles
+    name: The Tradun Isles
+    populated: true
+    orbit_radius: 6295.8
+    bearing: 132.29
+    islands:
+      - {id: far-belt-goustead, name: Goustead, radius: 2.8, seed: 345091303, x: 1.7, y: 6.14}
+      - {id: far-belt-meadun, name: Meadun, radius: 2.8, seed: 1994436867, x: -9.03, y: 7.3}
+      - {id: far-belt-orisworth, name: Orisworth, radius: 2.7, seed: 1220472254, x: -19.84, y: -0.38}
+      - {id: far-belt-haeststead, name: Haeststead, radius: 2.5, seed: 3291074675, x: -12.19, y: -10.1}
+      - {id: far-belt-haeholm, name: Haeholm, radius: 2.5, seed: 213353153, x: 13.95, y: 1.66}
+      - {id: far-belt-hougard, name: Hougard, radius: 2.3, seed: 2204810651, x: 25.41, y: -4.62}
+  - id: the-oraelmley-cays
+    name: The Oraelmley Cays
+    populated: true
+    orbit_radius: 6104.2
+    bearing: 149.51
+    islands:
+      - {id: far-belt-douley, name: Douley, radius: 3.6, seed: 3685445581, x: -5.1, y: 13.04}
+      - {id: far-belt-braestead, name: Braestead, radius: 3.2, seed: 3887059836, x: -1.04, y: 1.37}
+      - {id: far-belt-delmley, name: Delmley, radius: 3.1, seed: 609614427, x: 11.01, y: 2.4}
+      - {id: far-belt-wrealmmere, name: Wrealmmere, radius: 2.8, seed: 1627056684, x: 11.17, y: -9.61}
+      - {id: far-belt-triaskgard, name: Triaskgard, radius: 2.8, seed: 4044972731, x: -12.45, y: 1.33}
+      - {id: far-belt-driamere, name: Driamere, radius: 2.8, seed: 3147733180, x: -8.12, y: -9.76}
+      - {id: far-belt-nuley, name: Nuley, radius: 2.6, seed: 3350438824, x: -15.93, y: -18.35}
+      - {id: far-belt-glialey, name: Glialey, radius: 2.6, seed: 1856653520, x: 23.57, y: -6.76}
+      - {id: far-belt-brygard, name: Brygard, radius: 2.4, seed: 4017239664, x: -3.13, y: 26.34}
+  - id: cyvstead-archipelago
+    name: Cyvstead Archipelago
+    populated: true
+    orbit_radius: 6295.8
+    bearing: 184.47
+    islands:
+      - {id: far-belt-fynfield, name: Fynfield, radius: 26, seed: 2276406760, x: 10.88, y: 4.7}
+      - {id: far-belt-wiaingas, name: Wiaingas, radius: 6.3, seed: 2484941330, x: -20.87, y: 44.4}
+      - {id: far-belt-ceafield, name: Ceafield, radius: 5.7, seed: 4020516430, x: 40.6, y: -34.69}
+      - {id: far-belt-furingas, name: Furingas, radius: 2.8, seed: 2805622292, x: -30.61, y: -14.41}
+  - id: the-tryley-reach
+    name: The Tryley Reach
+    populated: true
+    orbit_radius: 6104.2
+    bearing: 198.53
+    islands:
+      - {id: far-belt-wrawick, name: Wrawick, radius: 14.6, seed: 2062055319, x: 16.49, y: 19.76}
+      - {id: far-belt-trornmere, name: Trornmere, radius: 7.1, seed: 3953145701, x: -19.38, y: 9.07}
+      - {id: far-belt-umylholm, name: Umylholm, radius: 4.2, seed: 4124995330, x: -31.45, y: -9.61}
+      - {id: far-belt-distiafield, name: Distiafield, radius: 3.8, seed: 3099416143, x: 10.65, y: -10.07}
+      - {id: far-belt-wroingas, name: Wroingas, radius: 2.6, seed: 2065680161, x: 23.68, y: -9.15}
+  - id: the-fealmere-reach
+    name: The Fealmere Reach
+    populated: true
+    orbit_radius: 6295.8
+    bearing: 229
+    islands:
+      - {id: far-belt-briamere, name: Briamere, radius: 10.6, seed: 3571034214, x: -19.2, y: -23.11}
+      - {id: far-belt-fouthorpe, name: Fouthorpe, radius: 8.4, seed: 3205359985, x: 1.62, y: 0.85}
+      - {id: far-belt-droulouingas, name: Droulouingas, radius: 4.8, seed: 474379961, x: -8.51, y: 23.89}
+      - {id: far-belt-wriaton, name: Wriaton, radius: 4.7, seed: 1599355997, x: 26.09, y: -1.62}
+  - id: the-eledun-isles
+    name: The Eledun Isles
+    populated: false
+    orbit_radius: 6104.2
+    bearing: 253.17
+    islands:
+      - {id: far-belt-orenddun, name: Orenddun, radius: 23.7, seed: 3609870214, x: 0.88, y: 23.48}
+      - {id: far-belt-criaskstead, name: Criaskstead, radius: 10.5, seed: 776366989, x: 49.48, y: -1.41}
+      - {id: far-belt-viaskdun, name: Viaskdun, radius: 3.5, seed: 3741483446, x: -15.59, y: 65.8}
+      - {id: far-belt-vestead, name: Vestead, radius: 3, seed: 1333018225, x: -25.86, y: -10.96}
+      - {id: far-belt-nenddun, name: Nenddun, radius: 2.6, seed: 565802451, x: -22.85, y: -23.18}
+      - {id: far-belt-pevwick, name: Pevwick, radius: 2.5, seed: 2797227092, x: 62.9, y: -19.22}
+      - {id: far-belt-noham, name: Noham, radius: 2.4, seed: 1908471450, x: -10.31, y: -21.89}
+      - {id: far-belt-sealmham, name: Sealmham, radius: 2.4, seed: 1593315829, x: -38.67, y: -12.62}
+  - id: yithorpe-archipelago
+    name: Yithorpe Archipelago
+    populated: false
+    orbit_radius: 6295.8
+    bearing: 284.86
+    islands:
+      - {id: far-belt-craesholm, name: Craesholm, radius: 26, seed: 2855844111, x: 25.98, y: 49.12}
+      - {id: far-belt-gaethorpe, name: Gaethorpe, radius: 5.6, seed: 1676951392, x: -6.24, y: 8.76}
+      - {id: far-belt-viwick, name: Viwick, radius: 3.9, seed: 593344744, x: -19.44, y: -6.1}
+      - {id: far-belt-asheasgard, name: Asheasgard, radius: 3.6, seed: 1660011418, x: 11.99, y: 2.53}
+      - {id: far-belt-housgard, name: Housgard, radius: 3.2, seed: 2935923228, x: -14.67, y: -19.99}
+      - {id: far-belt-zisley, name: Zisley, radius: 3, seed: 1390388999, x: 7.93, y: -10.23}
+      - {id: far-belt-neaskley, name: Neaskley, radius: 2.9, seed: 1705084395, x: -30.37, y: 1.99}
+      - {id: far-belt-ashyskworth, name: Ashyskworth, radius: 2.6, seed: 3013545634, x: 23.76, y: -5.91}
+      - {id: far-belt-gyley, name: Gyley, radius: 2.3, seed: 2245131031, x: 1.06, y: -20.16}
+  - id: the-yiaton-skerries
+    name: The Yiaton Skerries
+    populated: false
+    orbit_radius: 6104.2
+    bearing: 315.98
+    islands:
+      - {id: far-belt-mirnton, name: Mirnton, radius: 4, seed: 39776022, x: 10.54, y: 3.41}
+      - {id: far-belt-drouingas, name: Drouingas, radius: 3.8, seed: 383393131, x: -5.79, y: 9.75}
+      - {id: far-belt-diandworth, name: Diandworth, radius: 3.8, seed: 3436476927, x: 26.1, y: 8.14}
+      - {id: far-belt-houndton, name: Houndton, radius: 3.5, seed: 2811070692, x: -14.11, y: -2.47}
+      - {id: far-belt-piton, name: Piton, radius: 3.4, seed: 1545383525, x: -29.1, y: -7.36}
+      - {id: far-belt-diandingas, name: Diandingas, radius: 3.3, seed: 876713223, x: 12.36, y: -11.48}
+  - id: fiagard-archipelago
+    name: Fiagard Archipelago
+    populated: false
+    orbit_radius: 6295.8
+    bearing: 339.64
+    islands:
+      - {id: far-belt-feaham, name: Feaham, radius: 16.7, seed: 1011763205, x: 4.29, y: -28.54}
+      - {id: far-belt-zeaseaingas, name: Zeaseaingas, radius: 5.5, seed: 1703857328, x: 10.13, y: 8.14}
+      - {id: far-belt-deagard, name: Deagard, radius: 5.1, seed: 2768335057, x: -4.78, y: 22.79}
+      - {id: far-belt-niarnouingas, name: Niarnouingas, radius: 3.4, seed: 3130788187, x: -7.22, y: 4.57}
+      - {id: far-belt-verrefield, name: Verrefield, radius: 3.3, seed: 4146010119, x: 11.63, y: 30.92}
+      - {id: far-belt-trevham, name: Trevham, radius: 3.2, seed: 2830567456, x: 23.92, y: 38.98}
+      - {id: far-belt-miavingas, name: Miavingas, radius: 3.1, seed: 1995022434, x: -9.9, y: -56.9}
+      - {id: far-belt-pouwick, name: Pouwick, radius: 2.7, seed: 2727490003, x: -28.07, y: -19.96}

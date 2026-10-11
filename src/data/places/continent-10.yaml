@@ -1,0 +1,6 @@
+# Settlements on Continent 10 (see README.md in this folder).
+
+- {name: Boworth, kind: town, x: 50.6, y: -2.21}
+- {name: Weaworth, kind: village, x: 49.17, y: -21.64}
+- {name: Tiworth, kind: village, x: 30.83, y: 46.79}
+- {name: Ciaworth, kind: village, x: -39.41, y: 20.32}

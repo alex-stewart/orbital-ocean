@@ -17,6 +17,54 @@ import { nameMaker, slug, type NameParts } from './terrain/names';
  * together have the land area of a continent of `mass_radius`.
  */
 
+/** An archipelago as written in src/data/archipelagos.yaml (under its belt's id). */
+export interface ArchipelagoRow {
+  /** Unique within its belt; the full id is `arch:<belt>:<id>`. */
+  id: string;
+  name: string;
+  /** Whether `npm run seed -- places` settles it. */
+  populated?: boolean;
+  /** The group's centre at day 0: distance from the centre of the ocean, and bearing. */
+  orbit_radius: number;
+  bearing: number;
+  /** Optional: otherwise by the belt's law (P ∝ r^1.5 from its inner edge). */
+  period_days?: number;
+  islands: IslandRow[];
+}
+
+export interface IslandRow {
+  /** A body id, unique in the world. */
+  id: string;
+  name: string;
+  short_name?: string;
+  description?: string;
+  radius: number;
+  seed?: number;
+  /** Offset from the group's centre at day 0, IL (x east, y south). */
+  x: number;
+  y: number;
+}
+
+export type ArchipelagoRows = Record<string, ArchipelagoRow[]>;
+
+const round = (v: number, d: number) => Math.round(v * 10 ** d) / 10 ** d;
+
+/** A generated archipelago, as it would be written to archipelagos.yaml. */
+export function archipelagoRow(spec: ArchipelagoSpec): ArchipelagoRow {
+  const c = polar(spec.orbitRadius, spec.bearing);
+  return {
+    id: spec.id.split(':')[2],
+    name: spec.name,
+    populated: spec.populated,
+    orbit_radius: round(spec.orbitRadius, 1),
+    bearing: round(spec.bearing, 2),
+    islands: spec.islands.map((i) => {
+      const p = polar(i.orbitRadius, i.bearing);
+      return { id: i.id, name: i.name, radius: i.radius, seed: i.seed, x: round(p.x - c.x, 2), y: round(p.y - c.y, 2) };
+    }),
+  };
+}
+
 export interface IslandSpec {
   id: string;
   name: string;

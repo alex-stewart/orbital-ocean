@@ -1,0 +1,4 @@
+# Settlements on Continent 7 (see README.md in this folder).
+
+- {name: Giasands, kind: town, x: -25.16, y: 12.08, harbour: true}
+- {name: Eloustead, kind: village, x: 31.51, y: 2.8}

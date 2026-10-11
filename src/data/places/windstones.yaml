@@ -1,0 +1,4 @@
+# Settlements on Windstones (see README.md in this folder).
+
+- {name: Vouhaven, kind: town, x: 31.33, y: -49.98, harbour: true}
+- {name: Vylmhythe, kind: village, x: 62.57, y: 34.97, harbour: true}

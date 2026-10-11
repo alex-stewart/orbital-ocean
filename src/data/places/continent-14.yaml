@@ -1,0 +1,4 @@
+# Settlements on Continent 14 (see README.md in this folder).
+
+- {name: Cromill, kind: town, x: -55.92, y: 43.32, harbour: true}
+- {name: Brohythe, kind: village, x: 36.49, y: -69.62, harbour: true}

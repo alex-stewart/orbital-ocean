@@ -344,20 +344,19 @@ bands:
 # ─────────────────────────────────────────────────────────────────────────────
 #  OCEAN PLATFORMS
 #
-#  Platforms are generated (thousands of them); how many, where and how
-#  spaced is tuned in src/parameters/platforms.yaml. Here is only what kinds
-#  exist and what they're called. Each platform gets a number in the Imperial
-#  register: <register>-<owner code>-<number>, e.g. HPBE-P-01423.
+#  The platforms themselves are listed in src/data/platforms.yaml (sited by
+#  `npm run seed -- platforms`, tuned in src/parameters/platforms.yaml). Here
+#  is only what kinds exist and what they're called. Each platform has a
+#  number in the Imperial register: <register>-<owner code>-<number>,
+#  e.g. HPBE-P-01423.
 # ─────────────────────────────────────────────────────────────────────────────
 
 platform_register: HPBE
 
-# Size classes, smallest last. Their sizes and shares are parameters.
+# Size classes, largest first. Their sizes are parameters.
 platform_classes:
   - { id: grand,   name: Grand platform, like: a large cathedral }
   - { id: keep,    name: Keep,           like: a castle keep }
-  - { id: station, name: Station,        like: a manor house }
-  - { id: beacon,  name: Beacon,         like: a lighthouse }
 
 # Who holds platforms. `code` is the register letter; `imperial` marks the Empire.
 platform_owners:

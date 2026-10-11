@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { cal, loadWorld } from './world';
 import { isletPosition, platformPositions, positionsAt } from '../orbits';
-import { reach } from '../platforms';
+import { parsePlatforms, reach } from '../platforms';
+import { continentMap, primeContinentMap } from '../terrain';
+import { sitePlatforms } from '../seed';
+import { planShipping } from '../shipping';
 
 const world = loadWorld();
 const { platforms } = world;
@@ -24,29 +27,54 @@ describe('moons', () => {
   });
 });
 
-describe('platforms', () => {
-  it('generates thousands, deterministically, with unique register numbers', () => {
-    expect(platforms.length).toBeGreaterThan(2000);
-    expect(new Set(platforms.map((p) => p.id)).size).toBe(platforms.length);
-    expect(platforms.every((p) => /^HPBE-[PX]-\d{5}$/.test(p.id))).toBe(true);
-    const again = loadWorld().platforms;
-    expect(again.map((p) => p.id + p.bearing)).toEqual(platforms.map((p) => p.id + p.bearing));
+describe('siting platforms', () => {
+  const sited = sitePlatforms(world, cal.yearLength);
+  const rows = sited.rows;
+  const P = world.params.platforms;
+
+  it('sites the numbers asked for, with unique register numbers', () => {
+    // Grand platforms exactly; keeps at least (more may be added to close gaps).
+    expect(rows.filter((r) => r.class === 'grand').length).toBe(P.count.grand);
+    expect(rows.filter((r) => r.class === 'keep').length).toBeGreaterThanOrEqual(P.count.keep);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
+    expect(rows.every((r) => /^HPBE-[PX]-\d{5}$/.test(r.id))).toBe(true);
   });
 
-  it('anchors most Home Band platforms and orbits most in the outer bands', () => {
-    const share = (band: string) => {
-      const inBand = platforms.filter((p) => p.band?.id === band);
-      return inBand.filter((p) => p.motion === 'anchored').length / inBand.length;
-    };
-    expect(share('home')).toBeGreaterThan(0.5);
-    expect(share('second')).toBeLessThan(0.5);
-    expect(share('frontier')).toBeLessThan(0.5);
+  it('uses every kind of motion, and breaks no collision rule', () => {
+    for (const m of ['anchored', 'lane', 'convoy', 'ring']) expect(rows.some((r) => r.motion === m), m).toBe(true);
+    expect(sited.report.filter((l) => l.startsWith('warning'))).toEqual([]);
   });
 
-  it('uses every kind of motion', () => {
-    for (const m of ['anchored', 'lane', 'convoy', 'continent']) {
-      expect(platforms.some((p) => p.motion === m)).toBe(true);
+  it('keeps wanted routes within resupply range', () => {
+    const line = [...sited.report].reverse().find((l) => /within range|within resupply range/.test(l))!;
+    expect(Number(line.match(/(\d+)%/)![1])).toBeGreaterThanOrEqual(85);
+  });
+
+  it('puts platforms where ships call: nearly all are used as stops over the years', () => {
+    const parsed = parsePlatforms(rows, world.platformContent, P, {
+      central: world.central,
+      continents: world.bodies.filter((b) => b.kind === 'isle'),
+      belts: world.belts,
+      bands: world.bands,
+      oceanRadius: world.oceanRadius,
+    });
+    const w = { ...world, platforms: parsed.platforms, platformIndex: new Map(parsed.platforms.map((p, i) => [p.id, i])), platformRules: parsed.rules };
+    for (const b of world.bodies) primeContinentMap(w, b.id, continentMap(world, b));
+    const used = new Set<string>();
+    for (let k = 0; k < 16; k++) {
+      const t = cal.defaultDay + k * 1300;
+      const pos = positionsAt(w.bodies, t);
+      for (const r of planShipping(w, t, pos, platformPositions(w.platforms, t, pos)).routes) r.stops.forEach((s) => used.add(s));
     }
+    const resupply = w.platforms.filter((p) => p.owner.imperial);
+    expect(resupply.filter((p) => used.has(p.id)).length / resupply.length).toBeGreaterThan(0.9);
+  });
+});
+
+describe('platforms as listed', () => {
+  it('load without problems, with unique register numbers', () => {
+    expect(world.warnings.filter((w) => w.startsWith('HPBE') || w.startsWith('platforms'))).toEqual([]);
+    expect(new Set(platforms.map((p) => p.id)).size).toBe(platforms.length);
   });
 
   it('never comes near a continent, moon, islet or another platform', () => {

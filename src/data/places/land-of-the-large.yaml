@@ -1,0 +1,127 @@
+# Settlements on Land of the Large (see README.md in this folder).
+
+- {name: Veworth, kind: city, x: 89.54, y: -173.04}
+- {name: Heley, kind: city, x: -201.07, y: 53.05}
+- {name: Wousbridge, kind: city, x: -4.58, y: 206.71}
+- {name: Stinport, kind: city, x: -205.9, y: 2.34, harbour: true}
+- {name: Veby, kind: city, x: -30.04, y: -203.92}
+- {name: Stiley, kind: city, x: 212.28, y: -46.12, harbour: true}
+- {name: Dimere, kind: city, x: 78.91, y: -130.54}
+- {name: Glindholm, kind: city, x: 0.17, y: 158.04}
+- {name: Wirnbridge, kind: city, x: 148.29, y: -37.62}
+- {name: Tiweir, kind: city, x: -22.3, y: -168.38}
+- {name: Wrindmere, kind: city, x: 64.35, y: -99.25}
+- {name: Eliskholm, kind: city, x: 63.49, y: -68.36}
+- {name: Brirnford, kind: city, x: 180.93, y: -38.5}
+- {name: Hewharf, kind: town, x: -76.99, y: 185.56, harbour: true}
+- {name: Eloulmweir, kind: town, x: -15.29, y: 43.62}
+- {name: Brirnworth, kind: town, x: 196.96, y: -87.43, harbour: true}
+- {name: Veholm, kind: town, x: -1.84, y: 87.11}
+- {name: Gloundingas, kind: town, x: 150.37, y: 138.42}
+- {name: Tinsands, kind: town, x: 15.78, y: -208.67, harbour: true}
+- {name: Brinhaven, kind: town, x: 150.83, y: -132.06, harbour: true}
+- {name: Hehaven, kind: town, x: -128.26, y: -173.62, harbour: true}
+- {name: Gliskgard, kind: town, x: 8.23, y: 18.01}
+- {name: Vindouley, kind: town, x: -3.22, y: -114.94}
+- {name: Houndingas, kind: town, x: -38.31, y: 196, harbour: true}
+- {name: Eloudun, kind: town, x: -91.85, y: -191}
+- {name: Stimouth, kind: town, x: 97.03, y: 193.49, harbour: true}
+- {name: Hesley, kind: town, x: 53.89, y: -25.52}
+- {name: Hiholm, kind: town, x: -3.2, y: -33.39}
+- {name: Gilmford, kind: town, x: 48.23, y: -12.15}
+- {name: Trouwharf, kind: town, x: -65.67, y: -200.95, harbour: true}
+- {name: Broulmmere, kind: town, x: 38.85, y: 30.19}
+- {name: Houford, kind: town, x: 15.57, y: 124.77}
+- {name: Brouskley, kind: town, x: 52.85, y: 8.08}
+- {name: Heford, kind: town, x: -15.02, y: -50.73}
+- {name: Glounhythe, kind: town, x: 181.18, y: 89.34, harbour: true}
+- {name: Giweir, kind: town, x: -30.36, y: -33.89}
+- {name: Crournmere, kind: town, x: 20.88, y: -28.1}
+- {name: Gloulmbridge, kind: town, x: -0.13, y: 120.48}
+- {name: Wreskingas, kind: town, x: 4.51, y: 68.83}
+- {name: Glindby, kind: town, x: -23.13, y: -4.67}
+- {name: Briskiport, kind: town, x: -186.57, y: -106.87, harbour: true}
+- {name: Hemouth, kind: town, x: 216.13, y: 0.37, harbour: true}
+- {name: Brerneport, kind: town, x: -153.51, y: -153.73, harbour: true}
+- {name: Hemere, kind: town, x: 111.55, y: 183.93, harbour: true}
+- {name: Stilmport, kind: village, x: 124.8, y: 171.61, harbour: true}
+- {name: Criskmouth, kind: village, x: 166.24, y: -122.54}
+- {name: Gouwharf, kind: village, x: 211.99, y: 19.84, harbour: true}
+- {name: Wresley, kind: village, x: 120.43, y: -150.54}
+- {name: Eliworth, kind: village, x: 132.44, y: -137.09}
+- {name: Wouskiweir, kind: village, x: 14.65, y: 105.25}
+- {name: Triworth, kind: village, x: -20.01, y: 10.76}
+- {name: Giworth, kind: village, x: -198.22, y: -30.89}
+- {name: Gleskouley, kind: village, x: 61.44, y: -155.76}
+- {name: Toulmingas, kind: village, x: 23.47, y: 106.61}
+- {name: Giby, kind: village, x: 137.46, y: 156.13}
+- {name: Wenddun, kind: village, x: 43.86, y: -200.79}
+- {name: Hirnholm, kind: village, x: 56.39, y: 212.32}
+- {name: Houlmdun, kind: village, x: 55.86, y: -152.82}
+- {name: Dousands, kind: village, x: -191.63, y: -76.61}
+- {name: Demere, kind: village, x: 170.39, y: -117.5, harbour: true}
+- {name: Crinley, kind: village, x: 40.56, y: -30.59}
+- {name: Trouingas, kind: village, x: 66.02, y: 208.92}
+- {name: Tremere, kind: village, x: 81.01, y: 199.14}
+- {name: Tirnmill, kind: village, x: -14.91, y: 105.19}
+- {name: Trehythe, kind: village, x: 41.12, y: -206.4, harbour: true}
+- {name: Eleholm, kind: village, x: -38.94, y: -17.6}
+- {name: Gouholm, kind: village, x: 25.38, y: 35.48}
+- {name: Wouworth, kind: village, x: -111.45, y: -180.56}
+- {name: Stindhaven, kind: village, x: -97.66, y: 178.05, harbour: true}
+- {name: Triseley, kind: village, x: 21.14, y: 97.64}
+- {name: Doundeingas, kind: village, x: 5.18, y: 53.68}
+- {name: Hiskholm, kind: village, x: 18.36, y: 32.48}
+- {name: Glinoudun, kind: village, x: 175.97, y: -106.55}
+- {name: Velmouwharf, kind: village, x: -130.5, y: 153.6, harbour: true}
+- {name: Briley, kind: village, x: 162.94, y: 121.79}
+- {name: Wrimere, kind: village, x: 204.29, y: 38.33}
+- {name: Houholm, kind: village, x: 139.89, y: 148.63}
+- {name: Brougard, kind: village, x: 206.96, y: 26.19}
+- {name: Elouworth, kind: village, x: 111.6, y: -148.13}
+- {name: Crehaven, kind: village, x: -150.16, y: 140.73}
+- {name: Stoushythe, kind: village, x: -195.62, y: -61.31}
+- {name: Denby, kind: village, x: 50.92, y: -201.7}
+- {name: Veskley, kind: village, x: 216.11, y: -16.03}
+- {name: Vemill, kind: village, x: -17.24, y: -126.88}
+- {name: Treport, kind: village, x: -193.96, y: -69.36}
+- {name: Diley, kind: village, x: -173.01, y: -122.6}
+- {name: Wridun, kind: village, x: -25.95, y: 32.41}
+- {name: Touby, kind: village, x: -7.67, y: 17.41}
+- {name: Elesands, kind: village, x: -167.69, y: -134.64}
+- {name: Stoulmholm, kind: village, x: -2.74, y: 55.84}
+- {name: Elisdun, kind: village, x: -199.13, y: -45.88}
+- {name: Brindwharf, kind: village, x: -119.59, y: 158.23}
+- {name: Wouwharf, kind: village, x: 199.48, y: 56.15, harbour: true}
+- {name: Creholm, kind: village, x: -42.79, y: -22.75}
+- {name: Crournworth, kind: village, x: -20.13, y: -22.59}
+- {name: Hilmsands, kind: village, x: -166.09, y: 124.87}
+- {name: Bridun, kind: village, x: 30.96, y: -201.22}
+- {name: Stougard, kind: village, x: -157.39, y: -139.68}
+- {name: Gerneweir, kind: village, x: 32.67, y: -15.76}
+- {name: Broudun, kind: village, x: 54.24, y: 25.22}
+- {name: Touworth, kind: village, x: 181.64, y: -97.36}
+- {name: Tenmill, kind: village, x: -13.04, y: -22.33}
+- {name: Crousholm, kind: village, x: -10.16, y: -139.49}
+- {name: Vidun, kind: village, x: -89.83, y: 175.67}
+- {name: Eliport, kind: village, x: 127.86, y: -146.03}
+- {name: Dendeingas, kind: village, x: 127.62, y: 160.61}
+- {name: Wriworth, kind: village, x: 36.25, y: -20.89}
+- {name: Steskmouth, kind: village, x: -200.94, y: -38.07}
+- {name: Houndworth, kind: village, x: -17.39, y: -99.71}
+- {name: Croubridge, kind: village, x: -7.25, y: 102.67}
+- {name: Vinhaven, kind: village, x: -107.2, y: 168.88, harbour: true}
+- {name: Trouskworth, kind: village, x: -185.55, y: -92.12}
+- {name: Brilmhythe, kind: village, x: 79.27, y: 206.57}
+- {name: Wriford, kind: village, x: -15.18, y: 111.91}
+- {name: Wrigard, kind: village, x: -160.78, y: 133.22}
+- {name: Wroulmmere, kind: village, x: -59.25, y: 191.23}
+- {name: Glehythe, kind: village, x: 191.1, y: 68.88}
+- {name: Diby, kind: village, x: -186.71, y: -84.31}
+- {name: Houby, kind: village, x: 66.21, y: -35.73}
+- {name: Brindford, kind: village, x: -5.85, y: 9.7}
+- {name: Teingas, kind: village, x: -30.42, y: 37.76}
+- {name: Houhaven, kind: village, x: -112.78, y: 166.52}
+- {name: Elousdun, kind: village, x: -0.5, y: -209.64, harbour: true}
+- {name: Heholm, kind: village, x: 170.23, y: 104.3}
+- {name: Goulmmere, kind: village, x: -196.54, y: -54.16}

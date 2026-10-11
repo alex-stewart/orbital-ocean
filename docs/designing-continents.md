@@ -10,7 +10,7 @@ A design replaces exactly what you draw and nothing else. The Atlas works out th
 | Height contours, peaks | Elevation everywhere in between. If you draw no contours, terrain is generated inside your coast. |
 | Lakes | If you draw no lakes, they form where the terrain has basins. |
 | Rivers | If you draw no rivers, they run where water gathers. Your rivers are turned to flow downhill if drawn backwards. |
-| Settlements | If you draw none, they're placed by the population rules for the continent's band. Each one is checked for being on a river or a navigable river. |
+| Settlements | If you draw none, the continent keeps the settlements listed in `src/data/places/<id>.yaml` (which you can move about in the Atlas's editor). If you draw some, they replace that file's. Each one is checked for being on a river or a navigable river. |
 | Roads (optional) | If you leave the roads layer empty, roads are routed over your terrain between your settlements. |
 
 ---
@@ -136,7 +136,7 @@ This section helps you draw designs that sit naturally beside the generated cont
 
 ### Population
 
-Settlement counts follow the **band** the continent orbits in (a moon counts as its parent's band). The inner ocean is busy and the frontier is sparse. From `src/parameters/settlements.yaml`:
+Settlements are seeded once and then kept in `src/data/places/` (regenerate a body's with `npm run seed -- places <id>`). When seeded, settlement counts follow the **band** the continent orbits in (a moon counts as its parent's band). The inner ocean is busy and the frontier is sparse. From `src/parameters/settlements.yaml`:
 
 | Band | Settlements per 10,000 IL² of land |
 | --- | --- |

@@ -21,6 +21,8 @@ interface Props {
   onFollow(id: string | null): void;
   /** Start measuring from a place. */
   onMeasure(id: string): void;
+  /** The editor's fields for the selection (development only). */
+  editSlot?: ReactNode;
 }
 
 const fmt = new Intl.NumberFormat('en-GB');
@@ -153,6 +155,7 @@ export function Gazetteer(p: Props) {
             </nav>
           )}
           <div className="gz-body">
+            {sel && p.editSlot}
             {!sel && <Index {...p} />}
             {sel?.type === 'body' && <BodyEntry {...p} body={sel.body} />}
             {sel?.type === 'archipelago' && <ArchipelagoEntry {...p} archipelago={sel.archipelago} />}
@@ -528,7 +531,7 @@ function BodyEntry({ world, body, calendar: cal, t, shipping, followId, onFocus,
   const ports = map.settlements.filter((s) => s.port).length;
   const roadLength = (rank: string) => map.roads.filter((r) => r.rank === rank).reduce((sum, r) => sum + r.length, 0);
   const navigable = map.rivers.filter((r) => r.navigableFrom >= 0).length;
-  const orbiting = world.platforms.filter((q) => q.parent?.id === body.id && q.motion === 'continent').length;
+  const orbiting = world.platforms.filter((q) => q.parent?.id === body.id && q.motion === 'ring').length;
   const convoy = world.platforms.filter((q) => q.companion?.id === body.id).length;
   const seaRoutes = routesFrom(shipping, body.id);
   const chief = shipping?.ports.find((pt) => pt.body.id === body.id);
@@ -921,7 +924,7 @@ function describeMotion(p: Platform, world: World, cal: Calendar): string {
       const offset = ((p.bearing - c.bearing + 540) % 360) - 180;
       return `In convoy on the orbit of ${c.name}, ${Math.abs(Math.round(offset))}° ${offset > 0 ? 'ahead of' : 'behind'} it`;
     }
-    case 'continent':
+    case 'ring':
       return `Orbits ${p.parent!.name} at ${fmt.format(p.orbitRadius)} ${u}, once every ${formatDuration(cal, p.periodDays)}`;
   }
 }

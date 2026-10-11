@@ -69,11 +69,19 @@ test('the belt index opens an archipelago, its islands and their ferries', async
   expect(errors).toEqual([]);
 });
 
+test('the published Atlas has no editor', async ({ page }) => {
+  await page.goto('#/atlas');
+  await expect(page.locator('canvas.atlas-canvas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit the world' })).toHaveCount(0);
+  await page.keyboard.press('e');
+  await expect(page.locator('.editor-bar')).toHaveCount(0);
+});
+
 test('search finds a platform by its number', async ({ page }) => {
   await page.goto('#/atlas');
-  await page.getByRole('searchbox', { name: /find a place/i }).fill('1423');
+  await page.getByRole('searchbox', { name: /find a place/i }).fill('12');
   await page.keyboard.press('Enter');
-  await expect(page.locator('.gz-entry-head h2')).toHaveText(/HPBE-[PX]-01423/);
+  await expect(page.locator('.gz-entry-head h2')).toHaveText(/HPBE-[PX]-00012/);
 });
 
 test('measuring between two places', async ({ page }) => {

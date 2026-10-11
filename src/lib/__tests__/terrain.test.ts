@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { loadWorld } from './world';
+import { parameters } from '../../parameters';
+import { data, loadWorld, seededWorld } from './world';
 import { buildContinentMap, continentMap, mappedBodies } from '../terrain';
 import { flattenPath, parseDesign, parseSettlementLabel } from '../terrain/design';
 import { cellAt, sample } from '../terrain/grid';
 import { designTemplate } from '../terrain/template';
 import exampleSource from '../../../docs/example-continent.svg?raw';
 
-const world = loadWorld();
+// Seeding is what these test; the shipped files are checked in data.test.ts.
+const world = await seededWorld();
 const maps = mappedBodies(world).map((b) => ({ body: b, map: continentMap(world, b) }));
 
-describe('generated continents', () => {
+describe('seeded continents', () => {
   it('gives every continent terrain, water and at least one settlement', () => {
     for (const { body, map } of maps.filter(({ body }) => body.kind !== 'islet')) {
       expect(map.maxElevation, body.id).toBeGreaterThan(300);
@@ -162,7 +164,9 @@ describe('designed continents', () => {
       'village High Hale',
       'village Westby port',
     ]);
-    const w = loadWorld({ 'continent-7': exampleSource });
+    // (Its places file would be ignored, with a warning: the design draws its own.)
+    const places = new Map([...data.places].filter(([id]) => id !== 'continent-7'));
+    const w = loadWorld({ 'continent-7': exampleSource }, parameters, { places });
     const map = buildContinentMap(w, w.bodies.find((b) => b.id === 'continent-7')!);
     expect(map.source).toBe('designed');
     expect(map.maxElevation).toBeGreaterThan(900);

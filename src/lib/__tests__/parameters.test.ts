@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { parameters } from '../../parameters';
 import { parseParameters } from '../../parameters/schema';
 import terrainSource from '../../parameters/terrain.yaml?raw';
-import { loadWorld } from './world';
+import { seedPlaces } from '../seed';
+import { continentMap } from '../terrain';
+import { data, loadWorld } from './world';
 
 const files = import.meta.glob('../../parameters/*.yaml', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const sources = Object.fromEntries(Object.entries(files).map(([p, t]) => [p.replace(/^.*\/(.+)\.yaml$/, '$1'), t]));
@@ -20,16 +22,17 @@ describe('parameters', () => {
     expect(() => parseParameters(rest)).toThrow('parameters/shipping.yaml is missing');
   });
 
-  it('really drives the world: changing a parameter changes the result', () => {
+  it('really drives seeding: changing a parameter changes what is seeded', () => {
     const base = loadWorld();
     const denser = loadWorld({}, { ...parameters, settlements: { ...parameters.settlements, density: { home: 30, second: 3.5, frontier: 1.4 } } });
-    expect(denser.platforms.length).toBe(base.platforms.length);
-    // (settlements are built lazily per body; compare one)
-    return import('../terrain').then(({ continentMap }) => {
-      const a = continentMap(base, base.central).settlements.length;
-      const b = continentMap(denser, denser.central).settlements.length;
-      expect(b).toBeGreaterThan(a * 2);
-    });
+    expect(seedPlaces(denser, denser.central).length).toBeGreaterThan(seedPlaces(base, base.central).length * 2);
+  });
+
+  it('and the data files are what the world is built from', () => {
+    const world = loadWorld();
+    expect(world.platforms.length).toBe(data.platforms.length);
+    expect(continentMap(world, world.central).settlements.map((s) => s.name)).toEqual(data.places.get(world.central.id)!.map((p) => p.name));
+    expect(world.archipelagos.length).toBe(Object.values(data.archipelagos).flat().length);
   });
 
   it('keeps tuning numbers out of the world data', () => {

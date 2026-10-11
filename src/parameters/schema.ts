@@ -46,11 +46,11 @@ export interface PlatformParams {
   seed: number;
   clearance: number;
   spacing: number;
-  bands: Record<string, { count: number; anchored: number }>;
-  orbital: { lane: number; convoy: number; continent: number };
-  lanes: { max_per_gap: number; min_gap_in_clearances: number };
+  count: Record<string, number>;
+  motion: { anchored: number; lane: number; convoy: number; ring: number };
+  siting: { years: number; samples: number; backbone: number; cell: number; separation: number; max_lanes: number; repair: number };
   moonless_ring_reach: number;
-  sizes: Record<string, { radius: number; share: number; reveal: number }>;
+  sizes: Record<string, { radius: number; reveal: number }>;
   owners: Record<string, number>;
 }
 
@@ -144,11 +144,11 @@ const SPECS: Record<keyof Parameters, Spec> = {
     seed: 'n',
     clearance: 'n',
     spacing: 'n',
-    bands: { each: { count: 'n', anchored: 'n' } },
-    orbital: { lane: 'n', convoy: 'n', continent: 'n' },
-    lanes: { max_per_gap: 'n', min_gap_in_clearances: 'n' },
+    count: 'n{}',
+    motion: { anchored: 'n', lane: 'n', convoy: 'n', ring: 'n' },
+    siting: { years: 'n', samples: 'n', backbone: 'n', cell: 'n', separation: 'n', max_lanes: 'n', repair: 'n' },
     moonless_ring_reach: 'n',
-    sizes: { each: { radius: 'n', share: 'n', reveal: 'n' } },
+    sizes: { each: { radius: 'n', reveal: 'n' } },
     owners: 'n{}',
   },
   belts: {
