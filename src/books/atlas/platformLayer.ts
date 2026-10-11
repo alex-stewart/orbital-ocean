@@ -1,6 +1,6 @@
 import type { Point } from '../../lib/orbits';
 import type { Platform, SizeClass } from '../../lib/platforms';
-import { circlePath, type Box, type HitTarget, type RenderInput } from './render';
+import { circlePath, textWidth, type Box, type HitTarget, type RenderInput } from './render';
 import { fonts, theme } from './theme';
 
 /**
@@ -161,7 +161,7 @@ export function drawPlatformLabels(ctx: CanvasRenderingContext2D, s: RenderInput
     .filter(({ p }) => p.id === s.selectedId || (s.layers.labels && view.scale >= p.size.reveal * world.params.display.platform_label_factor))
     .sort((a, b) => Number(b.p.id === s.selectedId) - Number(a.p.id === s.selectedId) || b.p.size.radius - a.p.size.radius);
   for (const { h, p } of ordered) {
-    const tw = ctx.measureText(p.id).width;
+    const tw = textWidth(ctx, p.id);
     const box = { x: h.x + h.r + 4, y: h.y - 7, w: tw + 4, h: 12 };
     if (p.id !== s.selectedId && collides(box)) continue;
     placed.push(box);

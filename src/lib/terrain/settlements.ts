@@ -27,6 +27,10 @@ export interface SettlementRules {
   density: number;
   /** The least this body may have: at least one place of this size. */
   minimum: SettlementKind;
+  /** Exactly these numbers instead (belt islands, planned per archipelago). */
+  exact?: Record<SettlementKind, number>;
+  /** Islanders: everyone lives by the sea, and every place on the shore keeps boats. */
+  islanders?: boolean;
 }
 
 /**
@@ -50,16 +54,18 @@ export function placeSettlements(
   const rand = rng(seed * 31337 + 5);
   const landArea = land.reduce((s, v) => s + v, 0) * g.cell * g.cell;
   const total = Math.max(1, Math.round((landArea / 10_000) * rules.density));
-  const wanted: Record<SettlementKind, number> = {
+  const wanted: Record<SettlementKind, number> = rules.exact ? { ...rules.exact } : {
     city: Math.round(total * p.mix.city),
     town: Math.round(total * p.mix.town),
     village: 0,
   };
   // Populous bodies have at least a city; every body has at least its minimum.
-  if (total >= p.minimum.city_from) wanted.city = Math.max(1, wanted.city);
-  if (rules.minimum === 'city') wanted.city = Math.max(1, wanted.city);
-  if (rules.minimum === 'town' && wanted.city + wanted.town === 0) wanted.town = 1;
-  wanted.village = Math.max(0, total - wanted.city - wanted.town);
+  if (!rules.exact) {
+    if (total >= p.minimum.city_from) wanted.city = Math.max(1, wanted.city);
+    if (rules.minimum === 'city') wanted.city = Math.max(1, wanted.city);
+    if (rules.minimum === 'town' && wanted.city + wanted.town === 0) wanted.town = 1;
+    wanted.village = Math.max(0, total - wanted.city - wanted.town);
+  }
 
   const sea = new Uint8Array(N);
   const riverOrLake = new Uint8Array(N);
@@ -120,9 +126,11 @@ export function placeSettlements(
     const fresh = Math.exp(-toWater[k] / (g.cell * 3));
     const coast = Math.exp(-(toSea[k] - g.cell) / (g.cell * 2));
     // Fresh water and good farmland matter most; the coast helps, but only some
-    // places sit right on the shore (those become the harbours).
-    const shore = toSea[k] <= g.cell * 1.6 ? st.shore : 1;
-    score[k] = low * flat * shore * (st.base + st.fresh_water * fresh + st.coast * coast) * (0.5 + 0.5 * rand());
+    // places sit right on the shore (those become the harbours). Islanders
+    // live by the sea first.
+    const shore = toSea[k] <= g.cell * 1.6 && !rules.islanders ? st.shore : 1;
+    const seaward = rules.islanders ? 4 * st.coast : st.coast;
+    score[k] = low * flat * shore * (st.base + st.fresh_water * fresh + seaward * coast) * (0.5 + 0.5 * rand());
   }
 
   const placed: (Omit<Settlement, 'id'> & { k: number })[] = [];
@@ -142,7 +150,7 @@ export function placeSettlements(
       const x = cellX(g, k % n) + (rand() - 0.5) * g.cell * 0.6;
       const y = cellY(g, (k / n) | 0) + (rand() - 0.5) * g.cell * 0.6;
       if (!fits(x, y, kind)) continue;
-      const coastal = toSea[k] <= g.cell * 1.6;
+      const coastal = toSea[k] <= g.cell * (rules.islanders ? 3 : 1.6);
       const river = toWater[k] <= g.cell * 1.5;
       const high = elevation[k] > maxElevation * 0.35;
       // A river port sits by a navigable stretch.
@@ -160,7 +168,7 @@ export function placeSettlements(
         x,
         y,
         elevation: Math.round(elevation[k]),
-        port: coastal && (kind !== 'village' || rand() < p.village_harbour_chance),
+        port: coastal && (kind !== 'village' || !!rules.islanders || rand() < p.village_harbour_chance),
         river,
         riverPort,
       });

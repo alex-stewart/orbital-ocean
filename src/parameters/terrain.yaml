@@ -6,8 +6,10 @@
 # side, clamped to [min_cells, max_cells]. Finer grids are slower to build.
 grid:
   cells_per_il_of_radius: 0.9
-  min_cells: 96
+  min_cells: 128
   max_cells: 200
+  # Belt islands are small; a coarser floor keeps the hundred of them quick.
+  islet_min_cells: 56
 
 # Generated coastlines: `roughness` 0 is a circle, ~0.4 is ragged;
 # `resolution` is the number of points around the coast.
@@ -15,6 +17,7 @@ coast:
   central:   { roughness: 0.22, resolution: 2048 }
   continent: { roughness: 0.42, resolution: 720 }
   moon:      { roughness: 0.42, resolution: 720 }
+  islet:     { roughness: 0.5,  resolution: 240 }
 
 # Height of a generated body's highest ground, in metres:
 # base + per_il_of_radius × radius (unless world.yaml sets max_elevation).

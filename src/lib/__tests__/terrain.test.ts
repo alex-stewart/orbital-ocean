@@ -11,7 +11,7 @@ const maps = mappedBodies(world).map((b) => ({ body: b, map: continentMap(world,
 
 describe('generated continents', () => {
   it('gives every continent terrain, water and at least one settlement', () => {
-    for (const { body, map } of maps) {
+    for (const { body, map } of maps.filter(({ body }) => body.kind !== 'islet')) {
       expect(map.maxElevation, body.id).toBeGreaterThan(300);
       expect(map.rivers.length, body.id).toBeGreaterThan(0);
       expect(map.settlements.length, body.id).toBeGreaterThan(0);
@@ -145,7 +145,7 @@ describe('designed continents', () => {
   it('rejects designs for unknown continents or drawn too large', () => {
     const big = `<svg xmlns="http://www.w3.org/2000/svg"><g id="coast"><circle cx="0" cy="0" r="500"/></g></svg>`;
     expect(() => loadWorld({ mort: big })).toThrow(/guide circle/);
-    expect(() => loadWorld({ atlantis: big })).toThrow(/no continent or moon/);
+    expect(() => loadWorld({ atlantis: big })).toThrow(/no continent, moon or island/);
     expect(() => parseDesign('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).toThrow(/coast/);
   });
 

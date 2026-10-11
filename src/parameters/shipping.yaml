@@ -30,5 +30,10 @@ distance_decay: 1
 # Draw the busiest `max_routes` routes (every chief port keeps at least one).
 max_routes: 28
 
+# Zoomed out (below `overview_below_zoom` px per IL), only the busiest
+# `overview_routes` are drawn, so the inner ocean doesn't become a tangle.
+overview_routes: 10
+overview_below_zoom: 0.12
+
 # While time is playing, re-plan at most this often (milliseconds).
 replan_interval: 250

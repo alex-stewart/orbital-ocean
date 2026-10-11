@@ -8,6 +8,7 @@ import { hydrology, type River } from './hydrology';
 import { slug } from './names';
 import { routeRoads, type Road } from './routes';
 import { placeSettlements, type Settlement } from './settlements';
+import { archipelagoPlan } from './archipelago';
 
 export type { Road, RoadRank } from './routes';
 export type { Settlement, SettlementKind } from './settlements';
@@ -50,6 +51,15 @@ export function continentMap(world: World, body: Body): ContinentMap {
   return m;
 }
 
+/** Accept a map built elsewhere (the background worker), unless one is already in use. */
+export function primeContinentMap(world: World, id: string, map: ContinentMap): boolean {
+  let byId = cache.get(world);
+  if (!byId) cache.set(world, (byId = new Map()));
+  if (byId.has(id)) return false;
+  byId.set(id, map);
+  return true;
+}
+
 /** Whether a body's map is already built (so using it costs nothing). */
 export function hasContinentMap(world: World, body: Body): boolean {
   return cache.get(world)?.has(body.id) ?? false;
@@ -65,7 +75,7 @@ export function findSettlement(world: World, id: string): { body: Body; settleme
   return settlement ? { body, settlement } : null;
 }
 
-/** Bodies with detailed maps: the central isle, the continents and their moons. */
+/** Bodies with detailed maps: the central isle, the continents, their moons and the belt islands. */
 export function mappedBodies(world: World): Body[] {
   return world.bodies;
 }
@@ -89,7 +99,8 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
   const radius = body.radius;
   const half = body.outerRadius * 1.08;
   const gp = P.terrain.grid;
-  const n = Math.max(gp.min_cells, Math.min(gp.max_cells, Math.round(radius * gp.cells_per_il_of_radius)));
+  const floor = body.kind === 'islet' ? gp.islet_min_cells : gp.min_cells;
+  const n = Math.max(floor, Math.min(gp.max_cells, Math.round(radius * gp.cells_per_il_of_radius)));
   const g = makeGrid(half, n);
   const land = rasterize(g, coast);
   const maxElevation = body.maxElevation ?? Math.round(P.terrain.elevation.base + radius * P.terrain.elevation.per_il_of_radius);
@@ -169,6 +180,12 @@ export function buildContinentMap(world: World, body: Body): ContinentMap {
         riverPort: nearRiver && water.rivers.some((r) => r.navigableFrom >= 0 && r.points.some((_, v) => v % 2 === 0 && v / 2 >= r.navigableFrom && Math.hypot(r.points[v] - s.x, r.points[v + 1] - s.y) < g.cell * 2)),
       };
     });
+  } else if (body.archipelago) {
+    // Belt islands are settled per archipelago: this island's share of the plan.
+    const exact = archipelagoPlan(world, body.archipelago).get(body.id)!;
+    settlements = placeSettlements(seed + P.settlements.seed * 1000, g, elevation, land, water, maxElevation, { density: 0, minimum: 'village', exact, islanders: true }, P.settlements, world.names).map(
+      (s) => ({ ...s, id: uniqueId(s.name) }),
+    );
   } else {
     const sp = P.settlements;
     const density = body.settlementDensity ?? (band ? sp.density[band.id] : undefined);

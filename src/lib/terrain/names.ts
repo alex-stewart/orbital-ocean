@@ -14,12 +14,17 @@ export interface NameParts {
   vowels: string[];
   middles: string[];
   endings: { plain: string[]; coast: string[]; river: string[]; high: string[] };
+  /** Archipelago name patterns, with {name} for a generated name. */
+  archipelagoPatterns: string[];
   shape: {
     accent_share: number;
     middle_chance: number;
     second_vowel_chance: number;
     site_ending_chance: { coast: number; river: number; high: number };
     length: { min: number; max: number };
+    max_syllables: number;
+    no_repeated_vowel_sound: boolean;
+    no_doubled_vowel: boolean;
   };
 }
 
@@ -39,6 +44,7 @@ export function parseNames(source: string): NameParts {
       river: list(raw.endings?.river, 'endings.river'),
       high: list(raw.endings?.high, 'endings.high'),
     },
+    archipelagoPatterns: list((raw as { archipelago_patterns?: unknown }).archipelago_patterns, 'archipelago_patterns'),
     shape: (() => {
       const sh = raw.shape;
       const num = (v: unknown, key: string) => {
@@ -55,6 +61,9 @@ export function parseNames(source: string): NameParts {
           high: num(sh?.site_ending_chance?.high, 'site_ending_chance.high'),
         },
         length: { min: num(sh?.length?.min, 'length.min'), max: num(sh?.length?.max, 'length.max') },
+        max_syllables: num(sh?.max_syllables, 'max_syllables'),
+        no_repeated_vowel_sound: !!sh?.no_repeated_vowel_sound,
+        no_doubled_vowel: !!sh?.no_doubled_vowel,
       };
     })(),
   };
@@ -86,6 +95,15 @@ export function nameMaker(seed: number, parts: NameParts) {
   const { coast: COAST, river: RIVER, high: HIGH } = parts.endings;
   const used = new Set<string>();
 
+  /** The style rules from names.yaml: no tongue-twisters. */
+  const pleasant = (name: string) => {
+    const groups: string[] = name.toLowerCase().match(/[aeiouy]+/g) ?? [];
+    if (groups.length > sh.max_syllables) return false;
+    if (sh.no_repeated_vowel_sound && groups.some((g, i) => g.length > 1 && groups.indexOf(g) !== i)) return false;
+    if (sh.no_doubled_vowel && /([aeiouy])\1/i.test(name)) return false;
+    return true;
+  };
+
   return (ctx: NameContext): string => {
     for (let attempt = 0; attempt < 40; attempt++) {
       let stem = pick(onsets, r) + pick(vowels, r);
@@ -95,7 +113,7 @@ export function nameMaker(seed: number, parts: NameParts) {
       let name = stem + pick(endings, r);
       name = name.replace(/(.)\1\1/g, '$1$1');
       name = name[0].toUpperCase() + name.slice(1);
-      if (name.length >= sh.length.min && name.length <= sh.length.max && !used.has(name)) {
+      if (name.length >= sh.length.min && name.length <= sh.length.max && !used.has(name) && pleasant(name)) {
         used.add(name);
         return name;
       }

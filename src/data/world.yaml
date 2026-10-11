@@ -9,6 +9,8 @@
 #  Periods may be given as `period_years` (calendar years) or `period_days`.
 #  `seed` picks the generated placeholder coastline; change it to reroll.
 #  `description` (optional) is shown in the gazetteer.
+#  `short_name` (optional) is used where space is tight: zoomed out, and in the
+#  island strip. Without one, "Continent 7" becomes "C. 7".
 #  `max_elevation` (optional) sets the height of a generated body's highest
 #  ground in metres; `settlement_density` overrides its band's density
 #  (see src/parameters/settlements.yaml).
@@ -65,6 +67,7 @@ orbitals:
 
   - id: holy-purple-homeland
     name: Holy Purple Homeland
+    short_name: Homeland
     position: 3
     orbit_radius: 1250
     bearing: 200

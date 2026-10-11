@@ -11,6 +11,14 @@ density:
   second: 3.5
   frontier: 1.4
 
+# Settlements per 10,000 IL² of a belt's land (all its islands): a belt has as
+# many places as a continent of its land would. They are shared among its
+# populated archipelagos by land area, at least a village each. Islanders live
+# by the sea: every shore village on a belt island is a harbour.
+belt_density:
+  war-belt: 18
+  far-belt: 9
+
 # Share of each size: mostly villages, then towns, and a smaller but real
 # number of cities.
 mix:

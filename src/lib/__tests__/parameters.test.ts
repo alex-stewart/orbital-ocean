@@ -9,7 +9,7 @@ const sources = Object.fromEntries(Object.entries(files).map(([p, t]) => [p.repl
 
 describe('parameters', () => {
   it('loads and checks every file', () => {
-    expect(Object.keys(parameters).sort()).toEqual(['display', 'platforms', 'roads', 'settlements', 'shipping', 'terrain']);
+    expect(Object.keys(parameters).sort()).toEqual(['belts', 'display', 'platforms', 'roads', 'settlements', 'shipping', 'terrain']);
   });
 
   it('names the file and key when something is missing or mistyped', () => {

@@ -1,8 +1,9 @@
 import type { IslandShape } from '../../lib/coastline';
 import type { Point } from '../../lib/orbits';
+import { sample } from '../../lib/terrain/grid';
 import { continentMap, type ContinentMap, type RoadRank, type Settlement, type SettlementKind } from '../../lib/terrain';
 import type { Body } from '../../lib/world';
-import type { Box, HitTarget, RenderInput } from './render';
+import { textWidth, type Box, type HitTarget, type RenderInput } from './render';
 import { fonts, theme } from './theme';
 
 /**
@@ -21,7 +22,7 @@ function smoothstep(a: number, b: number, x: number): number {
 }
 
 // Hypsometric tints, by height in metres.
-const RAMP: [number, [number, number, number]][] = [
+export const RAMP: [number, [number, number, number]][] = [
   [0, [233, 227, 186]],
   [200, [229, 219, 170]],
   [600, [223, 204, 148]],
@@ -60,42 +61,39 @@ const cache = new WeakMap<ContinentMap, Drawables>();
 function drawables(map: ContinentMap): Drawables {
   const hit = cache.get(map);
   if (hit) return hit;
-  const { grid: g, elevation: e, land, lake } = map;
+  const { grid: g, elevation: e, land } = map;
   const { n } = g;
+  // Twice the grid's resolution, with heights interpolated between cells, so the
+  // shading stays smooth when zoomed in. Sea counts as height 0 here: the coast
+  // clip hides it, and it keeps the shoreline colour from fringing. Lakes are
+  // shaded as land too; their outlines are drawn over the top (no pale halo).
+  const R = 2;
+  const size = n * R;
+  const flat = new Float32Array(n * n);
+  for (let k = 0; k < n * n; k++) flat[k] = land[k] ? Math.max(0, e[k]) : 0;
   const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = n;
+  canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d')!;
-  const img = ctx.createImageData(n, n);
+  const img = ctx.createImageData(size, size);
   const exaggerate = 6;
   const L = [-1, -1, 1.3];
   const ll = Math.hypot(...L);
-  for (let j = 0; j < n; j++)
-    for (let i = 0; i < n; i++) {
-      const k = j * n + i;
-      const o = k * 4;
-      if (!land[k]) {
-        // Extend the edge colour a little into the sea so smoothing doesn't fringe the coast.
-        img.data[o + 3] = 0;
-        continue;
-      }
-      let rgb: [number, number, number];
-      if (lake[k] >= 0) {
-        rgb = [207, 223, 224];
-      } else {
-        const at = (ii: number, jj: number) => {
-          const kk = Math.min(n - 1, Math.max(0, jj)) * n + Math.min(n - 1, Math.max(0, ii));
-          return land[kk] ? e[kk] : 0;
-        };
-        const dzdx = ((at(i + 1, j) - at(i - 1, j)) / (2 * g.cell * 1000)) * exaggerate;
-        const dzdy = ((at(i, j + 1) - at(i, j - 1)) / (2 * g.cell * 1000)) * exaggerate;
-        const nl = Math.hypot(dzdx, dzdy, 1);
-        const shade = (-dzdx * L[0] - dzdy * L[1] + L[2]) / (nl * ll);
-        const f = Math.min(1.1, Math.max(0.72, 0.62 + 0.45 * shade));
-        rgb = tint(e[k]).map((c) => c * f) as [number, number, number];
-      }
-      img.data[o] = rgb[0];
-      img.data[o + 1] = rgb[1];
-      img.data[o + 2] = rgb[2];
+  const step = g.cell / R;
+  for (let pj = 0; pj < size; pj++)
+    for (let pi = 0; pi < size; pi++) {
+      const x = -g.half + (pi + 0.5) * step;
+      const y = -g.half + (pj + 0.5) * step;
+      const h = sample(g, flat, x, y);
+      const dzdx = ((sample(g, flat, x + step, y) - sample(g, flat, x - step, y)) / (2 * step * 1000)) * exaggerate;
+      const dzdy = ((sample(g, flat, x, y + step) - sample(g, flat, x, y - step)) / (2 * step * 1000)) * exaggerate;
+      const nl = Math.hypot(dzdx, dzdy, 1);
+      const shade = (-dzdx * L[0] - dzdy * L[1] + L[2]) / (nl * ll);
+      const f = Math.min(1.1, Math.max(0.72, 0.62 + 0.45 * shade));
+      const rgb = tint(h);
+      const o = (pj * size + pi) * 4;
+      img.data[o] = rgb[0] * f;
+      img.data[o + 1] = rgb[1] * f;
+      img.data[o + 2] = rgb[2] * f;
       img.data[o + 3] = 255;
     }
   ctx.putImageData(img, 0, 0);
@@ -268,7 +266,10 @@ export function drawSettlements(
   if (!s.layers.settlements) return { hits, labels };
   const scale = s.view.scale;
   const REVEAL = s.world.params.display.reveal.settlements;
-  for (const { b, p, sr } of bodies) {
+  for (const { b, p, sr: bodySr } of bodies) {
+    // A belt island's places show as its archipelago grows on screen, so a
+    // cluster appears together rather than island by island.
+    const sr = b.archipelago ? b.archipelago.extent * scale : bodySr;
     if (sr < Math.min(REVEAL.city, REVEAL.town, REVEAL.village) * 0.7) continue;
     const map = continentMap(s.world, b);
     // Smaller places first, so cities draw on top.
@@ -334,6 +335,9 @@ export function drawSettlements(
   return { hits, labels };
 }
 
+/** Where each settlement's name went last frame, tried first so names stay put. */
+const settlementSlot = new Map<string, number>();
+
 /** Settlement names, larger places first, avoiding everything already placed. */
 export function drawSettlementLabels(ctx: CanvasRenderingContext2D, s: RenderInput, labels: SettlementLabel[], placed: Box[]) {
   if (!s.layers.labels) return;
@@ -348,7 +352,7 @@ export function drawSettlementLabels(ctx: CanvasRenderingContext2D, s: RenderInp
     ctx.font =
       st.kind === 'city' ? `600 ${size}px ${fonts.caps}` : st.kind === 'town' ? `500 ${size}px ${fonts.serif}` : `italic ${size}px ${fonts.serif}`;
     ctx.letterSpacing = st.kind === 'city' ? '1px' : '0px';
-    const tw = ctx.measureText(st.name).width;
+    const tw = textWidth(ctx, st.name);
     const gap = l.r + 4;
     const options = [
       { x: l.x + gap, y: l.y + size / 3 },
@@ -356,10 +360,14 @@ export function drawSettlementLabels(ctx: CanvasRenderingContext2D, s: RenderInp
       { x: l.x - tw / 2, y: l.y - gap - 1 },
       { x: l.x - tw / 2, y: l.y + gap + size * 0.8 },
     ];
-    for (const o of options) {
+    const prev = settlementSlot.get(st.id) ?? 0;
+    const tryOrder = options.map((_, i) => i).sort((a, b) => (a === prev ? -1 : b === prev ? 1 : a - b));
+    for (const i of tryOrder) {
+      const o = options[i];
       const box = { x: o.x - 2, y: o.y - size * 0.8, w: tw + 4, h: size * 1.05 };
       if (st.id !== s.selectedId && collides(box)) continue;
       placed.push(box);
+      settlementSlot.set(st.id, i);
       ctx.globalAlpha = l.alpha;
       ctx.lineJoin = 'round';
       ctx.strokeStyle = 'rgba(244, 236, 214, 0.9)';

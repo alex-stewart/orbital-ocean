@@ -32,3 +32,19 @@ export function replaceParams(params: Record<string, string | null>) {
   const q = current.toString();
   history.replaceState(null, '', `#${path}${q ? `?${q}` : ''}`);
 }
+
+/** Like replaceParams, but as a new history entry (so Back returns to the previous one). */
+export function pushParams(params: Record<string, string | null>) {
+  const { path, params: current } = parse();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === null) current.delete(k);
+    else current.set(k, v);
+  }
+  const q = current.toString();
+  history.pushState(null, '', `#${path}${q ? `?${q}` : ''}`);
+}
+
+/** The current hash route's parameters (outside React). */
+export function currentParams(): URLSearchParams {
+  return parse().params;
+}

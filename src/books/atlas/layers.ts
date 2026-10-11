@@ -45,13 +45,13 @@ export const layerGroups: { title: string; items: { key: keyof Layers; label: st
     title: 'Places',
     items: [
       { key: 'moons', label: 'Moons' },
-      { key: 'belts', label: 'Belts' },
+      { key: 'belts', label: 'Belts and archipelagos' },
     ],
   },
   {
     title: 'Sea',
     items: [
-      { key: 'shipping', label: 'Imperial shipping routes' },
+      { key: 'shipping', label: 'Shipping routes and ferries' },
       { key: 'anchored', label: 'Anchored platforms' },
       { key: 'orbital', label: 'Orbital platforms' },
     ],

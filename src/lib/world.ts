@@ -2,16 +2,20 @@ import yaml from 'js-yaml';
 import type { Calendar } from './calendar';
 import type { Parameters } from '../parameters/schema';
 import { generatePlatforms, type Platform, type PlatformContent, type PlatformRules } from './platforms';
+import { generateArchipelagos } from './archipelagos';
 import { coastlinePoints } from './coastline';
 import { rng } from './random';
-import { parseDesign, type ContinentDesign } from './terrain/design';
+import type { ContinentDesign } from './terrain/design';
 import type { NameParts } from './terrain/names';
 
-export type BodyKind = 'central' | 'isle' | 'moon';
+/** central: the Land of the Large; isle: a continent; moon; islet: an island of a belt's archipelago. */
+export type BodyKind = 'central' | 'isle' | 'moon' | 'islet';
 
 export interface Body {
   id: string;
   name: string;
+  /** For crowded places (zoomed out, the island strip): `short_name`, or "C. 7" for "Continent 7". */
+  shortName: string;
   kind: BodyKind;
   /** Island radius, IL. */
   radius: number;
@@ -34,6 +38,23 @@ export interface Body {
   maxElevation: number | null;
   /** Settlements per 10,000 IL² of land, overriding the band's density. */
   settlementDensity: number | null;
+  /** For belt islands: the archipelago they belong to. */
+  archipelago: Archipelago | null;
+}
+
+/** A group of belt islands orbiting together (see archipelagos.ts). */
+export interface Archipelago {
+  id: string;
+  name: string;
+  belt: Belt;
+  populated: boolean;
+  /** Centre at day 0, and the period every island shares. */
+  orbitRadius: number;
+  bearing: number;
+  periodDays: number;
+  /** How far the group reaches from its centre, IL. */
+  extent: number;
+  islands: Body[];
 }
 
 export interface Islet {
@@ -49,7 +70,11 @@ export interface Belt {
   position: number | null;
   innerRadius: number;
   outerRadius: number;
+  /** Loose rocks, each on its own orbit. */
   islets: Islet[];
+  /** Orbital period at the inner edge, days (P ∝ r^1.5 across the belt). */
+  periodAtInnerDays: number;
+  archipelagos: Archipelago[];
 }
 
 /** An administrative ring of the ocean, between two radii. */
@@ -67,9 +92,10 @@ export interface World {
   oceanRadius: number;
   edgeName: string;
   central: Body;
-  /** Every body in drawing order: central, isles, moons. */
+  /** Every body in drawing order: central, isles, moons, belt islands. */
   bodies: Body[];
   belts: Belt[];
+  archipelagos: Archipelago[];
   bands: Band[];
   platforms: Platform[];
   /** Platform register number → index into `platforms`. */
@@ -97,6 +123,7 @@ interface RawBody {
   period_days?: number;
   position?: number;
   description?: string;
+  short_name?: string;
   max_elevation?: number;
   settlement_density?: number;
   moons?: RawBody[];
@@ -131,8 +158,8 @@ export interface WorldSources {
   params: Parameters;
   /** Name-building sounds (src/data/names.yaml), already parsed. */
   names: NameParts;
-  /** Hand-drawn continent SVGs by body id (src/data/continents/<id>.svg). */
-  designs?: Record<string, string>;
+  /** Hand-drawn designs by body id, already read (see terrain/design.ts parseDesign). */
+  designs?: Map<string, ContinentDesign>;
 }
 
 function hash(s: string): number {
@@ -143,10 +170,9 @@ function hash(s: string): number {
 
 /** Build the world from world.yaml text, the calendar, parameters and any designs. */
 export function parseWorld(source: string, cal: Calendar, sources: WorldSources): World {
-  const { params, names, designs: designSources = {} } = sources;
+  const { params, names, designs = new Map<string, ContinentDesign>() } = sources;
   const raw = yaml.load(source) as RawWorld;
   if (!raw?.central) throw new Error('world.yaml: `central` is required');
-  const designs = new Map(Object.entries(designSources).map(([id, svg]) => [id, parseDesign(svg, `continents/${id}.svg`)]));
 
   const toBody = (r: RawBody, kind: BodyKind, parent: Body | null): Body => {
     let periodDays = Infinity;
@@ -157,6 +183,7 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
     const body: Body = {
       id: r.id,
       name: r.name ?? r.id,
+      shortName: r.short_name ?? (r.name ?? r.id).replace(/^Continent (\d+)$/, 'C. $1'),
       kind,
       radius: r.radius,
       seed: r.seed ?? hash(r.id),
@@ -171,6 +198,7 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
       outerRadius: r.radius,
       maxElevation: r.max_elevation ?? null,
       settlementDensity: r.settlement_density ?? null,
+      archipelago: null,
     };
     // Coastline: the hand-drawn one if there is a design, else generated from the seed.
     const design = designs.get(r.id);
@@ -181,10 +209,14 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
       body.coast = [Array.from(unit, (v) => v * r.radius)];
     }
     body.outerRadius = Math.max(...body.coast.flatMap((ring) => ring.filter((_, i) => i % 2 === 0).map((x, i) => Math.hypot(x, ring[i * 2 + 1]))));
-    if (design && body.outerRadius > r.radius * params.terrain.design.max_coast_reach) {
+    // Belt islands are packed by their coasts' reach, so a drawn one must keep to it.
+    const limit = kind === 'islet' ? params.belts.coast_reach : params.terrain.design.max_coast_reach;
+    if (design && body.outerRadius > r.radius * limit) {
       throw new Error(
         `continents/${r.id}.svg: the coast reaches ${Math.round(body.outerRadius)} IL from the centre, but ${r.id} has radius ${r.radius}. ` +
-          `Keep the drawing within the guide circle, or raise its radius in world.yaml.`,
+          (kind === 'islet'
+            ? `A belt island's coast must stay within ${limit} × its radius (belts.yaml → coast_reach), or it could touch its neighbours.`
+            : `Keep the drawing within the guide circle, or raise its radius in world.yaml.`),
       );
     }
     body.moons = (r.moons ?? []).map((m) => toBody(m, 'moon', body));
@@ -194,11 +226,6 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
   const central = toBody(raw.central, 'central', null);
   const isles = (raw.orbitals ?? []).map((o) => toBody(o, 'isle', central));
   const bodies = [central, ...isles, ...central.moons, ...isles.flatMap((i) => i.moons)];
-  for (const id of designs.keys()) {
-    if (!bodies.some((b) => b.id === id)) {
-      throw new Error(`continents/${id}.svg: no continent or moon with id "${id}" in world.yaml`);
-    }
-  }
 
   const belts: Belt[] = (raw.belts ?? []).map((b) => {
     const rand = rng(b.seed ?? hash(b.id));
@@ -221,8 +248,47 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
       innerRadius: b.inner_radius,
       outerRadius: b.outer_radius,
       islets,
+      periodAtInnerDays: p0,
+      archipelagos: [],
     };
   });
+
+  // Archipelagos: their islands become bodies (kind 'islet') orbiting the centre,
+  // all islands of a group sharing its period.
+  const usedIds = new Set(bodies.map((b) => b.id));
+  const archipelagos: Archipelago[] = [];
+  for (const belt of belts) {
+    for (const spec of generateArchipelagos(belt, params.belts, names, usedIds)) {
+      const arch: Archipelago = {
+        id: spec.id,
+        name: spec.name,
+        belt,
+        populated: spec.populated,
+        orbitRadius: spec.orbitRadius,
+        bearing: spec.bearing,
+        periodDays: spec.periodDays,
+        extent: spec.extent,
+        islands: [],
+      };
+      arch.islands = spec.islands.map((is) => {
+        const body = toBody(
+          { id: is.id, name: is.name, radius: is.radius, seed: is.seed, orbit_radius: is.orbitRadius, bearing: is.bearing, period_days: spec.periodDays },
+          'islet',
+          central,
+        );
+        body.archipelago = arch;
+        return body;
+      });
+      belt.archipelagos.push(arch);
+      archipelagos.push(arch);
+      bodies.push(...arch.islands);
+    }
+  }
+  for (const id of designs.keys()) {
+    if (!bodies.some((b) => b.id === id)) {
+      throw new Error(`continents/${id}.svg: no continent, moon or island with id "${id}"`);
+    }
+  }
 
   const outermost = Math.max(
     central.radius,
@@ -275,6 +341,7 @@ export function parseWorld(source: string, cal: Calendar, sources: WorldSources)
     central,
     bodies,
     belts,
+    archipelagos,
     bands,
     platforms,
     platformIndex: new Map(platforms.map((p, i) => [p.id, i])),

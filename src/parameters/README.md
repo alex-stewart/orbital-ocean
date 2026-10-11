@@ -11,6 +11,7 @@ works lives in the code under [`src/lib/`](../lib/).
 | `settlements.yaml` | How many places, of what size, where they choose to stand |
 | `roads.yaml` | How roads weigh slope, height, bridges and existing roads |
 | `platforms.yaml` | How many platforms, of which sizes and owners, and how they're spaced |
+| `belts.yaml` | Archipelagos in the belts: how many, how big, how populated |
 | `shipping.yaml` | Imperial cargo routes: resupply range, costs, how much trade |
 | `display.yaml` | When things appear as you zoom, and how far you can zoom |
 
